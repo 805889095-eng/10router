@@ -58,7 +58,7 @@ import {
 } from "./utils";
 import Card from "@/shared/components/Card";
 import { translate } from "@/i18n/runtime";
-import { ConfirmModal, EditConnectionModal } from "@/shared/components";
+import { ConfirmModal, EditConnectionModal, Modal } from "@/shared/components";
 import { USAGE_SUPPORTED_PROVIDERS, getProviderWebsite } from "@/shared/constants/providers";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
@@ -247,32 +247,34 @@ export default function ProviderLimits() {
   const [windowsRefreshKey, setWindowsRefreshKey] = useState(0);
   const [quotaVisibility, setQuotaVisibility] = useState({});
   const [expiringFirst, setExpiringFirst] = useState(false);
-  // "Hide no-quota cards": a view toggle that drops connections with no quota
-  // package to show (the cloud MiMo card, Token Plan, …). The switch itself
-  // lives on the Experimental page (Providers card) — the toolbar here was
-  // getting crowded — so this page only reads the persisted pref. Default
-  // off so nothing disappears unasked.
-  const [hideNoQuota] = useState(() => {
+  // Quota card view preferences (persisted in localStorage)
+  const [hideNoQuota, setHideNoQuota] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("quotaHideNoQuota") === "1";
   });
-  // "Hide zero-balance cards" — the depleted sibling of hideNoQuota (same
-  // Experimental-page localStorage pattern). Drops cards whose quota fetch
-  // COMPLETED with every pack at absolute zero (0 余额 / 0 积分 accounts).
-  // Judged by isConnectionDepleted — the same predicate the bulk disable/enable
-  // actions use — so the toolbar and the view filter never disagree about what
-  // "depleted" means. Kept while loading / on error / before the first fetch.
-  const [hideZeroBalance] = useState(() => {
+  const [hideZeroBalance, setHideZeroBalance] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("quotaHideZeroBalance") === "1";
   });
-  // Experimental (same localStorage pattern as hideNoQuota, switch on the
-  // Experimental page): draw contained subscription windows as ONE nested
-  // track instead of flat rows.
-  const [nestedCycle] = useState(() => {
+  // Dedicated toggle for external companion pushed cards (CreditDaddy etc.) — default ON
+  const [showExternalCards, setShowExternalCards] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem("quotaShowExternalCards") !== "0";
+  });
+  const [nestedCycle, setNestedCycle] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("quotaNestedCycle") === "1";
   });
+
+  // Modal to manage all quota card display preferences in one place
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+
+  const updatePreference = useCallback((key, value, setter) => {
+    setter(value);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(key, value ? "1" : "0");
+    }
+  }, []);
   // "Only with balance" is NOT a separate view filter. It writes the
   // zero-balance rows into the SAME per-connection `quotaVisibility.hidden` list
   // that the per-row hide button writes, so the two stay one thing: a row hidden
@@ -341,6 +343,21 @@ export default function ProviderLimits() {
         setPagination(nextPagination);
         setTotals(nextTotals);
         setPage(getPaginationPageValue(data.pagination, targetPage));
+        // External-pushed cards arrive with their numbers INLINE (rows built
+        // from /api/external-quota snapshots). Seed them straight into
+        // quotaData — an `ext:` id has no providers-table row, so the normal
+        // GET /api/usage/<id> revalidation would 404 and strand the card on a
+        // permanent spinner. Persisting via writeQuotaEntry also lets the
+        // cache-paint path show them before the network returns.
+        const externalSeeds = connectionList.filter((c) => c.external && c.quota);
+        if (externalSeeds.length > 0) {
+          setQuotaData((prev) => {
+            const next = { ...prev };
+            for (const c of externalSeeds) next[c.id] = c.quota;
+            return next;
+          });
+          for (const c of externalSeeds) writeQuotaEntry(c.id, c.quota);
+        }
         writeConnectionsCache(
           connectionsCacheKey({ page: targetPage, pageSize, accountFilter, providerFilter }),
           {
@@ -507,6 +524,9 @@ export default function ProviderLimits() {
       const canObserve = typeof IntersectionObserver !== "undefined";
       const tasks = [];
       for (const conn of conns) {
+        // Pushed cards have no upstream to revalidate against — their numbers
+        // ride on the connection row and refresh with fetchConnections.
+        if (conn.external) continue;
         if (skipFreshFrom && isQuotaFresh(skipFreshFrom[conn.id])) continue;
         if (lazy && canObserve && !visibleIdsRef.current.has(conn.id)) {
           pendingQuotaRef.current.set(conn.id, conn.provider);
@@ -588,10 +608,20 @@ export default function ProviderLimits() {
 
   const handleDeleteConnection = useCallback(
     async (id) => {
-      if (!confirm("Delete this connection?")) return;
+      // Pushed cards are _meta snapshots, not connections: the confirm says
+      // what actually happens (the pusher can just re-push) and the DELETE
+      // targets /api/external-quota/<source>. Native confirm() is not routed
+      // through the i18n layer, so translate explicitly here.
+      const isExternalId = typeof id === "string" && id.startsWith("ext:");
+      if (isExternalId) {
+        if (!confirm(translate("Remove this pushed quota card? The pushing app can re-add it with its next update."))) return;
+      } else if (!confirm("Delete this connection?")) return;
       setDeletingId(id);
       try {
-        const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
+        const url = isExternalId
+          ? `/api/external-quota/${encodeURIComponent(id.slice(4))}`
+          : `/api/providers/${id}`;
+        const res = await fetch(url, { method: "DELETE" });
         if (res.ok) {
           setQuotaData((prev) => {
             const next = { ...prev };
@@ -1070,25 +1100,37 @@ export default function ProviderLimits() {
   // deliberately kept, and vice versa.
   const renderConnections = useMemo(() => {
     let list = sortedConnections;
+
+    // Filter external pushed cards if user explicitly toggled them off
+    if (!showExternalCards) {
+      list = list.filter((conn) => !conn.external);
+    }
+
     if (hideNoQuota) {
       list = list.filter((conn) => {
         if (loading[conn.id]) return true;
         if (errors[conn.id]) return true;
+        // External pushed cards with alert messages or active cards must stay visible
+        if (conn.external) return true;
         const q = quotaData[conn.id];
         if (!q) return true; // not fetched yet — decide once we know
         return (q.quotas?.length ?? 0) > 0;
       });
     }
+
     if (hideZeroBalance) {
       list = list.filter((conn) => {
         if (loading[conn.id]) return true;
         if (errors[conn.id]) return true;
+        // External cards showing warning messages (e.g. session expired) are not "depleted"
+        if (conn.external && quotaData[conn.id]?.message) return true;
         if (!quotaData[conn.id]) return true; // not fetched yet
         return !isConnectionDepleted(conn, quotaData);
       });
     }
+
     return list;
-  }, [sortedConnections, hideNoQuota, hideZeroBalance, loading, errors, quotaData]);
+  }, [sortedConnections, showExternalCards, hideNoQuota, hideZeroBalance, loading, errors, quotaData]);
 
   const bulkSetActive = useCallback(
     async (targetIds, isActive) => {
@@ -1115,15 +1157,17 @@ export default function ProviderLimits() {
   );
 
   const handleDisableDepleted = () => {
+    // External cards have no isActive to flip (PUT /api/providers/<id> would
+    // 404 on an `ext:` id — the row exists only in _meta).
     const ids = sortedConnections
-      .filter((c) => (c.isActive ?? true) && isConnectionDepleted(c, quotaData))
+      .filter((c) => !c.external && (c.isActive ?? true) && isConnectionDepleted(c, quotaData))
       .map((c) => c.id);
     bulkSetActive(ids, false);
   };
 
   const handleEnableAvailable = () => {
     const ids = sortedConnections
-      .filter((c) => !(c.isActive ?? true) && !isConnectionDepleted(c, quotaData))
+      .filter((c) => !c.external && !(c.isActive ?? true) && !isConnectionDepleted(c, quotaData))
       .map((c) => c.id);
     bulkSetActive(ids, true);
   };
@@ -1220,6 +1264,7 @@ export default function ProviderLimits() {
           trackerView === "windows" ? setWindowsRefreshKey((k) => k + 1) : refreshAll(true)
         }
         accountCount={pagination.total}
+        onOpenPreferences={() => setShowPreferencesModal(true)}
       />
 
       {trackerView === "windows" ? (
@@ -1382,7 +1427,7 @@ export default function ProviderLimits() {
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
-                    {(isCodex || claudeReset) && (
+                    {(isCodex || claudeReset) && !conn.external && (
                       <>
                         <Tooltip
                           text={
@@ -1442,7 +1487,7 @@ export default function ProviderLimits() {
                     <Tooltip text="Refresh quota">
                       <button
                         type="button"
-                        onClick={() => refreshProvider(conn.id, conn.provider)}
+                        onClick={() => (conn.external ? fetchConnections(page) : refreshProvider(conn.id, conn.provider))}
                         disabled={isRefreshing || rowBusy}
                         aria-label="Refresh quota"
                         className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
@@ -1454,6 +1499,7 @@ export default function ProviderLimits() {
                         </span>
                       </button>
                     </Tooltip>
+                    {!conn.external && (
                     <Tooltip text="Edit connection">
                       <button
                         type="button"
@@ -1470,6 +1516,7 @@ export default function ProviderLimits() {
                         </span>
                       </button>
                     </Tooltip>
+                    )}
                     <Tooltip text="Delete connection">
                       <button
                         type="button"
@@ -1485,6 +1532,7 @@ export default function ProviderLimits() {
                         </span>
                       </button>
                     </Tooltip>
+                    {!conn.external && (
                     <div
                       className="inline-flex items-center pl-0.5"
                       title={
@@ -1502,6 +1550,7 @@ export default function ProviderLimits() {
                         }
                       />
                     </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1922,6 +1971,75 @@ export default function ProviderLimits() {
           setSelectedConnection(null);
         }}
       />
+
+      {/* Card Display Preferences Modal */}
+      <Modal
+        isOpen={showPreferencesModal}
+        title={translate("Card display preferences")}
+        onClose={() => setShowPreferencesModal(false)}
+      >
+        <div className="flex flex-col gap-4 text-xs">
+          <p className="text-text-muted">
+            {translate("Customize which quota cards are displayed and their layout style.")}
+          </p>
+
+          {/* Toggle: External pushed cards */}
+          <div className="flex items-center justify-between gap-4 py-2 border-b border-border">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-text">{translate("Show external pushed cards")}</p>
+              <p className="text-text-muted">
+                {translate("Display companion cards (CreditDaddy free quotas & status notes)")}
+              </p>
+            </div>
+            <Toggle
+              checked={showExternalCards}
+              onChange={(val) => updatePreference("quotaShowExternalCards", val, setShowExternalCards)}
+            />
+          </div>
+
+          {/* Toggle: Hide no-quota provider cards */}
+          <div className="flex items-center justify-between gap-4 py-2 border-b border-border">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-text">{translate("Hide no-quota provider cards")}</p>
+              <p className="text-text-muted">
+                {translate("Hide standard connection cards that have no quota to display")}
+              </p>
+            </div>
+            <Toggle
+              checked={hideNoQuota}
+              onChange={(val) => updatePreference("quotaHideNoQuota", val, setHideNoQuota)}
+            />
+          </div>
+
+          {/* Toggle: Hide zero-balance provider cards */}
+          <div className="flex items-center justify-between gap-4 py-2 border-b border-border">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-text">{translate("Hide zero-balance provider cards")}</p>
+              <p className="text-text-muted">
+                {translate("Hide connection cards whose quota is fully depleted (0 balance / 0 credits)")}
+              </p>
+            </div>
+            <Toggle
+              checked={hideZeroBalance}
+              onChange={(val) => updatePreference("quotaHideZeroBalance", val, setHideZeroBalance)}
+            />
+          </div>
+
+          {/* Toggle: Nested cycle quota bars */}
+          <div className="flex items-center justify-between gap-4 py-2">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-text">{translate("Nested cycle quota bars")}</p>
+              <p className="text-text-muted">
+                {translate("Draw contained subscription windows as nested concentric tracks instead of flat rows")}
+              </p>
+            </div>
+            <Toggle
+              checked={nestedCycle}
+              onChange={(val) => updatePreference("quotaNestedCycle", val, setNestedCycle)}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
