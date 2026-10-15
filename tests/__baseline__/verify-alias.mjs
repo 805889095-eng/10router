@@ -30,6 +30,7 @@ const HISTORICAL_TOKENS = [
   "tokenbom","agnes-ai","agnes-ai-cn","drex","ocz","v1m","systemone","jev",
   "step","stepfun","stepfun-cn","stepfun-plan","stepfun-plan-cn",
   "step-cn","stepp-cn","stepp","sfp-cn","sfp","sfpcn","sf-cn","sfcn","step-plan","step-plan-cn","sf",
+  "rv","river",
 ];
 
 // Probe every spelling a provider actually publishes (id/alias/uiAlias/aliases)

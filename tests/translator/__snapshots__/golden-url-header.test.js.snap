@@ -638,6 +638,25 @@ exports[`GOLDEN buildHeaders (default executor providers) > codebuddy-intl → h
 }
 `;
 
+exports[`GOLDEN buildHeaders (default executor providers) > codiv → headers (apiKey / oauth) 1`] = `
+{
+  "apiKey": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "nonStream": {
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "oauth": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+}
+`;
+
 exports[`GOLDEN buildHeaders (default executor providers) > cohere → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -1182,28 +1201,6 @@ exports[`GOLDEN buildHeaders (default executor providers) > minimax-code-global 
 }
 `;
 
-exports[`GOLDEN buildHeaders (default executor providers) > minimax-free → headers (apiKey / oauth) 1`] = `
-{
-  "apiKey": {
-    "Accept": "text/event-stream",
-    "Content-Type": "application/json",
-    "anthropic-version": "2023-06-01",
-    "x-api-key": undefined,
-  },
-  "nonStream": {
-    "Content-Type": "application/json",
-    "anthropic-version": "2023-06-01",
-    "x-api-key": undefined,
-  },
-  "oauth": {
-    "Accept": "text/event-stream",
-    "Content-Type": "application/json",
-    "anthropic-version": "2023-06-01",
-    "x-api-key": undefined,
-  },
-}
-`;
-
 exports[`GOLDEN buildHeaders (default executor providers) > mistral → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -1224,6 +1221,25 @@ exports[`GOLDEN buildHeaders (default executor providers) > mistral → headers 
 `;
 
 exports[`GOLDEN buildHeaders (default executor providers) > mmf → headers (apiKey / oauth) 1`] = `
+{
+  "apiKey": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "nonStream": {
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "oauth": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+}
+`;
+
+exports[`GOLDEN buildHeaders (default executor providers) > modelscope → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
     "Accept": "text/event-stream",
@@ -1477,6 +1493,25 @@ exports[`GOLDEN buildHeaders (default executor providers) > poolside → headers
 }
 `;
 
+exports[`GOLDEN buildHeaders (default executor providers) > river → headers (apiKey / oauth) 1`] = `
+{
+  "apiKey": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "nonStream": {
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "oauth": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+}
+`;
+
 exports[`GOLDEN buildHeaders (default executor providers) > sambanova → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -1687,6 +1722,25 @@ exports[`GOLDEN buildHeaders (default executor providers) > tokenbom → headers
 `;
 
 exports[`GOLDEN buildHeaders (default executor providers) > tokenharbor → headers (apiKey / oauth) 1`] = `
+{
+  "apiKey": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "nonStream": {
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "oauth": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+}
+`;
+
+exports[`GOLDEN buildHeaders (default executor providers) > tokenharbor-free → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
     "Accept": "text/event-stream",
@@ -2118,6 +2172,13 @@ exports[`GOLDEN buildUrl (default executor providers) > codebuddy-intl → url (
 }
 `;
 
+exports[`GOLDEN buildUrl (default executor providers) > codiv → url (stream + non-stream) 1`] = `
+{
+  "nonStream": "https://api.codiv.ai/v1/chat/completions",
+  "stream": "https://api.codiv.ai/v1/chat/completions",
+}
+`;
+
 exports[`GOLDEN buildUrl (default executor providers) > cohere → url (stream + non-stream) 1`] = `
 {
   "nonStream": "https://api.cohere.ai/v1/chat/completions",
@@ -2293,13 +2354,6 @@ exports[`GOLDEN buildUrl (default executor providers) > minimax-code-global → 
 }
 `;
 
-exports[`GOLDEN buildUrl (default executor providers) > minimax-free → url (stream + non-stream) 1`] = `
-{
-  "nonStream": "http://127.0.0.1:47860/gateway/minimax/v1/messages",
-  "stream": "http://127.0.0.1:47860/gateway/minimax/v1/messages",
-}
-`;
-
 exports[`GOLDEN buildUrl (default executor providers) > mistral → url (stream + non-stream) 1`] = `
 {
   "nonStream": "https://api.mistral.ai/v1/chat/completions",
@@ -2311,6 +2365,13 @@ exports[`GOLDEN buildUrl (default executor providers) > mmf → url (stream + no
 {
   "nonStream": "https://api.xiaomimimo.com/api/free-ai/openai/chat",
   "stream": "https://api.xiaomimimo.com/api/free-ai/openai/chat",
+}
+`;
+
+exports[`GOLDEN buildUrl (default executor providers) > modelscope → url (stream + non-stream) 1`] = `
+{
+  "nonStream": "https://api-inference.modelscope.cn/v1/chat/completions",
+  "stream": "https://api-inference.modelscope.cn/v1/chat/completions",
 }
 `;
 
@@ -2398,6 +2459,13 @@ exports[`GOLDEN buildUrl (default executor providers) > poolside → url (stream
 }
 `;
 
+exports[`GOLDEN buildUrl (default executor providers) > river → url (stream + non-stream) 1`] = `
+{
+  "nonStream": "https://api.river.ai/v1/chat/completions",
+  "stream": "https://api.river.ai/v1/chat/completions",
+}
+`;
+
 exports[`GOLDEN buildUrl (default executor providers) > sambanova → url (stream + non-stream) 1`] = `
 {
   "nonStream": "https://api.sambanova.ai/v1/chat/completions",
@@ -2479,6 +2547,13 @@ exports[`GOLDEN buildUrl (default executor providers) > tokenharbor → url (str
 {
   "nonStream": "https://tokenharbor.ai/v1/chat/completions",
   "stream": "https://tokenharbor.ai/v1/chat/completions",
+}
+`;
+
+exports[`GOLDEN buildUrl (default executor providers) > tokenharbor-free → url (stream + non-stream) 1`] = `
+{
+  "nonStream": "https://tokenharbor.ai/dashboard",
+  "stream": "https://tokenharbor.ai/dashboard",
 }
 `;
 

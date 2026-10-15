@@ -826,11 +826,6 @@
     "clientId": "mcode-public",
     "tokenUrl": "https://account.minimax.cn/oauth2/token"
   },
-  "minimax-free": {
-    "baseUrl": "http://127.0.0.1:47860/gateway/minimax/v1/messages",
-    "format": "claude",
-    "noAuth": true
-  },
   "minimax": {
     "baseUrl": "https://api.minimax.io/anthropic/v1/messages",
     "format": "claude",
@@ -1048,10 +1043,13 @@
   "opencode": {
     "baseUrl": "https://opencode.ai",
     "headers": {
-      "x-opencode-client": "desktop"
+      "x-opencode-client": "cli"
     },
     "noAuth": true,
     "forceStream": true,
+    "reasoningInject": {
+      "scope": "all"
+    },
     "quirks": {
       "forceAutoToolChoiceModels": [
         "muse-spark-1.3-contributor-free"
@@ -1107,6 +1105,31 @@
       "url": "https://openapi.qoder.sh/api/v2/quota/usage"
     },
     "format": "openai"
+  },
+  "river": {
+    "baseUrl": "https://api.river.ai/v1/chat/completions",
+    "validateUrl": "https://api.river.ai/v1/models",
+    "format": "openai",
+    "transports": [
+      {
+        "format": "openai",
+        "baseUrl": "https://api.river.ai/v1/chat/completions",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      },
+      {
+        "format": "responses",
+        "baseUrl": "https://api.river.ai/v1/responses",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      }
+    ]
   },
   "sambanova": {
     "baseUrl": "https://api.sambanova.ai/v1/chat/completions",
@@ -1345,5 +1368,15 @@
       "url": "https://cloud.zed.dev/client/users/me"
     },
     "modelsUrl": "https://cloud.zed.dev/models"
+  },
+  "modelscope": {
+    "baseUrl": "https://api-inference.modelscope.cn/v1/chat/completions",
+    "validateUrl": "https://api-inference.modelscope.cn/v1/chat/completions",
+    "format": "openai"
+  },
+  "codiv": {
+    "baseUrl": "https://api.codiv.ai/v1/chat/completions",
+    "validateUrl": "https://api.codiv.ai/v1/models",
+    "format": "openai"
   }
 }
