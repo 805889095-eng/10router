@@ -8,6 +8,8 @@ import {
   Badge,
   Button,
   Toggle,
+  Popover,
+  MenuItem,
 } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { getProviderIconSrc } from "@/shared/utils/providerIcon";
@@ -111,6 +113,18 @@ function getConnectionErrorTag(connection) {
 
 const APIKEY_INITIAL_VISIBLE = 20;
 
+// Connection-status buckets for the wall filter. Deliberately the same four
+// states the cards already rank by (connectionRank / computeConnectionStats),
+// so "Connected" here means exactly what the green badge on a card means —
+// one vocabulary, not a second classifier.
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All", icon: "apps" },
+  { value: "connected", label: "Connected", icon: "check_circle" },
+  { value: "error", label: "Error", icon: "error" },
+  { value: "disabled", label: "Inactive", icon: "block" },
+  { value: "none", label: "No connections", icon: "link_off" },
+];
+
 export default function ProvidersPage() {
   const [connections, setConnections] = useState([]);
   const [providerNodes, setProviderNodes] = useState([]);
@@ -128,6 +142,14 @@ export default function ProvidersPage() {
   const [cardOrder, setCardOrder] = useState([]);
   const [draggingCardId, setDraggingCardId] = useState(null);
   const [dragOverCardId, setDragOverCardId] = useState(null);
+  // Connection-status filter for the whole wall (all / connected / error /
+  // none). Same four buckets the cards already rank by (connectionRank), so
+  // "connected" here means exactly what the green badge on a card means.
+  // A Popover menu, not a native <select>: the OS chrome of a select (white
+  // box, blue highlight, untranslated options) is the one control language
+  // this dashboard does not speak.
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilterOpen, setStatusFilterOpen] = useState(false);
   const notify = useNotificationStore();
   const searchQuery = useHeaderSearchStore((s) => s.query);
   const registerSearch = useHeaderSearchStore((s) => s.register);
@@ -291,6 +313,22 @@ export default function ProvidersPage() {
     };
   };
 
+  // Bucket a provider's connection stats into the wall filter's states.
+  // Precedence mirrors what the card shows first: a live connection wins over
+  // a stale error badge, and an all-disabled provider is "Inactive" rather
+  // than "Error" (its errors are history, not the current state).
+  const matchesStatusFilter = (stats) => {
+    if (statusFilter === "all") return true;
+    if (!stats) return statusFilter === "none";
+    if (statusFilter === "connected") return stats.connected > 0;
+    // All-disabled wins over a stale error badge: every connection is off, so
+    // the errors are history, not the current state.
+    if (statusFilter === "disabled") return stats.allDisabled === true;
+    if (statusFilter === "error") return stats.connected === 0 && stats.error > 0 && !stats.allDisabled;
+    if (statusFilter === "none") return stats.total === 0;
+    return true;
+  };
+
   // Toggle all connections for a provider on/off. authType may be a single
   // string or an array (kiro counts oauth + api_key/apikey together).
   const handleToggleProvider = async (providerId, authType, newActive) => {
@@ -384,7 +422,7 @@ export default function ProvidersPage() {
 
   const oauthEntries = sortByPriority(
     Object.entries(OAUTH_PROVIDERS).filter(([, info]) => !info.hidden && matchSearch(info.name)),
-  );
+  ).filter(([key, info]) => matchesStatusFilter(getProviderStats(key, dualAuthTypes(info, key))));
   // Merge free (noAuth/connectionless) and free-tier (api-key) providers into
   // ONE list sorted by the shared connection-state rule. Without this, the two
   // arrays render sequentially and a connected free-tier provider (e.g. Dots)
@@ -408,7 +446,7 @@ export default function ProvidersPage() {
           (info.serviceKinds ?? ["llm"]).includes("llm"),
       )
       .map(([k, info]) => ({ key: k, info, stats: getProviderStats(k, dualAuthTypes(info, k)), isFreeTier: true })),
-  ].sort((a, b) => {
+  ].filter((item) => matchesStatusFilter(item.stats)).sort((a, b) => {
     const ra = providerRank(a.stats, a.info, a.key);
     const rb = providerRank(b.stats, b.info, b.key);
     if (ra !== rb) return ra - rb;
@@ -451,9 +489,12 @@ export default function ProvidersPage() {
       const pb = b.priority ?? 999;
       if (pa !== pb) return pa - pb;
       return (a.name || "").localeCompare(b.name || "");
-    });
+    })
+    .filter(([k]) => matchesStatusFilter(getProviderStats(k, "apikey")));
 
-  const customProviders = [...compatibleProviders, ...anthropicCompatibleProviders].sort((a, b) => {
+  const customProviders = [...compatibleProviders, ...anthropicCompatibleProviders]
+    .filter((p) => matchesStatusFilter(getProviderStats(p.id, "apikey")))
+    .sort((a, b) => {
     const oa = getCardOrderIndex(a.id);
     const ob = getCardOrderIndex(b.id);
     if (oa !== ob) return oa - ob;
@@ -513,21 +554,84 @@ export default function ProvidersPage() {
     );
   }
 
+  // Reads the FILTERED lists (customProviders is the merged+filtered custom
+  // set), so a status filter that hides everything surfaces the empty state
+  // instead of four blank section headers.
   const hasAnyResult =
     oauthEntries.length > 0 ||
     freeAllEntries.length > 0 ||
     apikeyEntries.length > 0 ||
-    compatibleProviders.length > 0 ||
-    anthropicCompatibleProviders.length > 0;
+    customProviders.length > 0;
+
+  const activeStatusOption =
+    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter) || STATUS_FILTER_OPTIONS[0];
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
+      {/* Connection-status filter for the whole wall. A Popover menu in the
+          dashboard's own control language (surface panel + item rows), not a
+          native <select> — the OS chrome of a select is the one visual
+          dialect this UI does not speak, and its option text would skip
+          translate() entirely. */}
+      <div className="flex items-center justify-end gap-2">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setStatusFilterOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={statusFilterOpen}
+            title={translate("Filter providers by connection status")}
+            aria-label={translate("Filter providers by connection status")}
+            className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors ${
+              statusFilter === "all"
+                ? "border-black/10 bg-surface text-text-muted hover:bg-black/[0.04] dark:border-white/10 dark:hover:bg-white/[0.06]"
+                : "border-primary/30 bg-primary/10 text-primary"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px] leading-none">
+              {activeStatusOption.icon}
+            </span>
+            <span>{translate(activeStatusOption.label)}</span>
+            <span className="material-symbols-outlined text-[14px] leading-none text-text-muted">
+              expand_more
+            </span>
+          </button>
+          <Popover
+            open={statusFilterOpen}
+            onClose={() => setStatusFilterOpen(false)}
+            align="right"
+            className="w-48"
+          >
+            {STATUS_FILTER_OPTIONS.map((option) => (
+              <MenuItem
+                key={option.value}
+                selected={statusFilter === option.value}
+                icon={
+                  <span className="material-symbols-outlined mt-px text-[16px] leading-none text-text-muted">
+                    {option.icon}
+                  </span>
+                }
+                onClick={() => {
+                  setStatusFilter(option.value);
+                  setStatusFilterOpen(false);
+                }}
+              >
+                {translate(option.label)}
+              </MenuItem>
+            ))}
+          </Popover>
+        </div>
+      </div>
       {!hasAnyResult && (
         <div className="text-center py-8 border border-dashed border-border rounded-xl">
           <span className="material-symbols-outlined text-[32px] text-text-muted mb-2">
             search_off
           </span>
-          <p className="text-text-muted text-sm">No providers match your search</p>
+          <p className="text-text-muted text-sm">
+            {statusFilter !== "all" && !searchQuery.trim()
+              ? translate("No providers match this filter")
+              : translate("No providers match your search")}
+          </p>
         </div>
       )}
 
@@ -557,11 +661,14 @@ export default function ProvidersPage() {
             </Button>
           </div>
         </div>
-        {compatibleProviders.length === 0 &&
-        anthropicCompatibleProviders.length === 0 ? (
+        {customProviders.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
             <span className="material-symbols-outlined text-[18px]">extension</span>
-            <span>No custom providers — use buttons above to add OpenAI/Anthropic compatible endpoints</span>
+            <span>
+              {statusFilter !== "all"
+                ? translate("No custom providers match this filter")
+                : "No custom providers — use buttons above to add OpenAI/Anthropic compatible endpoints"}
+            </span>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">

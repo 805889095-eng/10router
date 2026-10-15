@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import ProviderIcon from "@/shared/components/ProviderIcon";
+import { Popover, MenuItem } from "@/shared/components/PopoverMenu";
 import { translate } from "@/i18n/runtime";
 import { cn } from "@/shared/utils/cn";
 import { ACCOUNT_FILTER_OPTIONS, QUOTA_SORT_OPTIONS } from "./utils";
@@ -23,62 +24,6 @@ const ICON = "material-symbols-outlined text-[16px] leading-none";
 // Icon stand-ins for the account filter's labels at phone widths — same
 // glyph language as the bulk menu (block / check_circle).
 const ACCOUNT_FILTER_ICONS = { all: "apps", active: "check_circle", inactive: "block" };
-
-function Popover({ open, onClose, align = "left", className, children }) {
-  if (!open) return null;
-  return (
-    <>
-      <button type="button" className="fixed inset-0 z-30 cursor-default bg-transparent" aria-label="Close" onClick={onClose} />
-      <div
-        className={cn(
-          "absolute z-40 mt-1.5 overflow-hidden rounded-xl border border-black/10 bg-surface/95 p-1 shadow-xl shadow-black/10 backdrop-blur dark:border-white/10",
-          align === "right" ? "right-0" : "left-0",
-          className,
-        )}
-      >
-        {children}
-      </div>
-    </>
-  );
-}
-
-Popover.propTypes = {
-  open: PropTypes.bool,
-  onClose: PropTypes.func.isRequired,
-  align: PropTypes.oneOf(["left", "right"]),
-  className: PropTypes.string,
-  children: PropTypes.node,
-};
-
-function MenuItem({ selected = false, onClick, icon, children, hint, disabled = false }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition-colors disabled:opacity-50",
-        selected ? "bg-primary/10 text-primary" : "text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
-      )}
-    >
-      {icon}
-      <span className="min-w-0 flex-1">
-        <span className="block font-medium">{children}</span>
-        {hint ? <span className="mt-0.5 block text-[11px] text-text-muted">{hint}</span> : null}
-      </span>
-      {selected ? <span className={cn(ICON, "text-[14px]")}>check</span> : null}
-    </button>
-  );
-}
-
-MenuItem.propTypes = {
-  selected: PropTypes.bool,
-  onClick: PropTypes.func,
-  icon: PropTypes.node,
-  children: PropTypes.node,
-  hint: PropTypes.node,
-  disabled: PropTypes.bool,
-};
 
 function ProviderGlyph({ provider, size = 16 }) {
   if (provider === "all") return <span className={cn(ICON, "text-text-muted")}>apps</span>;
