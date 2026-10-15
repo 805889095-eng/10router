@@ -60,6 +60,9 @@ const SERVICE_KIND_CAPABILITIES = {
   stt: { audioInput: true },
   tts: { audioOutput: true },
   embedding: { tools: false },
+  // Rerank takes a query + candidate documents and returns scores — no chat
+  // surface at all, same posture as embedding (which declares tools:false).
+  rerank: { tools: false },
 };
 
 export function capabilitiesFromServiceKind(kind) {
@@ -726,6 +729,11 @@ PROVIDER_CAPABILITIES.qdc = PROVIDER_CAPABILITIES["qoder-cn"];
  * a broad family pattern swallowing an exception (e.g. glm-4.6v vs glm-5).
  */
 export const PATTERN_CAPABILITIES = [
+  // ── Rerankers (issue #29) — BEFORE every family pattern: `*minimax-m3*`
+  // would otherwise hijack bge-reranker-v2-m3 into a 1M-window chat row, and
+  // any future family glob can do the same. A reranker is never a chat model:
+  // no tools, tiny window, dispatched by /v1/rerank.
+  { pattern: "*rerank*", caps: { tools: false, vision: false, reasoning: false, search: false, contextWindow: 8192, maxOutput: 0 } },
   // ── Claude (4.6+ / Sonnet 5.x = adaptive thinking; older/haiku = budget) ──
   { pattern: "*claude*opus-5*",     caps: { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 } },
   // 未知 Sonnet 5.x id（如 5.5）必须落在本行而不是下方泛化的 `*claude*sonnet*`：

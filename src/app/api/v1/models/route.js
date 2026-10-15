@@ -183,6 +183,7 @@ const MODEL_TYPE_TO_KIND = {
   stt: "stt",
   imageToText: "imageToText",
   video: "video",
+  rerank: "rerank",
 };
 
 function modelKind(model) {
@@ -195,6 +196,10 @@ function modelKind(model) {
 // fall back to provider-level kind matching when per-model type is unavailable.
 function inferKindFromUnknownModelId(modelId) {
   const lower = String(modelId).toLowerCase();
+  // Before the embedding test: every shipped reranker id contains "rerank"
+  // (bge-reranker-*, jina-reranker-*) and none contains "embed", but the
+  // ordering keeps the two heuristics independent if a future id mixes both.
+  if (/rerank/.test(lower)) return "rerank";
   if (/embed/.test(lower)) return "embedding";
   if (/tts|speech|audio|voice/.test(lower)) return "tts";
   if (/image|imagen|dall-?e|flux|sdxl|sd-|stable-diffusion/.test(lower)) return "image";

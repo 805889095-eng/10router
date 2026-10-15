@@ -68,7 +68,7 @@ const MEDIA_ONLY = new Set(["cloudflare-ai", "fal-ai", "stability-ai", "black-fo
 
 // "systemone" = Jev decision models (native /v1/systemone JSON, no chat layer —
 // a vision/context contract would be meaningless for them).
-export const MEDIA_KIND = new Set(["image", "video", "embedding", "tts", "stt", "audio", "systemone"]);
+export const MEDIA_KIND = new Set(["image", "video", "embedding", "tts", "stt", "audio", "systemone", "rerank"]);
 export const ALL_MODELS = REGISTRY.flatMap((entry) =>
   (entry.models || [])
     .map((m) => (typeof m === "string" ? { id: m } : m))

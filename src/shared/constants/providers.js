@@ -6,6 +6,7 @@ const MEDIA_ENTRY_KEYS = [
   "serviceKinds", "ttsConfig", "sttConfig", "embeddingConfig",
   "imageConfig", "imageToTextConfig", "videoConfig", "musicConfig",
   "searchViaChat", "searchConfig", "fetchConfig", "credentialFallback", "systemoneConfig",
+  "rerankConfig",
   "modelsFetcher", "mediaPriority", "hiddenKinds",
 ];
 
@@ -85,6 +86,7 @@ export const MEDIA_PROVIDER_KINDS = [
   { id: "video",       label: "Video",          icon: "movie",             endpoint: { method: "POST", path: "/v1/videos/generations" } },
   { id: "music",       label: "Music",          icon: "music_note",        endpoint: { method: "POST", path: "/v1/audio/music" } },
   { id: "systemone",   label: "System One",     icon: "psychology",        endpoint: { method: "POST", path: "/v1/systemone" }, isNew: true },
+  { id: "rerank",      label: "Rerank",         icon: "sort",              endpoint: { method: "POST", path: "/v1/rerank" }, isNew: true },
 ];
 
 export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";

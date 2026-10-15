@@ -73,6 +73,29 @@ export const KIND_EXAMPLE_CONFIG = {
     bodyKey: "prompt",
     defaultResponse: `{\n  "data": [\n    { "url": "...", "format": "mp3" }\n  ]\n}`,
   },
+  rerank: {
+    inputLabel: "Query",
+    inputPlaceholder: "What is the capital of the United States?",
+    defaultInput: "What is the capital of the United States?",
+    bodyKey: "query",
+    extraBody: {
+      documents: [
+        "Washington, D.C. (also known as simply Washington or D.C., and officially as the District of Columbia) is the capital of the United States.",
+        "Carson City is the capital city of the American state of Nevada.",
+        "The capital of Germany is Berlin.",
+      ],
+    },
+    defaultResponse: `{
+  "results": [
+    { "index": 0, "relevance_score": 0.999 },
+    { "index": 1, "relevance_score": 0.327 }
+  ]
+}`,
+    extraFields: [
+      { key: "top_n", label: "Top N", type: "number", default: 3, min: 1, max: 100 },
+      { key: "return_documents", label: "Return docs", type: "select", default: "", options: ["", "true", "false"] },
+    ],
+  },
   systemone: {
     inputLabel: "State",
     inputPlaceholder: "Situation, support ticket, or text to evaluate",
