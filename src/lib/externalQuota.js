@@ -48,6 +48,9 @@ const QUOTA_ROW_FIELDS = {
   recurring: "boolean",
   displayRemaining: "boolean",
   giftPack: "boolean",
+  detailOnly: "boolean",     // collapsed into 逐包明细, kept off the headline pool
+  summarizesDetail: "boolean", // summary row (headline restatement) — charted, never listed in 逐包明细
+  isCreditBalance: "boolean", // stored-value balance (钱/币余额) — single value + unit, never "X / Y"
   name: "shortString",       // explicit display name, <= 80 chars
 };
 
@@ -223,6 +226,9 @@ function snapshotToRow(snap) {
     ...(e.percentScale !== undefined ? { percentScale: e.percentScale } : {}),
     ...(e.displayRemaining !== undefined ? { displayRemaining: e.displayRemaining } : {}),
     ...(e.giftPack !== undefined ? { giftPack: e.giftPack } : {}),
+    ...(e.detailOnly !== undefined ? { detailOnly: e.detailOnly } : {}),
+    ...(e.summarizesDetail !== undefined ? { summarizesDetail: e.summarizesDetail } : {}),
+    ...(e.isCreditBalance !== undefined ? { isCreditBalance: e.isCreditBalance } : {}),
   }));
   return {
     id: `ext:${snap.source}`,
@@ -286,4 +292,25 @@ export async function buildExternalConnectionRows() {
     console.warn("[externalQuota] failed to build rows:", error?.message || error);
     return [];
   }
+}
+
+/**
+ * 同名认领（2026-10-14 定版）：外部推送卡与真实连接同 provider 且同名（去首尾空格、
+ * 忽略大小写；CD 账号别名与 10R 连接名两侧都可改）时，数字归连接卡展示，推送卡让位
+ * ——同一数值不印两遍（卡面纪律）。
+ */
+function rowMatchKey(provider, name) {
+  return `${provider}|${String(name || "").trim().toLowerCase()}`;
+}
+
+/** 过滤掉已被真实连接认领的推送卡（在 providers/client 合并处调用） */
+export function filterClaimedExternalRows(connections, externalRows) {
+  const claimed = new Set((connections || []).map((c) => rowMatchKey(c.provider, c.name)));
+  return (externalRows || []).filter((r) => !claimed.has(rowMatchKey(r.provider, r.name)));
+}
+
+/** 反向：连接 → 认领到的推送快照行（river 用量卡读本地数字用） */
+export function findClaimedExternalRow(connection, externalRows) {
+  const want = rowMatchKey(connection?.provider, connection?.name);
+  return (externalRows || []).find((r) => rowMatchKey(r.provider, r.name) === want) || null;
 }

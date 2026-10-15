@@ -37,6 +37,7 @@ export function isRecurringQuotaRow(row) {
 
 /** Stored-value pool (余额/代金券/现金): renders as one value, never "X / Y". */
 export function isStoredValueRow(row) {
+  if (row?.isCreditBalance === true) return true;
   return STORED_VALUE_RE.test(String(row?.name || ""));
 }
 

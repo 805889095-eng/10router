@@ -536,7 +536,12 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
         const soonestLive = live
           .filter((p) => p.resetAt)
           .sort((a, b) => String(a.resetAt).localeCompare(String(b.resetAt)))[0] || null;
-        const isSinglePool = isPoolFullyRepresented && !byBreakdown;
+        // A settled balance keeps its name line even when a breakdown exists
+        // (MiMo's 现金/赠送 legs fold into 逐包明细): "N 个资源包" copy is wrong
+        // for a stored-value card — the name IS what the number is
+        // ("现金余额：… · 赠送余额：…"). Pack-count copy stays for real pack
+        // families (Qoder's Resource Package).
+        const isSinglePool = isPoolFullyRepresented && (!byBreakdown || poolIsSettledBalance);
         if (isSinglePool) {
           return (
             <div className="text-[11px] text-text-muted">

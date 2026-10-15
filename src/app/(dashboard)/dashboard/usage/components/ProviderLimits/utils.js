@@ -81,6 +81,8 @@ export function isConnectionDepleted(connection, quotaData) {
   const judged = quotas.filter((q) => q.unlimited !== true);
   if (judged.length === 0) return false;
   return judged.every((q) => {
+    // A recurring cycle with a future reset is waiting for its window to refill, not permanently dead
+    if (q.recurring === true && q.resetAt && Date.parse(q.resetAt) > Date.now()) return false;
     const total = q.total || 0;
     return total <= 0 || (q.used || 0) >= total;
   });
@@ -859,6 +861,14 @@ export function parseQuotaData(provider, data) {
               ...(quota.recurring !== undefined ? { recurring: quota.recurring === true } : {}),
               ...(quota.displayRemaining !== undefined ? { displayRemaining: quota.displayRemaining === true } : {}),
               ...(quota.giftPack !== undefined ? { giftPack: quota.giftPack === true } : {}),
+              // 储值行旗标（minimax-code 的 Credits 算力币余额）：丢了它，
+              // isStoredValueRow 只认行名正则，"Credits" 会退化成 X/Y 进度行，
+              // 卡面印出「999.96 / 999.96」——同一数值印两遍。
+              ...(quota.isCreditBalance !== undefined ? { isCreditBalance: quota.isCreditBalance === true } : {}),
+              // 同名认领的推送余额行（river/MiMo）经此归一，折叠明细旗标必须直通，
+              // 否则连接卡与推送卡同数据渲染出两种形态
+              ...(quota.detailOnly !== undefined ? { detailOnly: quota.detailOnly === true } : {}),
+              ...(quota.summarizesDetail !== undefined ? { summarizesDetail: quota.summarizesDetail === true } : {}),
               ...(Number.isFinite(quota.remainingPercentage) ? { remainingPercentage: quota.remainingPercentage } : {}),
               ...(Number.isFinite(quota.percentScale) && quota.percentScale > 0 ? { percentScale: quota.percentScale } : {}),
             });

@@ -41,6 +41,8 @@ const {
   normalizeExternalQuotaPayload,
   isValidExternalQuotaSource,
   externalQuotaSourceFromId,
+  filterClaimedExternalRows,
+  findClaimedExternalRow,
 } = await import("../../src/lib/externalQuota.js");
 
 describe("external quota payload normalization", () => {
@@ -93,6 +95,42 @@ describe("external quota payload normalization", () => {
     expect(r.ok).toBe(true);
     const json = JSON.stringify(r.snapshot);
     expect(json).not.toMatch(/sneaky|weirdo|authorization/);
+  });
+
+  it("keeps summarizesDetail so a pushed summary row stays out of the per-pack details", () => {
+    const r = normalizeExternalQuotaPayload("cd", {
+      quotas: {
+        Balance: { used: 0, total: 32.88, name: "现金余额：¥ 0.00 · 赠送余额：¥ 32.88 (CNY)", summarizesDetail: true },
+        Voucher: { used: 0, total: 32.88, name: "赠送余额 (CNY)", detailOnly: true },
+      },
+    });
+    expect(r.ok).toBe(true);
+    const byKey = Object.fromEntries(r.snapshot.entries.map((e) => [e.key, e]));
+    expect(byKey.Balance.summarizesDetail).toBe(true);
+    expect(byKey.Voucher.detailOnly).toBe(true);
+  });
+
+  it("keeps isCreditBalance so a pushed stored-value balance renders as one value, not X / Y", () => {
+    const r = normalizeExternalQuotaPayload("cd", {
+      quotas: { Balance: { used: 0, total: 25, name: "Balance (USD)", isCreditBalance: true, displayRemaining: true } },
+    });
+    expect(r.ok).toBe(true);
+    expect(r.snapshot.entries[0].isCreditBalance).toBe(true);
+  });
+
+  it("claims by same provider + name (alias matching): claimed rows leave the wall, the connection finds them", () => {
+    const rows = [
+      { id: "ext:river-a", provider: "river", name: "谷歌#1" },
+      { id: "ext:mimo-a", provider: "xiaomi-mimo", name: "Xiaomi MiMo (UID: 6786673)" },
+    ];
+    const conns = [
+      { id: "c1", provider: "river", name: " 谷歌#1 " },   // 去空格 + 忽略大小写也要认领
+      { id: "c2", provider: "xiaomi-mimo", name: "test" }, // 不同名 → 不认领
+    ];
+    const left = filterClaimedExternalRows(conns, rows);
+    expect(left.map((r) => r.id)).toEqual(["ext:mimo-a"]);
+    expect(findClaimedExternalRow(conns[0], rows)?.id).toBe("ext:river-a");
+    expect(findClaimedExternalRow(conns[1], rows)).toBeNull();
   });
 
   it("needs quotas or a message", () => {

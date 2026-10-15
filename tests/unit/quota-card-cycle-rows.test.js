@@ -63,6 +63,12 @@ describe("nameWithoutUnit / quotaUnitOf (the card-name regression)", () => {
     expect(isStoredValueRow(row("weekly (7d)", { recurring: true }))).toBe(false);
     expect(isStoredValueRow(row("Monthly Credits", { recurring: true }))).toBe(false);
   });
+
+  it("a credit-balance row (MiniMax Code Credits) renders as a stored value, not X / X", () => {
+    const credits = row("Credits", { used: 0, total: 999.96, remaining: 999.96, isCreditBalance: true });
+    expect(isStoredValueRow(credits)).toBe(true);
+    expect(isResettingRow(credits)).toBe(false);
+  });
 });
 
 describe("classifyCycleRows", () => {

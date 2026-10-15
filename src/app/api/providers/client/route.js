@@ -3,7 +3,7 @@ import { getProviderConnections } from "@/lib/localDb";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
 import { USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
 import { isUsageEligible } from "@/shared/utils/usageEligibility";
-import { buildExternalConnectionRows } from "@/lib/externalQuota";
+import { buildExternalConnectionRows, filterClaimedExternalRows } from "@/lib/externalQuota";
 
 const SAFE_FIELDS = [
   "id", "provider", "authType", "name", "email", "displayName",
@@ -100,6 +100,10 @@ export async function GET(request) {
     } catch {
       externalConnections = [];
     }
+    // 同名认领：与真实连接同 provider 同名的推送卡让位（数字改由连接卡展示，不重复出卡）
+    try {
+      externalConnections = filterClaimedExternalRows(eligibleConnections, externalConnections);
+    } catch { /* 认领过滤失败保留全部推送卡 */ }
 
     const mergedConnections = [...eligibleConnections, ...externalConnections];
     const providerOptions = Array.from(new Set(mergedConnections.map((conn) => conn.provider))).sort();
