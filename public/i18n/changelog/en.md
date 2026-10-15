@@ -2,6 +2,23 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.5.0 (2026-10-15)
+
+### ✨ New
+
+- **"Earliest expiry first" upgraded to ring relay**: the same toggle now covers quota packs, recurring subscription windows and stored-value balances, and for dual-bucket providers (Antigravity/Gemini 5h+7d, MiniMax Code M Plan) it burns one carrier account to the bottom, steps forward only (never cuts back), and hands off invisibly below the 5% red zone — no more whole-pool synchronized drain.
+- **New providers**: MiniMax Code subscription lanes (CN + Global, device-code OAuth, M Plan windows + Credits tracking), River AI (usage-based, dual OpenAI-compatible endpoints), ModelScope (20 mainstream models + passthrough), Codiv and HAL-X THX-01 (System One decision-model endpoint).
+- **Generic external quota push**: companion apps (CreditDaddy first) POST parsed quotas to `/api/external-quota/<source>` and they render on the unified quota page; "same-name claim" attaches a pushed balance to the routing connection card when the alias matches the connection name.
+- **Per-key model/combo allowlists**: client API keys can be restricted to a set of callable models or combos; violations return 403. Editable on the Endpoint page.
+- **Gemini 4 "Argon" onboarded**: capabilities (vision + reasoning + search + 1M context) and official pricing ($2 / $10).
+- **Quota card display preferences dialog**: hide-no-quota, hide-zero-balance, nested concentric bars and show-external-cards now live in one toolbar popup.
+
+### 🐛 Fixes
+
+- **Drained 0-credit packs no longer hijack the expiry countdown** — spent packs used to keep ranking their account to the front; ranking now happens on live packs only.
+- **Mixed-case namespaced model ids no longer lose images** — resellers exposing `vendor/Model-Name` hit a case-sensitive capability lookup and had vision silently stripped; a case-insensitive canonical fallback fixes it.
+- **MiniMax Code "Credits" card no longer prints the same number twice**; unclaimed river / modelscope connections now show a "same-name claim" hint instead of "Usage API not implemented".
+
 ## v1.4.0 (2026-10-10)
 
 ### ✨ New

@@ -2,6 +2,23 @@
 
 这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.5.0 (2026-10-15)
+
+### ✨ 新增
+
+- **多账号「到期优先调度」升级为环形接力**：原「配额包到期优先」开关现已覆盖配额包 / 订阅速率窗口 / 余额三类额度，并对周期双桶（Antigravity/Gemini 5h+7d、MiniMax Code M Plan）改用「单点死磕、只前滚不插队、跌破 5% 红区无感换血」的接力算法——不再全池轮流失血、整条通道一起黑屏。
+- **新供应商**：MiniMax Code 订阅双线（国内 / 国际，设备码 OAuth 直连 + M Plan 窗口 + Credits 余额追踪）、River AI（按量计费 + OpenAI 兼容双端点）、ModelScope 魔搭（按量 + 20 款主流模型 + passthrough）、Codiv 与 HAL-X THX-01（System One 决策模型端点）。
+- **通用外部额度推送接口**：外部伴侣（首个接线方 CreditDaddy）把自己解析好的额度 POST 到 `/api/external-quota/<source>`，统一配额页即渲染成卡片；配合「同名认领」，CD 账号别名与连接名相同时余额直接挂到路由连接卡上。
+- **API Key 细粒度权限**：客户端 key 可设可调用的模型 / Combo 白名单，越权请求直接 403；Endpoint 页交互式编辑。
+- **Gemini 4「Argon」入库**：能力（视觉 + 推理 + 搜索 + 1M 上下文）与官方价目（$2 / $10）。
+- **配额卡片显示偏好聚合弹窗**：隐藏无配额 / 隐藏零余额 / 嵌套同心圆环 / 显示外部推送卡四个开关收敛到配额页工具栏一处管理。
+
+### 🐛 修复
+
+- **0 积分配额包不再劫持到期倒计时**：已耗尽的赠送包此前仍参与「最快到期」排序，把账号顶到队首空烧；现只按明细中存活包排序。
+- **混合大小写命名空间模型 id 不再被剥图**：reseller 以 `vendor/Model-Name` 形式暴露的多模态模型，此前因大小写漏配能力行导致图片被静默剥离，现补大小写不敏感兜底。
+- **MiniMax Code Credits 卡面「999.96 / 999.96」双印**、**未认领的 river / modelscope 连接不再报「Usage API not implemented」**（改给同名认领指路文案）。
+
 ## v1.4.0 (2026-10-10)
 
 ### ✨ 新增
