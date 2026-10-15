@@ -1614,13 +1614,17 @@ export default function ProviderLimits() {
                     accounts — say so instead of showing an unexplained gap
                     vs CreditDaddy (issue #44). */}
                 {quota?.raw?.webSessionExpired === true && (
-                  <p className="px-1 pb-1 text-[11px] text-amber-600 dark:text-amber-400">
-                    <span className="material-symbols-outlined align-[-2px] text-[13px]">
-                      warning
-                    </span>{" "}
+                  <p className="flex items-center gap-1 px-1 pb-1 text-[11px] text-text-muted" title={translate(
+      'Synced CreditDaddy web session expired — plan credits may read low or missing. Re-export the account from CreditDaddy after logging in to Qoder web again.',
+    )}>
+                    <span className="material-symbols-outlined shrink-0 text-[11px]">
+                      schedule
+                    </span>
+                    <span className="truncate">
                     {translate(
-                      "Synced CreditDaddy web session expired — plan credits may read low or missing. Re-export the account from CreditDaddy after logging in to Qoder web again.",
+                      'Synced CreditDaddy web session expired — plan credits may read low or missing. Re-export the account from CreditDaddy after logging in to Qoder web again.',
                     )}
+                    </span>
                   </p>
                 )}
                 {/* A failed revalidation keeps the cached numbers and says so,
