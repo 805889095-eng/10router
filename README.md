@@ -70,7 +70,8 @@
 ## 功能
 
 **统一路由与协议抹平**
-- **全格式双向翻译**：统一暴露出标准的 OpenAI 兼容端点（`/v1/chat/completions`、`/v1/models`、`/v1/embeddings`），Claude / Anthropic 原生请求同端口无缝识别并自动互转。
+- **全格式双向翻译**：统一暴露出标准的 OpenAI 兼容端点（`/v1/chat/completions`、`/v1/models`、`/v1/embeddings`、`/v1/responses`），Claude / Anthropic 原生请求同端口无缝识别并自动互转。
+- **重排序（Rerank）类别**：新增 `/v1/rerank` 端点，接入 Cohere、Jina AI、SiliconFlow（BGE Reranker）——输入 `query` + 候选文档、输出相关性分数，RAG / 知识库检索精排即插即用。
 - **100+ 供应商与 1000+ 模型**：开箱支持官方 Claude、OpenAI、DeepSeek、智谱 GLM、MiniMax（含 MiniMax Code 订阅双线）、Kimi、通义千问、小米 MiMo、SiliconFlow、ModelScope、River、Codiv、THX-01 以及 CreditDaddy 免费线（ZCode Free / Trae Free）等主流生态。
 - **RTK 智能 Token 节省引擎**：智能压缩裁剪冗余上下文及高频 `tool_result`，大幅降低大模型对话与 Agent 连续调用消耗。
 - **超长上下文自动处理**：针对模型设定真实的上下文上限与最大输出值，服务端自动实施滑动窗口切削与上下文压缩。
@@ -83,6 +84,8 @@
 
 **精准用量统计与生态协同**
 - **多维度计费与成本热力图**：内置全系主流模型官方精确标价表（Qwen 旗舰、MiMo 等），自动计算输入、输出与缓存命中成本，展示多维热力图、健康度与生涯报表。
+- **API Key 细粒度权限与日限额**：客户端 key 可设可调用的模型 / Combo 白名单（越权 403）与每日 Token 限额（超限 429，本地零点自动重置）。
+- **通用外部额度推送**：外部伴侣（首个接线方 CreditDaddy）把自己解析好的额度 POST 到 `/api/external-quota/<source>`，统一配额页即渲染成卡片；配合「同名认领」，推送余额直接挂到路由连接卡上。
 - **CreditDaddy 深度协同**：原生暴露只读额度总览接口（`GET /api/usage/quotas`，支持仪表盘虚拟 Key 免明文鉴权），支持向 CreditDaddy 统一反馈配额水位。
 - **ZCode 插件（10router-sync）跨宿主同步**：打通 ZCode、OpenCode、mirasim、小米 MiMo 与外部 10Router 实例的本地用量，支持断点续传、自动计价估算与重复数据签名拦截。
 
