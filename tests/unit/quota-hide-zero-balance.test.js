@@ -77,18 +77,18 @@ describe("isConnectionDepleted (shared depleted predicate)", () => {
 });
 
 describe("zero-balance view filter (quota page)", () => {
-  it("reads and persists the localStorage pref through the preferences modal", () => {
+  it("reads the localStorage pref the preferences dialog owns", () => {
     const src = read(QUOTA_PAGE_LIMITS);
     expect(src).toContain('localStorage.getItem("quotaHideZeroBalance")');
-    expect(src).toContain('updatePreference("quotaHideZeroBalance", val, setHideZeroBalance)');
-    // Distinct name from the retired row-level "hideDepleted" filter.
+    // Distinct name from the retired row-level "hideDepleted" filter — the
+    // experimental-page guards forbid that older identity on this file.
     expect(src).not.toContain("quotaHideDepleted");
     expect(src).not.toMatch(/if \(hideDepleted\) \{/);
   });
 
   it("composes with hide-no-quota, judged by the shared predicate", () => {
     const src = read(QUOTA_PAGE_LIMITS);
-    // One memo, two sequential filters — both opt-ins compose.
+    // One memo, sequential filters — all view opt-ins compose.
     expect(src).toMatch(/const renderConnections = useMemo\(\(\) => \{\s*let list = sortedConnections;/);
     expect(src).toContain("if (hideNoQuota) {");
     expect(src).toContain("if (hideZeroBalance) {");
@@ -101,7 +101,7 @@ describe("zero-balance view filter (quota page)", () => {
     // never blinks out mid-fetch or hides itself on an error.
     const filter = src.slice(
       src.indexOf("const renderConnections = useMemo"),
-      src.indexOf("}, [sortedConnections, hideNoQuota, hideZeroBalance"),
+      src.indexOf("}, [sortedConnections, showExternalCards, hideNoQuota, hideZeroBalance"),
     );
     expect((filter.match(/if \(loading\[conn\.id\]\) return true;/g) || []).length).toBe(2);
     expect((filter.match(/if \(errors\[conn\.id\]\) return true;/g) || []).length).toBe(2);
@@ -113,21 +113,37 @@ describe("zero-balance view filter (quota page)", () => {
   });
 });
 
-describe("hide-zero-balance toggle (preferences modal)", () => {
-  it("renders the row directly below the hide-no-quota row it extends", () => {
+describe("hide-zero-balance toggle (quota-page preferences dialog)", () => {
+  // The toggle migrated from the Experimental page into the quota page's
+  // "Card display preferences" modal (commit b9305c85) — the page now OWNS
+  // both read and write of the pref. Guards re-pinned to the new host.
+  it("renders the row and persists it as a client view pref", () => {
     const src = read(QUOTA_PAGE_LIMITS);
+    expect(src).toContain('translate("Hide zero-balance provider cards")');
+    expect(src).toContain('translate("Hide connection cards whose quota is fully depleted (0 balance / 0 credits)")');
+    expect(src).toContain('localStorage.getItem("quotaHideZeroBalance")');
+    // Written through the shared updatePreference helper, not a settings PATCH.
+    expect(src).toContain('updatePreference("quotaHideZeroBalance"');
+    expect(src).not.toMatch(/\{\s*quotaHideZeroBalance:/);
+  });
+
+  it("sits directly below the hide-no-quota row it extends", () => {
+    const src = read(QUOTA_PAGE_LIMITS);
+    const external = src.indexOf('translate("Show external pushed cards")');
     const noQuota = src.indexOf('translate("Hide no-quota provider cards")');
     const zeroBalance = src.indexOf('translate("Hide zero-balance provider cards")');
     const nested = src.indexOf('translate("Nested cycle quota bars")');
-    expect(noQuota).toBeGreaterThan(-1);
+    expect(external).toBeGreaterThan(-1);
+    expect(noQuota).toBeGreaterThan(external);
     expect(zeroBalance).toBeGreaterThan(noQuota);
     expect(nested).toBeGreaterThan(zeroBalance);
   });
 
-  it("persists as a client view pref, not through the settings PATCH path", () => {
-    const src = read(QUOTA_PAGE_LIMITS);
-    expect(src).toContain('translate("Hide connection cards whose quota is fully depleted (0 balance / 0 credits)")');
-    expect(src).not.toMatch(/\{\s*quotaHideZeroBalance:/);
+  it("leaves no quota-display toggles behind on the Experimental page", () => {
+    const src = read(EXPERIMENTAL);
+    expect(src).not.toContain("quotaHideZeroBalance");
+    expect(src).not.toContain("quotaHideNoQuota");
+    expect(src).not.toContain("quotaNestedCycle");
   });
 });
 

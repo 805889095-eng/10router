@@ -1122,8 +1122,8 @@ export default function ProviderLimits() {
       list = list.filter((conn) => {
         if (loading[conn.id]) return true;
         if (errors[conn.id]) return true;
-        // External cards showing warning messages (e.g. session expired) are not "depleted"
-        if (conn.external && quotaData[conn.id]?.message) return true;
+        // External pushed cards always stay visible so users can track their companion status
+        if (conn.external) return true;
         if (!quotaData[conn.id]) return true; // not fetched yet
         return !isConnectionDepleted(conn, quotaData);
       });
