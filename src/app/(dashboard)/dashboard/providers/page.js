@@ -113,13 +113,13 @@ function getConnectionErrorTag(connection) {
 
 const APIKEY_INITIAL_VISIBLE = 20;
 
-// Connection-status buckets for the wall filter. Deliberately the same four
-// states the cards already rank by (connectionRank / computeConnectionStats),
-// so "Connected" here means exactly what the green badge on a card means —
-// one vocabulary, not a second classifier.
+// Connection-status buckets for the wall filter. The "active" bucket is the
+// same vocabulary as the cards' top rank (connectionRank): a provider with a
+// live connection OR a no-auth provider whose topology toggle is on — one
+// classifier, not a second one.
 const STATUS_FILTER_OPTIONS = [
   { value: "all", label: "All", icon: "apps" },
-  { value: "connected", label: "Connected", icon: "check_circle" },
+  { value: "active", label: "Active", icon: "check_circle" },
   { value: "error", label: "Error", icon: "error" },
   { value: "disabled", label: "Inactive", icon: "block" },
   { value: "none", label: "No connections", icon: "link_off" },
@@ -142,9 +142,10 @@ export default function ProvidersPage() {
   const [cardOrder, setCardOrder] = useState([]);
   const [draggingCardId, setDraggingCardId] = useState(null);
   const [dragOverCardId, setDragOverCardId] = useState(null);
-  // Connection-status filter for the whole wall (all / connected / error /
-  // none). Same four buckets the cards already rank by (connectionRank), so
-  // "connected" here means exactly what the green badge on a card means.
+  // Connection-status filter for the whole wall (all / active / error /
+  // disabled / none). Same buckets the cards already rank by (connectionRank),
+  // so "active" here means exactly what rank 0 means: a live connection, or a
+  // no-auth provider whose topology toggle is on.
   // A Popover menu, not a native <select>: the OS chrome of a select (white
   // box, blue highlight, untranslated options) is the one control language
   // this dashboard does not speak.
@@ -316,11 +317,23 @@ export default function ProvidersPage() {
   // Bucket a provider's connection stats into the wall filter's states.
   // Precedence mirrors what the card shows first: a live connection wins over
   // a stale error badge, and an all-disabled provider is "Inactive" rather
-  // than "Error" (its errors are history, not the current state).
-  const matchesStatusFilter = (stats) => {
+  // than "Error" (its errors are history, not the current state). An enabled
+  // no-auth provider (keyless free hosts, badge "Ready") counts as Active —
+  // it has no connections row at all, so stats alone would misbucket it.
+  const matchesStatusFilter = (stats, info, key) => {
     if (statusFilter === "all") return true;
     if (!stats) return statusFilter === "none";
-    if (statusFilter === "connected") return stats.connected > 0;
+    if (statusFilter === "active") {
+      if (stats.connected > 0) return true;
+      // noAuth free providers: on the topology canvas → active; hidden → Inactive.
+      return !!info?.noAuth && providerRank(stats, info, key) === 0;
+    }
+    if (info?.noAuth) {
+      // noAuth buckets beyond Active: topology-off is its only "Inactive" state;
+      // it can never be Error (no connections) and lands in "none" otherwise.
+      if (statusFilter === "disabled") return providerRank(stats, info, key) === 1;
+      return statusFilter === "none";
+    }
     // All-disabled wins over a stale error badge: every connection is off, so
     // the errors are history, not the current state.
     if (statusFilter === "disabled") return stats.allDisabled === true;
@@ -422,7 +435,7 @@ export default function ProvidersPage() {
 
   const oauthEntries = sortByPriority(
     Object.entries(OAUTH_PROVIDERS).filter(([, info]) => !info.hidden && matchSearch(info.name)),
-  ).filter(([key, info]) => matchesStatusFilter(getProviderStats(key, dualAuthTypes(info, key))));
+  ).filter(([key, info]) => matchesStatusFilter(getProviderStats(key, dualAuthTypes(info, key)), info, key));
   // Merge free (noAuth/connectionless) and free-tier (api-key) providers into
   // ONE list sorted by the shared connection-state rule. Without this, the two
   // arrays render sequentially and a connected free-tier provider (e.g. Dots)
@@ -446,7 +459,7 @@ export default function ProvidersPage() {
           (info.serviceKinds ?? ["llm"]).includes("llm"),
       )
       .map(([k, info]) => ({ key: k, info, stats: getProviderStats(k, dualAuthTypes(info, k)), isFreeTier: true })),
-  ].filter((item) => matchesStatusFilter(item.stats)).sort((a, b) => {
+  ].filter((item) => matchesStatusFilter(item.stats, item.info, item.key)).sort((a, b) => {
     const ra = providerRank(a.stats, a.info, a.key);
     const rb = providerRank(b.stats, b.info, b.key);
     if (ra !== rb) return ra - rb;
@@ -490,10 +503,10 @@ export default function ProvidersPage() {
       if (pa !== pb) return pa - pb;
       return (a.name || "").localeCompare(b.name || "");
     })
-    .filter(([k]) => matchesStatusFilter(getProviderStats(k, "apikey")));
+    .filter(([k, info]) => matchesStatusFilter(getProviderStats(k, "apikey"), info, k));
 
   const customProviders = [...compatibleProviders, ...anthropicCompatibleProviders]
-    .filter((p) => matchesStatusFilter(getProviderStats(p.id, "apikey")))
+    .filter((p) => matchesStatusFilter(getProviderStats(p.id, "apikey"), null, p.id))
     .sort((a, b) => {
     const oa = getCardOrderIndex(a.id);
     const ob = getCardOrderIndex(b.id);
