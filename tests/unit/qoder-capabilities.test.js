@@ -76,4 +76,24 @@ describe("qoder / qoder-cn capability rows", () => {
       }
     }
   });
+
+  // ── vision 活体实测背书（学习上游 9router PR #4799，2026-10-13 PNG 随机码
+  // 探测：13 个具体 id 全部读回，含旧 is_vl 旗标误标为纯文本的四档）──
+  it("every concrete id claims vision (live-probed upstream, incl. DeepSeek/GLM/MiniMax)", () => {
+    for (const id of [
+      "dmodel", "dfmodel", "gmodel", "gfmodel",
+      "kmodel", "kmodel_latest", "mmodel",
+      "qmodel", "qmodel_latest", "qfmodel", "qmodel_38max",
+    ]) {
+      expect(getCapabilitiesForModel("qoder", id)?.vision, `qoder/${id}`).toBe(true);
+    }
+    for (const id of ["dmodel", "dfmodel", "gmodel", "mmodel"]) {
+      expect(getCapabilitiesForModel("qoder-cn", id)?.vision, `qoder-cn/${id}`).toBe(true);
+    }
+  });
+
+  it("CN-only GLM-5.2 (gm51model) stays text-only — the live probe did not cover it", () => {
+    // 上游探测未覆盖 5.2 非 flash，保守默认维持，不跟家族复制。
+    expect(getCapabilitiesForModel("qoder-cn", "gm51model")?.vision).toBe(false);
+  });
 });
