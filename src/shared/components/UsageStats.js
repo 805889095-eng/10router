@@ -290,6 +290,12 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
         const seen = new Set();
         const unique = (d?.connections || []).filter((c) => {
           if (c.isActive === false) return false;
+          // Ghost rows: a connection whose provider left the registry (e.g.
+          // tokenharbor-free, delisted in 1.4.1 while its DB rows survived)
+          // must not resurrect on the canvas — AI_PROVIDERS[id] is undefined,
+          // so every registry-based filter below would silently pass it and
+          // getProviderConfig would paint a grey unnamed box.
+          if (!AI_PROVIDERS[c.provider]) return false;
           if (!isLLMProvider(c.provider)) return false;
           if (isCommunityHidden(c.provider)) return false;
           // hidden 供应商（如 zed，registry 里 hidden: true）即便已连账号也
