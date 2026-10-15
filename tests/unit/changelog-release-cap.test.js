@@ -142,13 +142,11 @@ describe("served changelog files", () => {
     // sections are authored, so the top of each file must be a shipped release.
     // Guards against the 91d0463d pattern where dev notes reached `main` early.
     //
-    // One deliberate exception: a version the maintainer is actively preparing
-    // may be published to served clients ahead of its release (v1.3.0, pre-
-    // release early preview, maintainer decision 2026-10-01). Self-retiring:
-    // once the v1.3.0 tag exists, newestTag equals the lead and this guard is
-    // strict equality again — remove the constant only when no new lead is
-    // intended for the next cycle.
-    const PRE_RELEASE_LEAD = "1.3.0";
+    // (The v1.3.0 pre-release early-preview exception once lived here as a
+    // PRE_RELEASE_LEAD constant — self-retiring by design: once the tag
+    // existed, strict equality resumed. Removed for the v1.5.0 cycle; re-add
+    // a lead constant only when the next release intentionally previews its
+    // changelog before tagging.)
     let newestTag = null;
     try {
       newestTag = execFileSync("git", ["describe", "--tags", "--abbrev=0"], {
@@ -159,7 +157,7 @@ describe("served changelog files", () => {
     }
     for (const locale of LOCALES) {
       const top = readChangelog(locale).match(/^## v?(\d+\.\d+\.\d+)/m)[1];
-      expect([newestTag, PRE_RELEASE_LEAD], locale).toContain(top);
+      expect(newestTag, locale).toBe(top);
     }
   });
 });

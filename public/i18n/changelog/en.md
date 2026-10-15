@@ -13,7 +13,7 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 - **Gemini 4 "Argon" onboarded**: capabilities (vision + reasoning + search + 1M context) and official pricing ($2 / $10).
 - **Rerank category**: a new `/v1/rerank` endpoint and model kind, wired for Cohere, Jina AI and SiliconFlow (BGE Reranker) — send a `query` plus candidate documents, get relevance scores back; drop-in precision re-ranking for RAG pipelines. A "Rerank" entry appears under Media Providers, with an interactive example card.
 - **LongCat token packs**: CreditDaddy can push LongCat token-pack balances to the quota page (same-name claim attaches them to the connection card); gift/purchase packs render per-pack with the official burn-order rules.
-- **Connection-status filter on the providers page**: filter the provider wall by Connected / Error / Inactive / No connections, using the dashboard's own popover menu language instead of a native select.
+- **Connection-status filter on the providers page**: filter the provider wall by Active / Error / Inactive / No connections — "Active" covers connected providers and keyless providers whose topology toggle is on; the popover menu matches the dashboard's own control language instead of a native select.
 
 ### 🐛 Fixes
 
@@ -21,6 +21,7 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 - **Usage topology no longer renders delisted providers** — a provider removed from the registry (e.g. Token Harbor web session) but still holding residual connection rows no longer resurrects as a ghost node.
 - **Drained 0-credit packs no longer hijack the expiry countdown** — spent packs used to keep ranking their account to the front; ranking now happens on live packs only.
 - **Mixed-case namespaced model ids no longer lose images** — resellers exposing `vendor/Model-Name` hit a case-sensitive capability lookup and had vision silently stripped; a case-insensitive canonical fallback fixes it.
+- **Qoder DeepSeek / GLM / MiniMax tiers get vision back** — these tiers accept image input upstream, but missing capability rows stripped images; now restored per live-tested results.
 - **MiniMax Code "Credits" card no longer prints the same number twice**; unclaimed river / modelscope connections now show a "same-name claim" hint instead of "Usage API not implemented".
 
 ## v1.4.0 (2026-10-10)
