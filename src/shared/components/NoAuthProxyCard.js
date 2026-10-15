@@ -14,7 +14,7 @@ const STRATEGIES = [
   { value: "random", label: "Random" },
 ];
 
-// CreditDaddy 网关线（zcode-free / minimax-free / trae-free 共用同一 daemon:主机/端口设置
+// CreditDaddy 网关线（zcode-free / trae-free 共用同一 daemon:主机/端口设置
 // 键共享,路径按线分开。CreditDaddy 侧统一按品牌分线:zcode = /gateway/zcode/
 // v1/messages、minimax = /gateway/minimax/…、trae = /gateway/trae/…。三条线
 // 的默认路径都由 CreditDaddy 自己的版本决定,10Router 这边只跟随。
@@ -24,7 +24,6 @@ const STRATEGIES = [
 // 的就是生效路径),故不另设 pathPlaceholder。非 CreditDaddy 线不渲染网关区。
 const CREDITDADDY_LINES = {
   "zcode-free": { pathKey: "zcodeGatewayPath", defaultPath: "/gateway/zcode/v1/messages" },
-  "minimax-free": { pathKey: "minimaxGatewayPath", defaultPath: "/gateway/minimax/v1/messages" },
   "trae-free": { pathKey: "traeGatewayPath", defaultPath: "/gateway/trae/v1/messages" },
 };
 
@@ -287,8 +286,6 @@ export default function NoAuthProxyCard({ providerId }) {
           <p className="text-xs text-text-muted">
             {providerId === "trae-free"
               ? translate('Local: enable the gateway switch under "Trae → Interface settings" in CreditDaddy desktop and add a Trae (SOLO) account (default 127.0.0.1:47860).')
-              : providerId === "minimax-free"
-              ? translate('Local: enable the gateway switch under "MiniMax → Interface settings" in CreditDaddy desktop and add a MiniMax account (default 127.0.0.1:47860).')
               : translate('Local: enable the gateway switch under "ZCode → Interface settings" in CreditDaddy desktop (default 127.0.0.1:47860).')}{" "}
             {translate('LAN (NAS, etc.): put the CreditDaddy machine IP above, then in the same CreditDaddy panel turn on "Allow LAN access" and add this 10Router machine\'s IP to the allowlist, then restart CreditDaddy.')}{" "}
             {translate("The gateway is protected by an IP allowlist and checks no key, so there is nothing to enter here.")}{" "}

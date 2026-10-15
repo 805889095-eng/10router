@@ -9,33 +9,33 @@ import { FORMATS } from "../../open-sse/translator/formats.js";
 describe("applyThinking (minimax): M3.1 effort passthrough / M3 toggle", () => {
   it("M3.1: budget level maps to thinking.effort on the adaptive shape", () => {
     const body = { thinking: { type: "enabled", budget_tokens: 98304 } };
-    applyThinking(FORMATS.CLAUDE, "MiniMax-M3.1-Flash-Preview", body, "minimax-free");
+    applyThinking(FORMATS.CLAUDE, "MiniMax-M3.1-Flash-Preview", body, "minimax");
     expect(body.thinking).toEqual({ type: "adaptive", effort: "max" });
   });
 
   it("M3.1: mid budgets map to mid levels", () => {
     const body = { thinking: { type: "enabled", budget_tokens: 8000 } };
-    applyThinking(FORMATS.CLAUDE, "MiniMax-M3.1-Flash-Preview", body, "minimax-free");
+    applyThinking(FORMATS.CLAUDE, "MiniMax-M3.1-Flash-Preview", body, "minimax");
     // budgetToLevel: ≤16384 → medium
     expect(body.thinking).toEqual({ type: "adaptive", effort: "medium" });
   });
 
   it("M3.1: canDisable=false clamps none to adaptive default (no effort key)", () => {
     const body = { thinking: { type: "disabled" } };
-    applyThinking(FORMATS.CLAUDE, "MiniMax-M3.1-Flash-Preview", body, "minimax-free");
+    applyThinking(FORMATS.CLAUDE, "MiniMax-M3.1-Flash-Preview", body, "minimax");
     expect(body.thinking).toEqual({ type: "adaptive" });
     expect(body.thinking.effort).toBeUndefined();
   });
 
   it("M3: client toggle off → thinking disabled (canDisable true)", () => {
     const body = { thinking: { type: "disabled" } };
-    applyThinking(FORMATS.CLAUDE, "MiniMax-M3", body, "minimax-free");
+    applyThinking(FORMATS.CLAUDE, "MiniMax-M3", body, "minimax");
     expect(body.thinking).toEqual({ type: "disabled" });
   });
 
   it("M3: toggle on → plain adaptive (no effort key; M3 client has no levels)", () => {
     const body = { thinking: { type: "enabled", budget_tokens: 98304 } };
-    applyThinking(FORMATS.CLAUDE, "MiniMax-M3", body, "minimax-free");
+    applyThinking(FORMATS.CLAUDE, "MiniMax-M3", body, "minimax");
     expect(body.thinking).toEqual({ type: "adaptive" });
     expect(body.thinking.effort).toBeUndefined();
   });
