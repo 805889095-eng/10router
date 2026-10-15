@@ -319,6 +319,20 @@ export const MODEL_CAPABILITIES = {
   "morph-v3-fast":              { tools: false, contextWindow: 16000, maxOutput: 16000 }, // morph（第一方）
 };
 
+// Case-insensitive index over MODEL_CAPABILITIES for the resolver's step-2b
+// fallback (see getCapabilitiesForModel). Exact-cased lookups still win first,
+// so this only recovers rows a reseller's casing would otherwise miss. On a
+// case-collision the first-declared row wins (deterministic; today's only
+// collision — LongCat-2.0 vs longcat-2.0 — carries byte-identical caps).
+const MODEL_CAPABILITIES_CI = (() => {
+  const idx = {};
+  for (const [key, caps] of Object.entries(MODEL_CAPABILITIES)) {
+    const lk = key.toLowerCase();
+    if (!(lk in idx)) idx[lk] = caps;
+  }
+  return idx;
+})();
+
 const KIRO_GPT_5_6_CAPABILITIES = { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 };
 
 // Codex OAuth (ChatGPT backend) — per-model context window reported by upstream
@@ -733,6 +747,12 @@ export const PATTERN_CAPABILITIES = [
 
   // ── Gemini (all 2.0+ multimodal + google_search grounding, 1M ctx) ─
   { pattern: "*gemini*image*",  caps: { vision: true, imageOutput: true, contextWindow: 1048576 } },
+  // Gemini 4 "Argon" (2026-09-30). Reasoning-only tier, so it carries no
+  // audio/video/PDF in the announced spec — those are not claimed until a
+  // source documents them. 1M context and $2/$10 per 1M confirmed via
+  // Artificial Analysis; output limit also 1M, up from the 64K the rest of the
+  // line carries, per the Gemini 4 announcement.
+  { pattern: "*gemini-4*",      caps: { vision: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 } },
   // pdf:true 按第一方数据补声明（models.dev google/google-vertex：Gemini 2.5 与 3.x
   // Flash/Pro 全系 input 含 pdf）。透传层本就放行（未声明 ≠ false，modality 只剥显式
   // false），这里补的是能力徽章的准确性——antigravity/gemini 的模型卡此前不显示 PDF。
@@ -902,6 +922,7 @@ export const PATTERN_CAPABILITIES = [
   { pattern: "*hunyuan*",       caps: { reasoning: true, thinkingFormat: "hunyuan", contextWindow: 262144, maxOutput: 262144 } },
   { pattern: "hy3*",            caps: { reasoning: true, thinkingFormat: "hunyuan", contextWindow: 262144, maxOutput: 262144 } },
   { pattern: "*step-*",         caps: { reasoning: true, thinkingFormat: "step", contextWindow: 128000 } },
+  { pattern: "*ernie*",         caps: { contextWindow: 200000, maxOutput: 64000 } },
   { pattern: "*nemotron*",      caps: { reasoning: true, contextWindow: 128000 } },
   { pattern: "*ling-*",         caps: { reasoning: true, contextWindow: 128000 } },
 ];
@@ -984,6 +1005,23 @@ export function getCapabilitiesForModel(provider, model) {
   // 2. Canonical exact
   if (MODEL_CAPABILITIES[baseModel]) return { ...DEFAULT_CAPABILITIES, ...MODEL_CAPABILITIES[baseModel] };
   if (MODEL_CAPABILITIES[model]) return { ...DEFAULT_CAPABILITIES, ...MODEL_CAPABILITIES[model] };
+  // 2b. Canonical case-insensitive — ONLY for namespace-stripped ids. Model ids
+  // are case-insensitive identifiers and the pattern layer below already
+  // matches with /i, but the canonical table is a plain object, so a reseller
+  // that exposes a model under a different casing than the canonical row
+  // misses it and falls through to a broader wildcard. That is exactly how
+  // river / modelscope served `deepseek-ai/DeepSeek-V4.1-Flash`: the HF-style
+  // prefix strips to `DeepSeek-V4.1-Flash`, which misses the lowercase
+  // `deepseek-v4.1-flash` canonical row and lands on `*deepseek-v4*`
+  // (vision:false) — silently stripping images from a multimodal model.
+  // A BARE id is not recovered here: it is the provider's own declaration and
+  // must keep resolving through the provider/pattern layers (volcengine-ark's
+  // `GLM-5.2` deliberately clamps to its own 128K ceiling via a pattern, and
+  // hijacking it onto the first-party 131072 row would over-promise).
+  if (model.includes("/")) {
+    const ciCaps = MODEL_CAPABILITIES_CI[baseModel.toLowerCase()];
+    if (ciCaps) return { ...DEFAULT_CAPABILITIES, ...ciCaps };
+  }
 
   // 3. Pattern match (first match wins)
   for (const { pattern, caps } of PATTERN_CAPABILITIES) {

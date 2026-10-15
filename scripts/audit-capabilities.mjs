@@ -46,6 +46,15 @@ export function resolveStep(provider, model) {
   }
   if (MODEL_CAPABILITIES[baseModel]) return { step: "canonical", key: baseModel, caps: MODEL_CAPABILITIES[baseModel] };
   if (MODEL_CAPABILITIES[model]) return { step: "canonical", key: model, caps: MODEL_CAPABILITIES[model] };
+  // canonical_ci: resolver step 2b — case-insensitive recovery of a canonical
+  // row a reseller's casing would miss, for NAMESPACE-STRIPPED ids only (must
+  // mirror getCapabilitiesForModel: a bare id keeps its pattern resolution).
+  if (model.includes("/")) {
+    const ciKey = Object.keys(MODEL_CAPABILITIES).find(
+      (k) => k.toLowerCase() === baseModel.toLowerCase(),
+    );
+    if (ciKey) return { step: "canonical_ci", key: ciKey, caps: MODEL_CAPABILITIES[ciKey] };
+  }
   for (const { pattern, caps } of PATTERN_CAPABILITIES) {
     if (matchPattern(pattern, baseModel) || matchPattern(pattern, model)) return { step: "pattern", key: pattern, caps };
   }
