@@ -140,6 +140,43 @@ const OAUTH_TEST_CONFIG = {
     extraHeaders: { "x-api-version": "1.0.0" },
     refreshable: false,
   },
+  // MiniMax Code (mcode) 订阅 —— 探 mavis 端点轻量 ping，带自动 refresh
+  "minimax-code": {
+    url: "https://agent.minimax.cn/mavis/api/v1/llm/v1/messages",
+    method: "POST",
+    authHeader: "Authorization",
+    authPrefix: "Bearer ",
+    extraHeaders: {
+      "Content-Type": "application/json",
+      "User-Agent": "MiniMaxAgent",
+      "X-Mavis-Agent-Id": "main",
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "MiniMax-M3.1-Flash-Preview",
+      max_tokens: 1,
+      messages: [{ role: "user", content: "ping" }],
+    }),
+    refreshable: true,
+  },
+  "minimax-code-global": {
+    url: "https://agent.minimax.io/mavis/api/v1/llm/v1/messages",
+    method: "POST",
+    authHeader: "Authorization",
+    authPrefix: "Bearer ",
+    extraHeaders: {
+      "Content-Type": "application/json",
+      "User-Agent": "MiniMaxAgent",
+      "X-Mavis-Agent-Id": "main",
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "MiniMax-M3.1-Flash-Preview",
+      max_tokens: 1,
+      messages: [{ role: "user", content: "ping" }],
+    }),
+    refreshable: true,
+  },
 };
 
 /**
@@ -268,7 +305,7 @@ async function refreshOAuthToken(connection) {
       return { accessToken: data.access_token, expiresIn: data.expires_in, refreshToken: data.refresh_token || refreshToken };
     }
 
-    if (provider === "codex" || provider === "grok-cli" || provider === "xai") {
+    if (provider === "codex" || provider === "grok-cli" || provider === "xai" || provider === "minimax-code" || provider === "minimax-code-global") {
       return await refreshProviderCredentials(provider, connection, console);
     }
 
@@ -1054,7 +1091,8 @@ case "llm7": {
       case "featherless":
       case "bluesminds":
       case "alitp-intl":
-      case "tokenbom": {
+      case "tokenbom":
+      case "codiv": {
         // Generic OpenAI-compatible freeTier/apikey providers with a GET
         // /models endpoint and default Bearer auth — validate via that.
         const validateUrl =
@@ -1275,8 +1313,10 @@ export async function testSingleConnection(id, options = {}) {
         const expiryInfo = extractEarliestPackageExpiry(usage);
         if (expiryInfo) {
           await updateProviderConnection(id, {
-            earliestPackageExpiry: expiryInfo.expiry,
-            earliestPackageName: expiryInfo.name,
+            earliestPackageExpiry: expiryInfo.expiry || null,
+            earliestPackageName: expiryInfo.name || null,
+            earliestPackageRemaining:
+              typeof expiryInfo.remainingPercentage === "number" ? expiryInfo.remainingPercentage : null,
             quotaCheckedAt: new Date().toISOString(),
           });
         }

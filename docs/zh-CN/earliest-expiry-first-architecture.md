@@ -1,6 +1,8 @@
-# 跨账号「配额包到期优先 (Earliest Expiry First)」调度架构与轻量缓存机制
+# 跨账号「到期优先调度 (Earliest Expiry First)」与「环形单向闭环接力 (Relay)」架构
 
-> 本文档面向项目维护者与协同开发者，详细阐述多账号「配额包到期优先」调度策略的业务背景、架构决策考量、SWR（Stale-While-Revalidate）轻量缓存设计以及容错兜底机制。
+> 本文档面向项目维护者与协同开发者，详细阐述多账号「到期优先」调度策略的业务背景、架构决策考量、SWR（Stale-While-Revalidate）轻量缓存设计、单点接力选号算法以及容错兜底机制。
+>
+> 同一开关覆盖两类额度的调度：**配额包**（固定截止的赠送包）、**订阅速率窗口**（周期循环的 5h/7d/weekly 双桶）与**余额**（无分母的储值 Credits）。文案自 v1.4.1 起由「配额包到期优先」更名为「到期优先调度」。
 
 ---
 
@@ -62,9 +64,10 @@
 ```
 
 ### 1. 数据模型持久化（`src/lib/db/repos/connectionsRepo.js`）
-每个账号连接在数据库中维护三个轻量字段，由统一的 SQLite 适配层存储：
-- `earliestPackageExpiry`（ISO 8601 字符串）：该账号下最早即将到期的有效配额包的到期时间戳。
-- `earliestPackageName`（字符串）：该配额包的名称（如 `"Bonus Pack 1"`、`"赠送包"`），用于前端界面悬浮提示。
+每个账号连接在数据库中维护四个轻量字段，由统一的 SQLite 适配层存储：
+- `earliestPackageExpiry`（ISO 8601 字符串）：该账号下最早即将到期的**有效**配额包/订阅窗口的到期时间戳（已耗尽的一次性包不参与，见第四节）。
+- `earliestPackageName`（字符串）：该额度行的名称（如 `"Bonus Pack 1"`、`"M2.7 · 5 hours"`），用于前端界面悬浮提示。
+- `earliestPackageRemaining`（数字，0–100）：该账号**最有约束的存活桶**的实时剩余百分比（relay 红区信号，见第五节）。余额类（无分母）与未知为 `null`——接力对 `null` 永不预判切换。
 - `quotaCheckedAt`（ISO 8601 字符串）：上一次成功拉取并刷新该账号配额的时间戳。
 
 ### 2. 关键路径（Critical Path）：纯本地毫秒比对
@@ -93,20 +96,68 @@
 
 ---
 
-## 四、 配额包到期提取算法（`open-sse/services/usage/expiryExtractor.js`）
+## 四、 配额到期提取算法（`open-sse/services/usage/expiryExtractor.js`）
 
-不同厂商返回的配额数据结构各异（包含汇总行、永久额度、周期循环包、活动赠送包等）。`extractEarliestPackageExpiry(usage)` 算法遵循以下规范：
+不同厂商返回的配额数据结构各异（包含汇总行、永久额度、周期循环包、活动赠送包、逐包明细 `packs[]` 等）。`extractEarliestPackageExpiry(usage)` 同时产出两个信号：**倒计时徽章**（最早到期时间）与**接力红区**（最有约束的实时剩余百分比）。算法规范：
 
 1. **跳过汇总项**：识别并跳过 `"Total Points"`、`"Summary"` 等总额汇总字段。
-2. **过滤已耗尽包**：
-   - 检查 `used >= total` 或 `remaining <= 0`。
+2. **明细替代聚合（Qoder 教训）**：桶带 `packs[]` 逐包明细时（Qoder 的 `addOn`），**只按存活包排序**，绝不读桶级 `resetAt`——生产端的桶级时间戳按「含已耗尽包」的最早包推导，读它会让一个 `0/100` 的死包继续劫持账号排序（幽灵倒计时 bug）。包的到期字段兼容 `expiresAt` / `resetAt` 两种命名。
+3. **过滤已耗尽的一次性包**：
+   - 检查 `used >= total` 或 `remaining <= 0` 或 `remainingPercentage <= 0`。
    - **关键原则**：如果一个包虽然明天就到期，但里面**额度已经被扣光了**，绝不能再优先调度它，必须跳过并继续寻找下一个未耗尽的包。
-3. **过滤历史过期时间**：只接纳大于 `Date.now()` 的未来时间戳，防止已过期的失效包影响排序。
-4. **寻找极小值**：在满足条件的包中，选取时间戳最小（最快到期）的那一个，返回其名称与 ISO 时间戳。
+   - **例外——周期循环窗口**（`recurring:true`，CodeBuddy 回填包 / MiMo weekly / MiniMax Code M Plan / Antigravity 5h+7d）：耗尽≠死亡，其**重置时间正是徽章要说的信息**，耗尽的周期窗口照常参与排序。
+4. **重置日期已过的行完全出局**：有日期但不是未来（一次性包已过期 / 周期窗口回填中上游还没翻表）——倒计时与红区两个信号都不供出，避免拿陈旧 `remaining` 触发误切。
+5. **无日期行只供红区**：永久额度（MiniMax Code 的 Credits 余额、未逐项化的余量包）没有倒计时可言，但「还剩多少」对接力有价值——参与 `remainingPercentage` 的最小值追踪，不产生徽章。
+6. **储值余额不冒充百分比**：带 `isCreditBalance:true` 的行没有分母（1330 积分既不是 1330% 也不是 4%），红区信号直接返回 `null`；余额耗尽（`remaining <= 0`）仍会被规则 3 过滤出环。
+7. **寻找极小值**：在满足条件的包中，选取时间戳最小（最快到期）的那一个，返回其名称与 ISO 时间戳；同时返回全程最小的存活剩余。
 
 ---
 
-## 五、 极端情况与容错兜底矩阵
+## 五、 环形单向闭环接力（Relay）——同一开关下的多账号订阅形态
+
+### 1. 为什么「按到期时间重排」对周期双桶是错的
+
+Antigravity / MiniMax Code 这类**周期循环额度**（5h 短窗 + 7d 水库）没有"到期作废"概念，只有"何时回填"。若沿用「每次请求按最早到期重排、队首优先」：扛旗号的 5h 窗一回填，它立刻跳回队首接管流量——池子在**自己的重排逻辑上打转**，每个号的短桶被同一节奏轮流抽干，最后**整条通道同时黑屏**；接力设计里"把一个桶压到见底"的扛旗者永远不存在。
+
+### 2. 三条铁律（纯函数 `open-sse/services/relaySelection.js`）
+
+| 规则 | 内容 | 动机 |
+| :--- | :--- | :--- |
+| **① 单点死磕** | 一个账号扛 100% 流量直到真正枯竭，绝不摊薄 | 摊薄 = 全池短桶同抽同干 = 集体黑屏 |
+| **② 只前滚、不插队** | 固定环序（priority 升序）1→2→3→4→1；越过红区才步进**下一号**；已回血的前序号账号即使 100% 也原地待命，直到环转回来 | 中途切回 = 抖动，设计明令禁止 |
+| **③ 激进预判** | 切换由**实时剩余跌破 5% 红区**触发（`earliestPackageRemaining` < `RELAY_RED_ZONE_PCT`），不等上游 429——客户端全程无感 | 429 换号至少烧掉一次请求的 TTFT |
+
+### 3. 状态设计：扛旗指针不新增存储
+
+carrier 从 `lastUsedAt` 派生（最近被使用的环内账号即现任扛旗者），与轮询共享同一字段：
+- 选号**无状态**——重启存活、无新列、无迁移；
+- relay 命中时在 `auth.js` 里 await 落一次 `lastUsedAt`，保证下一请求认得出"谁在扛旗"；
+- 环序 = 既有的到期时间排序（一次性赠送包场景下 relay 自然退化为"压干队首再步进"，与旧行为同向且不回切）；
+- `remaining` 未知（首刷前 / 无百分比额度供应商）视为健康——**绝不在缺数据时预判切换**，交给上游 429/锁处理；
+- 全环皆红：回落环首让常规 429/lock 路径接管，不返回 null 饿死请求。
+
+### 4. 与既有策略轴的优先级
+
+`earliestExpiryFirst` 开启且环内 ≥2 号时，relay **接管选号**（优先于 `fallbackStrategy:"round-robin"`——轮询正是规则①禁止的摊薄）；显式 pin（`preferredConnectionId`）仍然短路一切策略。关闭开关则完全走原有 fill-first / round-robin 路径，行为零变化。
+
+### 5. 信号链路
+
+```
+usage handler（recurring / isCreditBalance 旗标）
+   └─► extractEarliestPackageExpiry ─► { expiry, name, remainingPercentage }
+         ├─► auth.js 后台 SWR 刷新（15min）       ─┐
+         ├─► /api/usage/[connectionId] 仪表盘刷新  ├─► earliestPackage{Expiry,Name,Remaining}
+         └─► 连接测试 testUtils 成功后的后台刷新   ─┘        （SQLite 连接行）
+                                                               │
+每个聊天请求 getProviderCredentials ◄──────────────────────────┘
+   └─► 到期排序成环 ─► selectRelayCarrier(环) ─► 扛旗号 + lastUsedAt 落戳
+```
+
+> 供应商 usage handler 的责任：周期窗口必须打 `recurring:true`（MiniMax Code 的 M Plan interval/weekly 自 v1.4.1 起已标注），储值余额必须打 `isCreditBalance:true`——两个旗标决定它进倒计时还是进红区，还是都不进。
+
+---
+
+## 六、 极端情况与容错兜底矩阵
 
 | 场景 | 网关表现 | 对用户的影响 |
 | :--- | :--- | :--- |
@@ -114,29 +165,35 @@
 | **上游账单接口宕机或返回 504** | 后台 SWR 异步任务静默捕获异常并吞掉，不影响正在进行的聊天；连接保留上次已知的时间戳继续工作。 | **零影响，不阻断正常聊天**。 |
 | **新绑定的账号尚未拉取过配额** | 该账号的 `earliestPackageExpiry` 为 `null`，排序时回退到默认优先级，并触发后台初次刷新。 | **平滑过渡，首个请求正常放行**。 |
 | **所有账号的配额包均已过期或无到期时间** | 自动回退到常规的 `Priority` 顺序或 `Round Robin` 轮询模式。 | **完全兼容传统调度行为**。 |
+| **接力全环皆红（`earliestPackageRemaining` 全部 < 5%）** | `selectRelayCarrier` 回落环首，交由常规 429/lock 路径接管，绝不返回 null 饿死请求。 | **请求仍走既有换号/冷却，不会因选号返回空而 500**。 |
+| **周期窗口回填中（`resetAt` 已过但上游未翻表）** | 该行两个信号都不供出（第四节规则 4），下一次 SWR 刷新纠正。 | **不会拿陈旧剩余误切，也不会显示负倒计时**。 |
 
 ---
 
-## 六、 界面与配置项参考
+## 七、 界面与配置项参考
 
-- **配置存储位置**：`settings.providerStrategies[providerId].earliestExpiryFirst: boolean`。
+- **配置存储位置**：`settings.providerStrategies[providerId].earliestExpiryFirst: boolean`（同一开关驱动到期排序 + 接力选号，无独立 relay 开关）。
 - **界面入口**：
-  - 供应商详情页：`/dashboard/providers/[id]` 右上角「配额包到期优先」独立切换开关；
+  - 供应商详情页：`/dashboard/providers/[id]` 右上角「到期优先调度」独立切换开关（v1.4.1 起由「配额包到期优先」更名，覆盖配额包 / 订阅窗口 / 余额三类额度）；
   - 媒体供应商卡片：`ConnectionsCard.js` 右上角提供相同开关；
-  - 连接卡片列表：账号行渲染带有 `schedule` 图标的倒计时徽章（如 `5h`、`3d`），悬浮提示对应包名与绝对时间戳。
+  - 连接卡片列表：账号行渲染带有 `schedule` 图标的倒计时徽章（如 `5h`、`3d`），悬浮提示对应额度行名（`earliestPackageName`）与绝对时间戳。
 
 ---
 
-## 七、 关联代码与测试索引
+## 八、 关联代码与测试索引
 
-- 提取算法：`open-sse/services/usage/expiryExtractor.js`
+- 到期提取算法：`open-sse/services/usage/expiryExtractor.js`
+- 接力选号纯函数：`open-sse/services/relaySelection.js`
 - 调度策略与后台刷新：`src/sse/services/auth.js`
-- 数据持久化字段：`src/lib/db/repos/connectionsRepo.js`
+- 数据持久化字段：`src/lib/db/repos/connectionsRepo.js`（`earliestPackageRemaining` 在 `OPTIONAL_FIELDS`）
 - 界面组件与徽章：
   - `src/app/(dashboard)/dashboard/providers/[id]/page.js`
   - `src/app/(dashboard)/dashboard/providers/[id]/ConnectionRow.js`
   - `src/app/(dashboard)/dashboard/providers/components/ConnectionsCard.js`
-- 单元测试：`tests/unit/earliest-expiry-first.test.js`（6/6 全部通过）
+- 单元测试：
+  - `tests/unit/earliest-expiry-first.test.js`（提取算法，含 Qoder 幽灵倒计时回归、余额/周期窗口边界）
+  - `tests/unit/relay-carrier-selection.test.js`（接力三律纯函数：单点/前滚/红区阈值/未知降级）
+  - `tests/unit/relay-auth-wiring.test.js`（`getProviderCredentials` 集成：环序、扛旗持久化、开关关闭零变化、pin 短路）
 
 ### 与渠道级熔断的交互（v1.1.2 起）
 

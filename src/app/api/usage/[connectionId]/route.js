@@ -222,20 +222,46 @@ export async function computeConnectionUsage(connection, { force = false } = {})
       const expiryInfo = extractEarliestPackageExpiry(usage);
       if (expiryInfo) {
         await updateProviderConnection(connection.id, {
-          earliestPackageExpiry: expiryInfo.expiry,
-          earliestPackageName: expiryInfo.name,
+          earliestPackageExpiry: expiryInfo.expiry || null,
+          earliestPackageName: expiryInfo.name || null,
+          earliestPackageRemaining:
+            typeof expiryInfo.remainingPercentage === "number" ? expiryInfo.remainingPercentage : null,
           quotaCheckedAt: new Date().toISOString(),
         });
       } else if (usage && usage.quotas) {
         await updateProviderConnection(connection.id, {
           earliestPackageExpiry: null,
           earliestPackageName: null,
+          earliestPackageRemaining: null,
           quotaCheckedAt: new Date().toISOString(),
         });
       }
     } catch (e) {
       console.warn(`[Usage API] Failed to update package expiry for ${connection.id}:`, e.message);
     }
+
+    // 同名认领（2026-10-14 定版）：CD 推送的余额快照（river / 小米 MiMo / ModelScope
+    // 等「余额只在网页会话侧」的供应商）归到连接卡展示——数字已在本地 _meta 快照，
+    // 无需任何凭据。连接改名（编辑连接 → 名称）与 CD 账号别名同名即认领；未认领的
+    // 给指路文案（这些供应商没有原生 usage handler，不指路就会漏出
+    // "Usage API not implemented for <provider>"——river 已因此被修过一次，
+    // modelscope 同设计，一并纳入）。
+    try {
+      const { buildExternalConnectionRows, findClaimedExternalRow } = await import("@/lib/externalQuota");
+      const claimed = findClaimedExternalRow(connection, await buildExternalConnectionRows());
+      const rows = claimed?.quota?.quotas || [];
+      const PUSH_ONLY_USAGE_PROVIDERS = new Set(["river", "modelscope"]);
+      if (rows.length) {
+        const extQuotas = Object.fromEntries(rows.map((r) => [r.name, r]));
+        if (usage && usage.quotas && Object.keys(usage.quotas).length) {
+          usage = { ...usage, quotas: { ...usage.quotas, ...extQuotas } };   // 原生行 + 推送余额行
+        } else {
+          usage = { quotas: extQuotas, plan: claimed.quota.plan ?? usage?.plan ?? null };
+        }
+      } else if (PUSH_ONLY_USAGE_PROVIDERS.has(connection.provider) && usage && usage.message) {
+        usage = { message: "No pushed balance matched this connection — set the CreditDaddy account alias to this connection's name (same name claims the card)" };
+      }
+    } catch { /* 认领读取失败保留原 usage */ }
 
     return { status: 200, body: usage };
   } catch (error) {

@@ -15,7 +15,7 @@ const OPTIONAL_FIELDS = [
   "scope", "projectId", "apiKey", "testStatus",
   "lastTested", "lastError", "lastErrorAt", "rateLimitedUntil", "expiresIn", "errorCode",
   "consecutiveUseCount", "idToken", "lastRefreshAt",
-  "earliestPackageExpiry", "earliestPackageName", "quotaCheckedAt",
+  "earliestPackageExpiry", "earliestPackageName", "earliestPackageRemaining", "quotaCheckedAt",
 ];
 
 // Every read and every write of a connection funnels through these two, which is

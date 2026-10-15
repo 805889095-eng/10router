@@ -152,6 +152,94 @@ describe("extractEarliestPackageExpiry", () => {
     expect(extractEarliestPackageExpiry({})).toBeNull();
     expect(extractEarliestPackageExpiry({ message: "error" })).toBeNull();
   });
+
+  it("Qoder regression: a DRAINED pack inside an itemised bucket must not drive the countdown", () => {
+    // The reported bug: 主号 had 赠送包 1 at 0/100 expiring in 3d and the only
+    // live pack (25/100) at 19d. The badge showed 3d 13h — the dead pack's
+    // expiry — so the account kept winning the earliest-expiry queue while
+    // nothing spendable matched that countdown. The bucket-level resetAt is
+    // derived from the soonest pack INCLUDING drained ones, so ranking must
+    // happen on the LIVE packs of the itemised detail, not on the aggregate.
+    const now = Date.now();
+    const usage = {
+      quotas: {
+        user: { total: 0, used: 0, remaining: 0, resetAt: null },
+        addOn: {
+          total: 600,
+          used: 575,
+          remaining: 25,
+          resetAt: new Date(now + 3 * 86400000).toISOString(), // soonest pack — DRAINED
+          packs: [
+            { total: 100, used: 100, remaining: 0, expiresAt: new Date(now + 3 * 86400000).toISOString() },
+            { total: 100, used: 75, remaining: 25, expiresAt: new Date(now + 19 * 86400000).toISOString() },
+          ],
+        },
+      },
+    };
+    const result = extractEarliestPackageExpiry(usage);
+    expect(result).not.toBeNull();
+    expect(result.timestamp).toBeGreaterThanOrEqual(now + 19 * 86400000 - 60000);
+    expect(result.name).toBe("addOn");
+    // red-zone signal comes from the live pack: 25/100 = 25%
+    expect(result.remainingPercentage).toBeCloseTo(25);
+  });
+
+  it("itemised bucket with ALL packs drained contributes nothing", () => {
+    const now = Date.now();
+    const usage = {
+      quotas: {
+        addOn: {
+          total: 200,
+          used: 200,
+          remaining: 0,
+          resetAt: new Date(now + 2 * 86400000).toISOString(),
+          packs: [
+            { total: 100, used: 100, remaining: 0, expiresAt: new Date(now + 2 * 86400000).toISOString() },
+            { total: 100, used: 100, remaining: 0, expiresAt: new Date(now + 9 * 86400000).toISOString() },
+          ],
+        },
+      },
+    };
+    expect(extractEarliestPackageExpiry(usage)).toBeNull();
+  });
+
+  it("balance-only account contributes no fake percentage — relay degrades to dead-burn", () => {
+    // MiniMax Code pay-as-you-go: only the Credits balance row exists, with no
+    // denominator. Reading 1330 credits as "1330%" or 4 credits as "4%" would
+    // both be lies, so the extractor reports nothing: the account keeps the
+    // single-point carrier until upstream 429/lock retires it (rule 1 anyway).
+    const usage = {
+      quotas: {
+        Credits: { name: "Credits", used: 0, total: 4, remaining: 4, isCreditBalance: true },
+      },
+    };
+    expect(extractEarliestPackageExpiry(usage)).toBeNull();
+  });
+
+  it("windows + balance: the recurring windows rank, the balance stays out of the red zone", () => {
+    const now = Date.now();
+    const usage = {
+      quotas: {
+        "M2.7 · 5 hours": { used: 97, total: 100, remainingPercentage: 3, resetAt: new Date(now + 2 * 3600000).toISOString(), recurring: true },
+        Credits: { name: "Credits", used: 0, total: 1330, remaining: 1330, isCreditBalance: true },
+      },
+    };
+    const result = extractEarliestPackageExpiry(usage);
+    expect(result.name).toBe("M2.7 · 5 hours");
+    expect(result.remainingPercentage).toBe(3);
+  });
+
+  it("recurring window with a PAST reset is mid-refill — no stale remaining, no badge", () => {
+    // The reset already happened but upstream hasn't rolled the numbers yet:
+    // ranking on either signal would be wrong; the next refresh fixes it.
+    const now = Date.now();
+    const usage = {
+      quotas: {
+        Weekly: { used: 100, total: 100, remainingPercentage: 0, resetAt: new Date(now - 60000).toISOString(), recurring: true },
+      },
+    };
+    expect(extractEarliestPackageExpiry(usage)).toBeNull();
+  });
 });
 
 describe("Earliest Expiry Account Selection Logic", () => {

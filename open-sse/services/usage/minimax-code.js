@@ -99,6 +99,13 @@ export function parsePlanWindows(body) {
         remaining: left,
         remainingPercentage: left,
         resetAt: x.end > 0 ? new Date(ms(x.end)).toISOString() : null,
+        // M Plan windows REFILL (5h interval / 7d weekly) — they are rate
+        // windows, not one-shot packs. Flagging them recurring keeps a drained
+        // window's reset time as the badge (when does it come back) and lets
+        // the relay red-zone pre-switch the carrier at <5% instead of waiting
+        // for upstream 429. Without it, a drained window reads as "account has
+        // nothing" and multi-account subscription routing loses its signal.
+        recurring: true,
       });
     }
   }

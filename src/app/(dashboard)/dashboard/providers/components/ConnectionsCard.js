@@ -462,7 +462,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
             <div className="flex items-center gap-2">
               <span
                 className="text-xs text-text-muted font-medium"
-                title={translate("Prioritize accounts with quota packages that expire soonest")}
+                title={translate("Prioritize accounts whose quota (packages, subscription windows, balances) expires soonest")}
               >
                 {translate("Earliest Expiry First")}
               </span>

@@ -5,6 +5,7 @@ import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import { resolveProviderId, FREE_PROVIDERS } from "@/shared/constants/providers.js";
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { extractEarliestPackageExpiry } from "open-sse/services/usage/expiryExtractor.js";
+import { selectRelayCarrier } from "open-sse/services/relaySelection.js";
 import { NEEDS_REAUTH_MESSAGE } from "./tokenRefresh.js";
 import { hashApiKey } from "@/lib/db/crypto/apiKeyIdentity.js";
 import { errorResponse } from "open-sse/utils/error.js";
@@ -51,6 +52,11 @@ function triggerBackgroundQuotaRefresh(connections) {
         await updateProviderConnection(conn.id, {
           earliestPackageExpiry: expiryInfo?.expiry || null,
           earliestPackageName: expiryInfo?.name || null,
+          // Live remaining-percentage of the most-constrained bucket — the
+          // relay red-zone signal. Undefined when the provider has no
+          // percentage quota (relay then degrades to "burn until 429").
+          earliestPackageRemaining:
+            typeof expiryInfo?.remainingPercentage === "number" ? expiryInfo.remainingPercentage : null,
           quotaCheckedAt: new Date().toISOString(),
         });
       } catch {
@@ -121,9 +127,9 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     const providerId = resolveProviderId(provider);
 
     // Inject a virtual connection for no-auth free providers (with optional proxy pool from settings)
-    // CreditDaddy 网关线（zcode-free / minimax-free / trae-free）在本机回环免密，局域网由 IP 白名单保护、
+    // CreditDaddy 网关线（zcode-free / trae-free）在本机回环免密，局域网由 IP 白名单保护、
     // 不校验 key —— 无需建带 key 的连接。仍手动建了连接时优先走真实连接，无连接才落 noAuth 虚拟行
-    const isCreditDaddyLine = providerId === "zcode-free" || providerId === "minimax-free" || providerId === "trae-free";
+    const isCreditDaddyLine = providerId === "zcode-free" || providerId === "trae-free";
     const hasCdRealConnection = isCreditDaddyLine
       ? (await getProviderConnections({ provider: providerId, isActive: true })).length > 0
       : false;
@@ -140,9 +146,7 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
           // minimax = /gateway/minimax/v1/messages；
           // trae = /gateway/trae/v1/messages
           let gwPath = (settings.zcodeGatewayPath || '').trim() || '/gateway/zcode/v1/messages';
-          if (providerId === 'minimax-free') {
-            gwPath = (settings.minimaxGatewayPath || '').trim() || '/gateway/minimax/v1/messages';
-          } else if (providerId === 'trae-free') {
+          if (providerId === 'trae-free') {
             gwPath = (settings.traeGatewayPath || '').trim() || '/gateway/trae/v1/messages';
           }
           const u = new URL(`http://127.0.0.1:47860${gwPath.startsWith('/') ? '' : '/'}${gwPath}`);
@@ -289,6 +293,22 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     }
     if (connection) {
       // skip strategy
+    } else if (earliestExpiryFirst && orderedConnections.length > 1) {
+      // Relay: single-point dead-burn on the earliest-expiry ring. The carrier
+      // (most recently used account) keeps 100% of traffic until its live quota
+      // crosses the red zone, then the ring steps FORWARD — a refilled earlier
+      // account never cuts back in. This supersedes round-robin under the same
+      // toggle on purpose: spreading the load is exactly what drains every
+      // recurring bucket in the pool at once (the "all accounts black-hole
+      // together" failure the design forbids).
+      const relay = selectRelayCarrier(orderedConnections);
+      connection = relay.connection;
+      if (relay.stepped) {
+        log.info("AUTH", `${provider} | relay handoff → ${connection.id?.slice(0, 8)} (${connection.name || connection.email || "unnamed"}) | remaining=${connection.earliestPackageRemaining ?? "?"}%`);
+      }
+      // Persist the carrier stamp — relay derives "who is carrying" from
+      // lastUsedAt, the same field round-robin maintains.
+      await updateProviderConnection(connection.id, { lastUsedAt: new Date().toISOString() });
     } else if (strategy === "round-robin") {
       const stickyLimit = providerOverride.stickyRoundRobinLimit || settings.stickyRoundRobinLimit || 3;
 
