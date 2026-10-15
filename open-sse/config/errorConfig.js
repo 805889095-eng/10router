@@ -23,7 +23,7 @@ export const DEFAULT_ERROR_MESSAGES = {
   402: "Payment required",
   403: "You exceeded your current quota",
   // 404 is deliberately NOT "Model not found": on the local CreditDaddy gateway
-  // lines (zcode-free / minimax-free / trae-free) a 404 means the endpoint path
+  // lines (zcode-free / trae-free) a 404 means the endpoint path
   // is wrong or the gateway does not serve it — the brand segment moved from
   // /gateway/v1/messages to /gateway/<brand>/v1/messages — and saying "model
   // not found" points the user at their model list instead of at the path they
@@ -124,6 +124,8 @@ export const ERROR_RULES = [
   // 而用户无论等多久都不会自己好——出路是去实名，不是等重置。
   { text: "real-name verification",   cooldownMs: 0 },
   { text: "realname verification",    cooldownMs: 0 },
+  // ModelScope 未绑定阿里云账号提示（配置状态，cooldown 0 立即穿透与提示）
+  { text: "bind your alibaba cloud account", cooldownMs: 0 },
   { text: "rate limit",               backoff: true },
   { text: "too many requests",        backoff: true },
   { text: "quota exceeded",           backoff: true },
@@ -151,7 +153,7 @@ export const ERROR_RULES = [
 // 正则与文案放在本模块（叶子，无 import）而不是某个 handler 里，是因为两个消费方
 // 都要用：ERROR_RULES 用它把 403 从「额度/故障」重分类为「配置状态、不冷却」，
 // utils/error.js 用它给客户端补可执行的出路说明。两份真相源会漂。
-export const REALNAME_GATE_RE = /real-name verification|realname|\bface verification\b|实名认证/i;
+export const REALNAME_GATE_RE = /real-name verification|realname|\bface verification\b|实名认证|bind your alibaba cloud account/i;
 
 // 注意 provider 键用注册表 id：调用方传入的是 resolveProviderId 之后的值。
 export const REALNAME_HINT = {
@@ -161,6 +163,9 @@ export const REALNAME_HINT = {
     "https://account.stepfun.com/security?action=realname 完成人脸核验后重试（推荐）；" +
     "2. 或改用按量计费的 stepfun-cn 渠道（扣现金/代金券，无实名要求）。" +
     "该账号不会被锁定，但在实名完成前每次调用都会得到这条提示。",
+  modelscope:
+    "ModelScope 魔搭要求账号先绑定阿里云账号（实名认证）才能使用免费推理 API。出路：打开 " +
+    "https://modelscope.cn/my/account 完成第三方账号「阿里云」绑定后重试。",
 };
 
 export const REALNAME_HINT_GENERIC =

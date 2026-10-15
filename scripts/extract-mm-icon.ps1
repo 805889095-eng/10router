@@ -1,5 +1,5 @@
 # One-shot: extract the largest icon (256px) from the MiniMax Code client exe
-# via SHDefExtractIcon, saved as PNG for the minimax-free provider normalization.
+# via SHDefExtractIcon, saved as PNG for the MiniMax provider icon normalization.
 param(
     [string]$Exe = "C:\Users\YangYu\AppData\Local\Programs\MiniMax Code\Uninstall MiniMax Code.exe",
     [string]$Out = "$env:TEMP\mm-code-icon-256.png"
