@@ -20,10 +20,11 @@ export default {
   transport: {
     baseUrl: "https://opencode.ai",
     headers: {
-      "x-opencode-client": "desktop",
+      "x-opencode-client": "cli",
     },
     noAuth: true,
     forceStream: true,
+    reasoningInject: { scope: "all" },
     // Muse Spark 1.3-Free 400s on any tool_choice other than "auto" (named /
     // required / none). Demote in the executor; extend only with evidence.
     quirks: {
@@ -55,8 +56,8 @@ export default {
   systemoneConfig: {
     baseUrl: "https://opencode.ai/zen/v1/systemone",
     headers: {
-      "x-opencode-client": "desktop",
-      "User-Agent": "opencode/1.18.31",
+      "x-opencode-client": "cli",
+      "User-Agent": "opencode/1.18.35",
     },
   },
   modelsFetcher: { url: "https://opencode.ai/zen/v1/models", type: "opencode-free" },

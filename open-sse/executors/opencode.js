@@ -9,7 +9,7 @@ import { isMuseSparkModel } from "../providers/models/helpers.js";
 import { applyFingerprintTools } from "../utils/opencodeFingerprint.js";
 import { ANTHROPIC_API_VERSION } from "../providers/shared.js";
 
-const OPENCODE_UA = "opencode/1.18.31";
+const OPENCODE_UA = "opencode/1.18.35";
 const MAX_SESSION_LENGTH = 256;
 const SESSION_HEADER = "x-opencode-session";
 const SESSION_FIELD = "_opencodeSession";
@@ -81,9 +81,15 @@ export function translateSessionId(sessionId, clientTool = "") {
     .createHash("sha256")
     .update(`opencode\0${clientTool || "generic"}\0${sessionId || ""}`)
     .digest();
-  const timeHex = digest.subarray(0, 6).toString("hex");
+  const current = BigInt(Date.now()) * 0x1000n + 1n;
+  const value = ~current;
+  const timeHex = Array.from({ length: 6 }, (_, index) =>
+    Number((value >> BigInt(40 - 8 * index)) & 0xffn)
+      .toString(16)
+      .padStart(2, "0")
+  ).join("");
   let randomPart = "";
-  for (let i = 6; i < 20; i++) {
+  for (let i = 0; i < 14; i++) {
     randomPart += BASE62_CHARS[digest[i] % 62];
   }
   return `ses_${timeHex}${randomPart}`;
@@ -396,8 +402,9 @@ export class OpenCodeExecutor extends BaseExecutor {
       "Content-Type": "application/json",
       "Authorization": "Bearer public",
       "User-Agent": isOpencodeDownstream ? downstreamUa : OPENCODE_UA,
-      "x-opencode-client": lower["x-opencode-client"] || "desktop",
+      "x-opencode-client": lower["x-opencode-client"] || "cli",
       "x-opencode-session": session,
+      "x-opencode-session-id": session,
       "x-opencode-request": requestId,
       "x-opencode-project": lower["x-opencode-project"] || "global",
       "Accept": stream ? "text/event-stream" : "*/*",

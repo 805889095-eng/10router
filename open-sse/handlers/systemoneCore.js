@@ -48,12 +48,14 @@ export async function handleSystemoneCore({
 
   // noAuth free lanes carry accessToken "public" from the credential stub.
   const token = credentials?.apiKey || credentials?.accessToken;
+  const sysSession = generateSessionId();
   const headers = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(cfg.headers || {}),
     // Zen lanes expect the official client session header on every request.
-    "x-opencode-session": generateSessionId(),
+    "x-opencode-session": sysSession,
+    "x-opencode-session-id": sysSession,
   };
   const requestBody = { ...body, model };
 
