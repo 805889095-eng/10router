@@ -113,9 +113,11 @@ export function normalizeExternalQuotaPayload(source, body) {
   // Optional refresh callback for the card's "Refresh quota" button: an
   // expiring capability URL the pusher (CreditDaddy) answers by measuring
   // again and re-pushing. Scalar-only like everything else here, and
-  // validated as an http(s) URL so nothing structured can ride it. Only
-  // external pushed cards carry it — the connection-card refresh path
-  // (usage API) never reads this field.
+  // validated as an http(s) URL so nothing structured can ride it. External
+  // pushed cards carry it, and a same-name claim mirrors it onto the claiming
+  // connection row (attachClaimRefreshUrls) so that card's button can call
+  // back too. The usage API itself never reads the field — the BROWSER posts
+  // it, so no server-side fetch of a pushed URL (SSRF) is introduced.
   let refreshUrl = null;
   if (body.refreshUrl !== undefined && body.refreshUrl !== null) {
     if (typeof body.refreshUrl !== "string") {
@@ -336,4 +338,22 @@ export function filterClaimedExternalRows(connections, externalRows) {
 export function findClaimedExternalRow(connection, externalRows) {
   const want = rowMatchKey(connection?.provider, connection?.name);
   return (externalRows || []).find((r) => rowMatchKey(r.provider, r.name) === want) || null;
+}
+
+/**
+ * 认领镜像：把被认领推送卡上的 `refreshUrl` 抄到连接行上（在让位过滤之前调用）。
+ * 没有这一步，连接卡（如改名对齐后的 River）的刷新按钮只会重读本地快照——
+ * 从不 POST 回推送方，CD 侧收不到现拉请求、数字也不会变（2026-10-15 用户实测
+ * 「刷新无日志、按钮不转」的根因）。POST 仍由浏览器发起，服务端不碰推送 URL。
+ */
+export function attachClaimRefreshUrls(connections, externalRows) {
+  const byKey = new Map();
+  for (const r of externalRows || []) {
+    if (r.refreshUrl) byKey.set(rowMatchKey(r.provider, r.name), r.refreshUrl);
+  }
+  for (const c of connections || []) {
+    const url = byKey.get(rowMatchKey(c.provider, c.name));
+    if (url) c.refreshUrl = url;
+  }
+  return connections;
 }

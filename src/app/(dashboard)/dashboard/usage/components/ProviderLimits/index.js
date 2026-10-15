@@ -540,9 +540,26 @@ export default function ProviderLimits() {
     [runLimited],
   );
 
-  // Refresh quota for a specific provider
+  // Refresh quota for a specific provider. When the connection claimed an
+  // external push (same-name claim), the row carries the pusher's `refreshUrl`
+  // mirrored at /api/providers/client — POST it first so the pusher measures
+  // again and re-pushes, then the usage read below picks up the fresh numbers.
+  // Without a claim (or on older pushes) this is exactly the old behavior.
   const refreshProvider = useCallback(
-    async (connectionId, provider) => {
+    async (connectionId, provider, refreshUrl) => {
+      if (refreshUrl) {
+        // Spin the button through the callback POST too — fetchQuota below
+        // only owns the loading flag for its own read. A pusher on the LAN
+        // can take seconds to measure-and-repush; without this the row looks
+        // dead until the read starts.
+        setLoading((prev) => ({ ...prev, [connectionId]: true }));
+        try {
+          await fetch(refreshUrl, { method: "POST", mode: "cors" });
+        } catch {
+          // Pusher unreachable (CD off, expired sig) — fall through and show
+          // the last known snapshot instead of failing the whole refresh.
+        }
+      }
       await fetchQuota(connectionId, provider, { force: true });
       setLastUpdated(new Date());
     },
@@ -1512,7 +1529,7 @@ export default function ProviderLimits() {
                     <Tooltip text="Refresh quota">
                       <button
                         type="button"
-                        onClick={() => (conn.external ? refreshExternal(conn) : refreshProvider(conn.id, conn.provider))}
+                        onClick={() => (conn.external ? refreshExternal(conn) : refreshProvider(conn.id, conn.provider, conn.refreshUrl))}
                         disabled={isRefreshing || rowBusy}
                         aria-label="Refresh quota"
                         className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-50"

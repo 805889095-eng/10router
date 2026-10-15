@@ -43,6 +43,7 @@ const {
   externalQuotaSourceFromId,
   filterClaimedExternalRows,
   findClaimedExternalRow,
+  attachClaimRefreshUrls,
 } = await import("../../src/lib/externalQuota.js");
 
 describe("external quota payload normalization", () => {
@@ -367,4 +368,26 @@ describe("refreshUrl callback field (external cards only)", () => {
     expect(r.ok).toBe(true);
     expect(r.snapshot.refreshUrl.length).toBeLessThanOrEqual(500);
   });
+
+  it("mirrors the callback onto the claiming connection row (attachClaimRefreshUrls)", () => {
+    // The bug this pins: a claimed push card (River 谷歌#1) disappears from the
+    // wall and its numbers show on the CONNECTION card — but the connection
+    // row carried no refreshUrl, so that card's button only re-read the local
+    // snapshot and the pusher never got a re-measure POST.
+    const rows = [
+      { id: "ext:river-a", provider: "river", name: "谷歌#1", refreshUrl: "http://cd.local/refresh?sig=1" },
+      { id: "ext:mimo-a", provider: "xiaomi-mimo", name: "mimo", refreshUrl: null },
+    ];
+    const conns = [
+      { id: "c1", provider: "river", name: "谷歌#1" },
+      { id: "c2", provider: "xiaomi-mimo", name: "mimo" },
+      { id: "c3", provider: "river", name: "other" },
+    ];
+    attachClaimRefreshUrls(conns, rows);
+    expect(conns[0].refreshUrl).toBe("http://cd.local/refresh?sig=1");
+    // Claimed push without a callback (older pushes) → row stays without one.
+    expect(conns[1].refreshUrl).toBeUndefined();
+    expect(conns[2].refreshUrl).toBeUndefined();
+  });
+
 });

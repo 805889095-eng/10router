@@ -3,7 +3,7 @@ import { getProviderConnections } from "@/lib/localDb";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
 import { USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
 import { isUsageEligible } from "@/shared/utils/usageEligibility";
-import { buildExternalConnectionRows, filterClaimedExternalRows } from "@/lib/externalQuota";
+import { buildExternalConnectionRows, filterClaimedExternalRows, attachClaimRefreshUrls } from "@/lib/externalQuota";
 
 const SAFE_FIELDS = [
   "id", "provider", "authType", "name", "email", "displayName",
@@ -11,6 +11,10 @@ const SAFE_FIELDS = [
   "testStatus", "lastError", "lastErrorAt", "errorCode",
   "expiresAt", "lastUsedAt", "consecutiveUseCount",
   "createdAt", "updatedAt",
+  // Mirrored from a same-name-claimed external push (see attachClaimRefreshUrls)
+  // so the connection card's refresh button can call the pusher back. Not a DB
+  // column — present only on rows that actually claimed a push with a callback.
+  "refreshUrl",
 ];
 
 const SAFE_PSD_FIELDS = [
@@ -100,8 +104,11 @@ export async function GET(request) {
     } catch {
       externalConnections = [];
     }
-    // 同名认领：与真实连接同 provider 同名的推送卡让位（数字改由连接卡展示，不重复出卡）
+    // 同名认领：与真实连接同 provider 同名的推送卡让位（数字改由连接卡展示，不重复出卡）。
+    // 让位前先把推送卡的 refreshUrl 镜像到连接行——连接卡的刷新按钮据此 POST 回
+    // 推送方现拉（否则认领后的卡刷新只会重读本地快照，CD 收不到请求）。
     try {
+      attachClaimRefreshUrls(eligibleConnections, externalConnections);
       externalConnections = filterClaimedExternalRows(eligibleConnections, externalConnections);
     } catch { /* 认领过滤失败保留全部推送卡 */ }
 
