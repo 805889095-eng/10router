@@ -250,7 +250,7 @@ export async function computeConnectionUsage(connection, { force = false } = {})
       const { buildExternalConnectionRows, findClaimedExternalRow } = await import("@/lib/externalQuota");
       const claimed = findClaimedExternalRow(connection, await buildExternalConnectionRows());
       const rows = claimed?.quota?.quotas || [];
-      const PUSH_ONLY_USAGE_PROVIDERS = new Set(["river", "modelscope"]);
+      const PUSH_ONLY_USAGE_PROVIDERS = new Set(["river", "modelscope", "longcat"]);
       if (rows.length) {
         const extQuotas = Object.fromEntries(rows.map((r) => [r.name, r]));
         if (usage && usage.quotas && Object.keys(usage.quotas).length) {

@@ -390,4 +390,35 @@ describe("refreshUrl callback field (external cards only)", () => {
     expect(conns[2].refreshUrl).toBeUndefined();
   });
 
+  it("accepts a LongCat token-pack push shaped for the official burn order", () => {
+    // LongCat (2026-10 platform rules): gift packs burn BEFORE purchase packs
+    // while the purchase pack is untouched; once the purchase pack starts
+    // burning, ALL packs rank purely by expiry. 10Router does not simulate the
+    // order (the platform deducts, we display) — the push just needs giftPack
+    // flags and per-pack expiry through the whitelist intact.
+    const r = normalizeExternalQuotaPayload("longcat", {
+      provider: "longcat",
+      label: "LongCat 资源包",
+      refreshUrl: "http://127.0.0.1:47860/quota-refresh?source=longcat&sig=" + "b".repeat(64),
+      quotas: {
+        // Live gift pack: 353.28万 remaining of 500万, expires first
+        "赠送资源包": {
+          used: 146.72, total: 500, name: "Token 资源包（赠送）",
+          resetAt: "2026-10-25T00:00:00Z", giftPack: true, detailOnly: true,
+        },
+        // Untouched 1000万 purchase pack expiring later
+        "购买资源包": {
+          used: 0, total: 1000, name: "1000万 Token（购买）",
+          resetAt: "2026-11-11T00:00:00Z", detailOnly: true,
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+    expect(r.snapshot.source).toBe("longcat");
+    const byKey = Object.fromEntries(r.snapshot.entries.map((e) => [e.key, e]));
+    expect(byKey["赠送资源包"].giftPack).toBe(true);
+    expect(byKey["赠送资源包"].resetAt).toBe("2026-10-25T00:00:00Z");
+    expect(byKey["购买资源包"].total).toBe(1000);
+    expect(r.snapshot.refreshUrl).toMatch(/^http:/);
+  });
 });

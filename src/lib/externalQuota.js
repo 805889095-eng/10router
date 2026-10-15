@@ -34,7 +34,11 @@ const SOURCE_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 // but it feeds `/providers/${provider}.png` and className-ish uses, so keep it
 // to a conservative slug grammar.
 const PROVIDER_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
-const QUOTA_KEY_RE = /^[A-Za-z0-9][A-Za-z0-9 ._@-]{0,63}$/;
+// Quota keys double as display labels when the pusher sends no `name`, so
+// CJK must ride too — LongCat's official pack names ARE the keys ("赠送资源包"
+// 资源包文案原样推送, 2026-10). Grammar: letter/number/CJK first char, then
+// those plus separator punctuation; no slashes, quotes or control chars.
+const QUOTA_KEY_RE = /^[\p{L}\p{N}][\p{L}\p{N} ._@·（）()\-]{0,63}$/u;
 
 // Whitelisted quota-row fields, with the coercion each one gets. Unknown keys
 // are dropped; anything not scalar is rejected (see normalizeQuotaEntry).

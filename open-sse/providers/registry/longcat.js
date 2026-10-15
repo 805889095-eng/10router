@@ -16,6 +16,15 @@ export default {
     },
   },
   category: "apikey",
+  // Token 资源包只在网页会话侧（longcat.chat 平台页），API key 查不到——
+  // river/modelscope 同款：CD 推送 + 同名认领，无原生 usage handler。
+  // 消耗顺序官方规则（2026-10 平台公告）：购买包未动时优先烧赠送包（即使
+  // 购买包更早到期）；购买包开烧后全包按到期时间统一排序。前端展示按
+  // detailOnly 逐包明细走，倒计时交给 earliestExpiryFirst 的存活包排序。
+  features: {
+    usage: true,
+    usageApikey: true,
+  },
   transport: {
     baseUrl: "https://api.longcat.chat/openai/v1/chat/completions",
     validateUrl: "https://api.longcat.chat/openai/v1/models",
