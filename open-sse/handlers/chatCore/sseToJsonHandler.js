@@ -391,7 +391,16 @@ export async function handleForcedSSEToJson({ providerResponse, sourceFormat, ta
       ? chatCompletionToResponses(parsed, customToolNames)
       : (typeof translateToClientFormat === "function" ? translateToClientFormat(parsed) : parsed);
 
-    return { success: true, response: new Response(JSON.stringify(restoreToolNames(finalBody, toolNameMap)), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }) };
+    const headers = {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      ...upstreamResponseHeaders(providerResponse.headers)
+    };
+    if (sourceFormat === FORMATS.CLAUDE && !headers["request-id"]) {
+      headers["request-id"] = finalBody?.id || `req_${Date.now()}`;
+    }
+
+    return { success: true, response: new Response(JSON.stringify(restoreToolNames(finalBody, toolNameMap)), { headers }) };
   } catch (err) {
     console.error("[ChatCore] Chat Completions SSE→JSON failed:", err);
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to convert streaming response to JSON");

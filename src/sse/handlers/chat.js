@@ -11,7 +11,7 @@ import {
   checkApiKeyModelAccess,
 } from "../services/auth.js";
 import { getSettings, getChannelBlock, setChannelBlock, clearChannelBlock } from "@/lib/localDb";
-import { buildChannelBlock, channelBlockRemainingMs, formatRetryAfter, withChannelScopeHint, withRateLimitHint } from "open-sse/services/accountFallback.js";
+import { buildChannelBlock, channelBlockRemainingMs, formatRetryAfter, withChannelScopeHint, withRateLimitHint, withInsufficientBalanceHint } from "open-sse/services/accountFallback.js";
 import { getModelInfo, getComboModels } from "../services/model.js";
 import { isOversizedForCbcn, describeCbcnOversize } from "open-sse/executors/codebuddy-cn.js";
 import { handleChatCore } from "open-sse/handlers/chatCore.js";
@@ -331,11 +331,13 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         const errorMsg = lastError || credentials.lastError || "Unavailable";
         const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
-        // Cooldown is already running (backoff rule); translate a raw 429 JSON
-        // blob into something actionable for the client (non-429 passes through).
+        const baseMsg = `[${provider}/${model}] ${errorMsg}`;
+        const hintedMsg = status === 402 || /insufficient[_\s-]*balance|余额不足|欠费/i.test(errorMsg)
+          ? withInsufficientBalanceHint(baseMsg, provider)
+          : withRateLimitHint(baseMsg, provider);
         return unavailableResponse(
           status,
-          withRateLimitHint(`[${provider}/${model}] ${errorMsg}`, provider),
+          hintedMsg,
           credentials.retryAfter,
           credentials.retryAfterHuman,
           lastHeaders,
@@ -346,9 +348,13 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         return errorResponse(HTTP_STATUS.NOT_FOUND, `No active credentials for provider: ${provider}`);
       }
       log.warn("CHAT", "No more accounts available", { provider });
+      const baseLastError = lastError || "All accounts unavailable";
+      const hintedLastError = lastStatus === 402 || /insufficient[_\s-]*balance|余额不足|欠费/i.test(baseLastError)
+        ? withInsufficientBalanceHint(baseLastError, provider)
+        : withRateLimitHint(baseLastError, provider);
       return errorResponse(
         lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
-        withRateLimitHint(lastError || "All accounts unavailable", provider),
+        hintedLastError,
         lastHeaders,
       );
     }

@@ -43,9 +43,11 @@ function shouldPreserveReasoningContent(model, responseBody, targetFormat) {
 }
 
 function openAICompletionToClaudeMessage(responseBody) {
-  if (!responseBody?.choices?.[0]) return responseBody;
-  const choice = responseBody.choices[0];
-  const message = choice.message || {};
+  if (responseBody?.type === "message" && Array.isArray(responseBody?.content)) {
+    return responseBody;
+  }
+  const choice = responseBody?.choices?.[0];
+  const message = choice?.message || {};
   const content = [];
 
   const reasoning = message.reasoning_content || message.provider_specific_fields?.reasoning_content || "";
@@ -66,14 +68,14 @@ function openAICompletionToClaudeMessage(responseBody) {
   }
   if (content.length === 0) content.push({ type: "text", text: "" });
 
-  const usage = responseBody.usage || {};
+  const usage = responseBody?.usage || {};
   return {
-    id: String(responseBody.id || `msg_${Date.now()}`).replace(/^chatcmpl-/, ""),
+    id: String(responseBody?.id || `msg_${Date.now()}`).replace(/^chatcmpl-/, ""),
     type: "message",
     role: "assistant",
-    model: responseBody.model || "unknown",
+    model: responseBody?.model || "unknown",
     content,
-    stop_reason: fromOpenAIFinish(choice.finish_reason, FORMATS.CLAUDE),
+    stop_reason: fromOpenAIFinish(choice?.finish_reason, FORMATS.CLAUDE),
     stop_sequence: null,
     usage: {
       input_tokens: usage.prompt_tokens || usage.input_tokens || 0,
@@ -500,10 +502,19 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     console.error("[RequestDetail] Failed to save:", err.message);
   });
 
+  const headers = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    ...upstreamResponseHeaders(providerResponse.headers)
+  };
+  if (sourceFormat === FORMATS.CLAUDE && !headers["request-id"]) {
+    headers["request-id"] = translatedResponse?.id || `req_${Date.now()}`;
+  }
+
   return {
     success: true,
     response: new Response(JSON.stringify(restoreToolNames(translatedResponse, toolNameMap)), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", ...upstreamResponseHeaders(providerResponse.headers) }
+      headers
     })
   };
 }

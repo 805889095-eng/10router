@@ -414,6 +414,20 @@ const RATE_LIMIT_PROVIDER_NOTE = {
   "xiaomi-mimo": "小米 MiMo 为体验/免费通道，每分钟请求数与 Token 数（TPM）均有硬限制，超出即拒绝。",
 };
 
+export const INSUFFICIENT_BALANCE_RE = /insufficient[_\s-]*balance|余额不足|欠费/i;
+
+export function isInsufficientBalanceText(message) {
+  return INSUFFICIENT_BALANCE_RE.test(String(message || ""));
+}
+
+export function withInsufficientBalanceHint(message, provider) {
+  if (!isInsufficientBalanceText(message)) return message;
+  return (
+    `${message}\n\n` +
+    `提示：账号额度或余额不足（insufficient balance），非网络或服务故障。请充值、重新领取活动额度或切换至其他可用渠道/账号。`
+  );
+}
+
 /** True when the message describes an upstream rate limit (429). */
 export function isRateLimitText(message) {
   return RATE_LIMIT_RE.test(String(message || ""));

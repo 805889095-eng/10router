@@ -1,5 +1,5 @@
 import { ERROR_TYPES, DEFAULT_ERROR_MESSAGES } from "../config/errorConfig.js";
-import { withRealnameHint } from "../services/accountFallback.js";
+import { withRealnameHint, withInsufficientBalanceHint } from "../services/accountFallback.js";
 
 /**
  * Build OpenAI-compatible error response body
@@ -114,7 +114,19 @@ export async function parseUpstreamError(response, executor = null) {
   let message = "";
   try {
     const json = JSON.parse(bodyText);
-    message = json.error?.message || json.message || json.error || bodyText;
+    // CodeBuddy / Tencent 11133 or model provider errors often carry human-friendly tips in displayTips / displayMsg
+    if (json?.code === 11133 || json?.displayTips || json?.displayMsg) {
+      const tip = json.displayTips?.zh || json.displayTips?.en || json.displayTips?.["zh-hant"];
+      const msg = json.displayMsg?.zh || json.displayMsg?.en || json.displayMsg?.["zh-hant"] || json.msg || json.message;
+      if (tip) {
+        message = `${msg ? `${msg}：` : ""}${tip}`;
+      } else if (msg) {
+        message = msg;
+      }
+    }
+    if (!message) {
+      message = json.error?.message || json.message || json.msg || json.error || bodyText;
+    }
   } catch {
     message = bodyText;
   }
@@ -152,7 +164,9 @@ export function createErrorResult(statusCode, message, resetsAtMs, extraHeaders 
  */
 export function unavailableResponse(statusCode, message, retryAfter, retryAfterHuman, extraHeaders = null) {
   const retryAfterSec = Math.max(Math.ceil((new Date(retryAfter).getTime() - Date.now()) / 1000), 1);
-  const msg = `${message} (${retryAfterHuman})`;
+  // For permanent issues like insufficient balance (402), do not append misleading countdown
+  const isBalanceIssue = statusCode === 402 || /insufficient[_\s-]*balance|余额不足|欠费/i.test(message);
+  const msg = (isBalanceIssue || !retryAfterHuman) ? message : `${message} (${retryAfterHuman})`;
   return new Response(
     JSON.stringify({
       type: "error",
@@ -168,7 +182,7 @@ export function unavailableResponse(statusCode, message, retryAfter, retryAfterH
         "Content-Type": "application/json",
         // Intentionally mis-cased to prevent duplicate headers: the gateway's
         // own cooldown must win over any forwarded upstream retry-after.
-        "retry-after": String(retryAfterSec)
+        ...(!isBalanceIssue ? { "retry-after": String(retryAfterSec) } : {})
       }
     }
   );
@@ -197,5 +211,6 @@ export function formatProviderError(error, provider, model, statusCode) {
   // (chat / embeddings / image / video / systemone) at once — they all build
   // their client-facing string through this function. Non-matching messages
   // pass through byte-for-byte.
-  return withRealnameHint(base, provider);
+  const withHint = withRealnameHint(base, provider);
+  return withInsufficientBalanceHint(withHint, provider);
 }

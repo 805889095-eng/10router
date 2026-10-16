@@ -117,6 +117,10 @@ export const ERROR_RULES = [
   // immediately with zero wait, and the client sees the friendly message without
   // a misleading "(reset after 30s)".
   { text: "mimo desktop account",     cooldownMs: 0 },
+  // CodeBuddy 11133（模型无法处理此请求 / 参数被模型方拒绝）：是特定模型的内容不兼容或模型拒识，
+  // 官方建议 SWITCH_MODEL。在组合中应当立刻降级尝试下一个模型，而不锁账号。
+  { text: "11133",                    cooldownMs: 0 },
+  { text: "rejected by the model provider", cooldownMs: 0 },
   // CodeBuddy CN 极端载荷本地拦截：该渠道 WAF 对超大包风控，本地拦截以 400 返回。
   // 在组合降级场景中，后续候选渠道可能无此体积限制，故允许立即降级（cooldownMs: 0，不锁账号）。
   { text: "请求体积已达极端量级",     cooldownMs: 0 },
