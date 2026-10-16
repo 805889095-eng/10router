@@ -13,10 +13,10 @@
 // from here, so the threshold carries margin. Every failure mode is
 // fail-open: a broken summary leaves the original request untouched.
 // ───────────────────────────────────────────────────────────────────────────
-import { getCustomModels } from "@/lib/localDb";
+import { getCustomModels, getCombos } from "@/lib/localDb";
 import { getAllModelCaps } from "@/lib/modelCapsDb";
 import { ALIAS_TO_ID } from "@/shared/constants/providers";
-import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
+import { getCapabilitiesForModel, aggregateComboCapabilities } from "open-sse/providers/capabilities.js";
 import { detectFormatByEndpoint, FORMATS } from "open-sse/translator/formats.js";
 import * as log from "../utils/logger.js";
 
@@ -228,9 +228,18 @@ async function loadResolutionMaps() {
   if (windowCache && now - windowCache.at < WINDOW_CACHE_MS) return windowCache;
   let caps = {};
   let customs = [];
+  let combos = [];
   try { caps = await getAllModelCaps() || {}; } catch { /* fail-open */ }
   try { customs = await getCustomModels() || []; } catch { /* fail-open */ }
-  windowCache = { at: now, caps, customs: buildCustomIndex(customs) };
+  try { combos = await getCombos() || []; } catch { /* fail-open */ }
+  const comboByName = Object.fromEntries((combos || []).map((c) => [c?.name, c?.models]));
+  windowCache = {
+    at: now,
+    caps,
+    customs: buildCustomIndex(customs),
+    combos: combos || [],
+    comboByName,
+  };
   return windowCache;
 }
 
@@ -245,12 +254,58 @@ const positiveInt = (v) => {
 export async function resolveModelWindow(modelStr) {
   const s = String(modelStr || "");
   const slash = s.indexOf("/");
-  if (slash <= 0) return null;
+  const { caps, customs, combos, comboByName } = await loadResolutionMaps();
+
+  // If the model string has no slash, it may be a combo (e.g. "my-fast-combo").
+  // Combos aggregate member capabilities: min contextWindow / max maxOutput.
+  if (slash <= 0) {
+    const combo = combos.find((c) => c?.name === s);
+    if (!combo || !Array.isArray(combo.models) || combo.models.length === 0) return null;
+
+    const resolveMemberCaps = (fullId) => {
+      const mSlash = typeof fullId === "string" ? fullId.indexOf("/") : -1;
+      if (mSlash === -1) return null;
+      const mAlias = fullId.slice(0, mSlash);
+      const mModelId = fullId.slice(mSlash + 1);
+      const mProviderId = ALIAS_TO_ID[mAlias] || mAlias;
+      const mBaseId = mModelId.split(":")[0];
+
+      const pinned = caps[mAlias]?.[mModelId] || caps[mProviderId]?.[mModelId]
+        || caps[mAlias]?.[mBaseId] || caps[mProviderId]?.[mBaseId];
+      if (pinned && (positiveInt(pinned.contextWindow) || positiveInt(pinned.maxOutput))) {
+        const out = {};
+        if (positiveInt(pinned.contextWindow)) out.contextWindow = positiveInt(pinned.contextWindow);
+        if (positiveInt(pinned.maxOutput)) out.maxOutput = positiveInt(pinned.maxOutput);
+        return out;
+      }
+      const customRow = customs.get(`${mAlias}::${mModelId}`) || customs.get(`${mProviderId}::${mModelId}`)
+        || customs.get(`${mAlias}::${mBaseId}`) || customs.get(`${mProviderId}::${mBaseId}`);
+      if (customRow && (positiveInt(customRow.contextWindow) || positiveInt(customRow.maxOutput))) {
+        const out = {};
+        if (positiveInt(customRow.contextWindow)) out.contextWindow = positiveInt(customRow.contextWindow);
+        if (positiveInt(customRow.maxOutput)) out.maxOutput = positiveInt(customRow.maxOutput);
+        return out;
+      }
+      return null;
+    };
+
+    const directPinned = caps[s]?.[s] || caps["combo"]?.[s];
+    if (directPinned && (positiveInt(directPinned.contextWindow) || positiveInt(directPinned.maxOutput))) {
+      return { contextWindow: positiveInt(directPinned.contextWindow), maxOutput: positiveInt(directPinned.maxOutput) };
+    }
+
+    const aggregated = aggregateComboCapabilities(combo.models, comboByName, resolveMemberCaps);
+    if (!aggregated) return null;
+    return {
+      contextWindow: positiveInt(aggregated.contextWindow),
+      maxOutput: positiveInt(aggregated.maxOutput),
+    };
+  }
+
   const alias = s.slice(0, slash);
   const modelId = s.slice(slash + 1);
   const providerId = ALIAS_TO_ID[alias] || alias;
   const baseId = modelId.split(":")[0]; // "kimi-k3:agentic" shares the base numbers
-  const { caps, customs } = await loadResolutionMaps();
 
   const pinned = caps[alias]?.[modelId] || caps[providerId]?.[modelId]
     || caps[alias]?.[baseId] || caps[providerId]?.[baseId];

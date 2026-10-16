@@ -117,6 +117,10 @@ export const ERROR_RULES = [
   // immediately with zero wait, and the client sees the friendly message without
   // a misleading "(reset after 30s)".
   { text: "mimo desktop account",     cooldownMs: 0 },
+  // CodeBuddy CN 极端载荷本地拦截：该渠道 WAF 对超大包风控，本地拦截以 400 返回。
+  // 在组合降级场景中，后续候选渠道可能无此体积限制，故允许立即降级（cooldownMs: 0，不锁账号）。
+  { text: "请求体积已达极端量级",     cooldownMs: 0 },
+  { text: "extreme-size backstop",    cooldownMs: 0 },
   // StepFun CN Step Plan 免费套餐的 403：账号未完成实名（人脸）核验，上游在放行调用
   // 之前先拒。同样是**配置状态**而非故障、也非额度问题——cooldown 0 让账号永不锁定、
   // combo 立即穿透，与上面的 missing-MiMo-Desktop-session 同族。少了这条它会落到下方

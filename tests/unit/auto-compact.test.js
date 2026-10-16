@@ -5,12 +5,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCustomModels: vi.fn(),
+  getCombos: vi.fn(),
   getAllModelCaps: vi.fn(),
   logInfo: vi.fn(),
   logWarn: vi.fn(),
 }));
 
-vi.mock("@/lib/localDb", () => ({ getCustomModels: mocks.getCustomModels }));
+vi.mock("@/lib/localDb", () => ({
+  getCustomModels: mocks.getCustomModels,
+  getCombos: mocks.getCombos,
+}));
 vi.mock("@/lib/modelCapsDb", () => ({ getAllModelCaps: mocks.getAllModelCaps }));
 vi.mock("@/sse/utils/logger.js", () => ({
   info: mocks.logInfo,
@@ -39,6 +43,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   invalidateWindowCache();
   mocks.getCustomModels.mockResolvedValue([]);
+  mocks.getCombos.mockResolvedValue([]);
   mocks.getAllModelCaps.mockResolvedValue({});
 });
 
@@ -204,6 +209,18 @@ describe("resolveModelWindow", () => {
     const win = await resolveModelWindow("mynode/custom-gpt");
     expect(win.contextWindow).toBe(777000);
     expect(win.maxOutput).toBe(9000);
+  });
+  it("resolves combo window by aggregating member capabilities (Issue #64)", async () => {
+    mocks.getCombos.mockResolvedValue([
+      {
+        name: "my-combo",
+        models: ["openai/gpt-4o", "anthropic/claude-3-5-sonnet"],
+      },
+    ]);
+    const win = await resolveModelWindow("my-combo");
+    expect(win).not.toBeNull();
+    // gpt-4o contextWindow: 128000, claude-3-5-sonnet contextWindow: 200000 -> min is 128000
+    expect(win.contextWindow).toBe(128000);
   });
   it("unknown model without a window returns null window (caller fails open)", async () => {
     // capabilities always has a default; but a non-"alias/model" string yields null

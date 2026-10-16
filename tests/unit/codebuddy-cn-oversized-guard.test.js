@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { isOversizedForCbcn, describeCbcnOversize, CBCN_PAYLOAD_LIMITS } from "../../open-sse/executors/codebuddy-cn.js";
 import { buildErrorBody, unavailableResponse } from "../../open-sse/utils/error.js";
+import { checkFallbackError } from "../../open-sse/services/accountFallback.js";
 
 describe("CodeBuddy CN oversized payload pre-check", () => {
   it("detects payload with too many messages", () => {
@@ -51,5 +52,15 @@ describe("Error body shape compatibility", () => {
     const json = await res.json();
     expect(json.type).toBe("error");
     expect(json.error.message).toContain("channel blocked");
+  });
+
+  it("triggers fallback without cooldown on oversized rejection (Issue #65)", () => {
+    const errText = "[codebuddy-cn/kimi-k3] 请求体积已达极端量级（3.5MB > 3.2MB），已在本地拦截，避免触发上游渠道级风控。";
+    const { shouldFallback, cooldownMs } = checkFallbackError(400, errText, 0, "codebuddy-cn");
+    expect(shouldFallback).toBe(true);
+    expect(cooldownMs).toBe(0);
+
+    const normal400 = checkFallbackError(400, "invalid parameter", 0, "codebuddy-cn");
+    expect(normal400.shouldFallback).toBe(false);
   });
 });
