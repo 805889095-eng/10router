@@ -355,10 +355,13 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
     })
     .filter((f) => f.members.length >= 2 && f.totalNum > 0);
   const familyMemberSet = new Set(families.flatMap((f) => f.members));
-  // Monthly joins the additive pool only beside a pack family — there its reset
-  // day acts as an expiry and it is one more pack (CodeBuddy). Alone, a monthly
-  // row is a subscription window (opencode-go), not a spendable balance.
-  const monthlyPacks = families.length > 0 ? cycle.monthly.filter((r) => !inLadder.has(r)) : [];
+  // Monthly joins the additive pool beside a pack family, or if it is marked
+  // as a giftPack / credit pool (e.g. CodeBuddy Intl with no bonus packs).
+  // Alone without those flags, a monthly row is a subscription window (opencode-go),
+  // not an additive spendable balance.
+  const monthlyPacks = cycle.monthly.filter(
+    (r) => !inLadder.has(r) && (families.length > 0 || r.giftPack === true || r.displayRemaining === true)
+  );
   // Stored-value singletons with IDENTICAL values are the same pool rendered
   // twice upstream (stepfun-cn: 余额(CNY) + 代金券(CNY) both 14.95/14.95) —
   // 去重，不累加（用户实测「其实是一个」）。

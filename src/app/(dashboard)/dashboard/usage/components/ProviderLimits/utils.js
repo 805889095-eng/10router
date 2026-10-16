@@ -526,6 +526,7 @@ export function parseQuotaData(provider, data) {
               total: rep.total || 0,
               resetAt: rep.resetAt || null,
               remainingPercentage: rep.remainingPercentage,
+              recurring: rep.recurring === true,
               percentScale: true,
             });
           }
@@ -541,6 +542,7 @@ export function parseQuotaData(provider, data) {
               total: rep.total || 0,
               resetAt: rep.resetAt || null,
               remainingPercentage: rep.remainingPercentage,
+              recurring: rep.recurring === true,
               percentScale: true,
             });
           }
@@ -553,6 +555,7 @@ export function parseQuotaData(provider, data) {
               total: quota.total || 0,
               resetAt: quota.resetAt || null,
               remainingPercentage: quota.remainingPercentage,
+              recurring: quota.recurring === true,
               percentScale: true,
             });
           });
@@ -565,6 +568,7 @@ export function parseQuotaData(provider, data) {
               total: quota.total || 0,
               resetAt: quota.resetAt || null,
               remainingPercentage: quota.remainingPercentage,
+              recurring: quota.recurring === true,
               percentScale: true,
             });
           });

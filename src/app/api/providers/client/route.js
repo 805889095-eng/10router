@@ -71,11 +71,19 @@ function sortConnections(connections, sort) {
     });
   }
 
+  // Default band: group by PROVIDER first, then priority within the group.
+  // Sorting priority-first split one provider's cards across bands wherever a
+  // user had set per-connection priorities (minimax-code #187 pri 1 vs #131
+  // pri 2 landed pages apart on the quota wall) — the provider is the mental
+  // unit, the priority only ranks cards inside it. groupByProviderStable on
+  // the client then keeps the whole group together.
   return list.sort((a, b) => {
+    const providerDiff = (a.provider || "").localeCompare(b.provider || "");
+    if (providerDiff !== 0) return providerDiff;
     const priorityA = a.priority ?? Number.MAX_SAFE_INTEGER;
     const priorityB = b.priority ?? Number.MAX_SAFE_INTEGER;
     if (priorityA !== priorityB) return priorityA - priorityB;
-    return (a.provider || "").localeCompare(b.provider || "");
+    return (a.name || "").localeCompare(b.name || "");
   });
 }
 
