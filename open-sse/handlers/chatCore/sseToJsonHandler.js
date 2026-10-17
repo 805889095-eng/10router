@@ -396,8 +396,10 @@ export async function handleForcedSSEToJson({ providerResponse, sourceFormat, ta
       "Access-Control-Allow-Origin": "*",
       ...upstreamResponseHeaders(providerResponse.headers)
     };
-    if (sourceFormat === FORMATS.CLAUDE && !headers["request-id"]) {
-      headers["request-id"] = finalBody?.id || `req_${Date.now()}`;
+    if (sourceFormat === FORMATS.CLAUDE) {
+      if (!headers["request-id"] || !headers["request-id"].startsWith("req_")) {
+        headers["request-id"] = `req_${Date.now()}`;
+      }
     }
 
     return { success: true, response: new Response(JSON.stringify(restoreToolNames(finalBody, toolNameMap)), { headers }) };

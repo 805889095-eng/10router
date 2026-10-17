@@ -69,8 +69,10 @@ function openAICompletionToClaudeMessage(responseBody) {
   if (content.length === 0) content.push({ type: "text", text: "" });
 
   const usage = responseBody?.usage || {};
+  let msgId = String(responseBody?.id || `msg_${Date.now()}`).replace(/^chatcmpl-/, "");
+  if (!msgId.startsWith("msg_")) msgId = `msg_${msgId}`;
   return {
-    id: String(responseBody?.id || `msg_${Date.now()}`).replace(/^chatcmpl-/, ""),
+    id: msgId,
     type: "message",
     role: "assistant",
     model: responseBody?.model || "unknown",
@@ -249,8 +251,13 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
   }
   if (targetFormat === FORMATS.OPENAI) return responseBody;
 
-  // Gemini / Antigravity
+  // Antigravity / Gemini / Vertex
   if (targetFormat === FORMATS.GEMINI || targetFormat === FORMATS.ANTIGRAVITY || targetFormat === FORMATS.GEMINI_CLI || targetFormat === FORMATS.VERTEX) {
+    if (sourceFormat === FORMATS.CLAUDE) {
+      // Direct pipeline or convert intermediate OpenAI format to Claude message
+      const openaiComp = translateNonStreamingResponse(responseBody, targetFormat, FORMATS.OPENAI, customToolNames, toolNameMap);
+      return openAICompletionToClaudeMessage(openaiComp);
+    }
     const response = responseBody.response || responseBody;
     if (!response?.candidates?.[0]) return responseBody;
 
@@ -507,8 +514,10 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     "Access-Control-Allow-Origin": "*",
     ...upstreamResponseHeaders(providerResponse.headers)
   };
-  if (sourceFormat === FORMATS.CLAUDE && !headers["request-id"]) {
-    headers["request-id"] = translatedResponse?.id || `req_${Date.now()}`;
+  if (sourceFormat === FORMATS.CLAUDE) {
+    if (!headers["request-id"] || !headers["request-id"].startsWith("req_")) {
+      headers["request-id"] = `req_${Date.now()}`;
+    }
   }
 
   return {

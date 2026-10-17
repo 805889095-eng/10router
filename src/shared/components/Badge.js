@@ -12,9 +12,17 @@ const variants = {
 };
 
 const sizes = {
+  xs: "px-1.5 py-0.5 text-[9px] gap-1",
   sm: "px-2 py-0.5 text-[10px]",
   md: "px-2.5 py-1 text-xs",
   lg: "px-3 py-1.5 text-sm",
+};
+
+const iconSizes = {
+  xs: "text-[10px]",
+  sm: "text-[12px]",
+  md: "text-[14px]",
+  lg: "text-[16px]",
 };
 
 export default function Badge({
@@ -28,7 +36,7 @@ export default function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold",
+        "inline-flex items-center gap-1 rounded-full font-medium leading-none",
         variants[variant],
         sizes[size],
         className
@@ -47,7 +55,16 @@ export default function Badge({
           )}
         />
       )}
-      {icon && <span className="material-symbols-outlined text-[14px]">{icon}</span>}
+      {icon && (
+        <span
+          className={cn(
+            "material-symbols-outlined",
+            iconSizes[size] || "text-[12px]"
+          )}
+        >
+          {icon}
+        </span>
+      )}
       {children}
     </span>
   );

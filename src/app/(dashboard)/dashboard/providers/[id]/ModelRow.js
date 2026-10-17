@@ -331,7 +331,7 @@ export default function ModelRow({ model, fullModel, alias, copied, onCopy, test
                 text={translate("Not available on every plan yet — needs a paid tier, or is still rolling out")}
               >
                 <Badge
-                  size="sm"
+                  size="xs"
                   variant="warning"
                   icon="lock"
                   className="shrink-0 cursor-help leading-none"
@@ -349,7 +349,7 @@ export default function ModelRow({ model, fullModel, alias, copied, onCopy, test
                 text={translate("Prioritized for subscribers")}
               >
                 <Badge
-                  size="sm"
+                  size="xs"
                   variant="info"
                   icon="bolt"
                   className="shrink-0 cursor-help leading-none"
