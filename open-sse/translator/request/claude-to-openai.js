@@ -222,14 +222,30 @@ function convertClaudeMessage(msg) {
           if (typeof block.content === "string") {
             resultContent = block.content;
           } else if (Array.isArray(block.content)) {
-            resultContent = block.content
-              .filter(c => c.type === CLAUDE_BLOCK.TEXT)
-              .map(c => c.text)
-              .join("\n") || JSON.stringify(block.content);
+            const textParts = [];
+            for (const item of block.content) {
+              if (item?.type === CLAUDE_BLOCK.TEXT && typeof item.text === "string") {
+                textParts.push(item.text);
+              } else if (item?.type === CLAUDE_BLOCK.IMAGE && item.source?.type === "base64") {
+                parts.push({
+                  type: OPENAI_BLOCK.IMAGE_URL,
+                  image_url: {
+                    url: encodeDataUri(item.source.media_type, item.source.data),
+                  },
+                });
+              }
+            }
+            resultContent = textParts.join("\n");
+            // If tool_result had only images (no text), avoid JSON.stringify of the entire base64 array
+            if (!resultContent && block.content.some((c) => c?.type === CLAUDE_BLOCK.IMAGE)) {
+              resultContent = "[Image attached to tool result]";
+            } else if (!resultContent) {
+              resultContent = JSON.stringify(block.content);
+            }
           } else if (block.content) {
             resultContent = JSON.stringify(block.content);
           }
-          
+
           toolResults.push({
             role: ROLE.TOOL,
             tool_call_id: block.tool_use_id,
