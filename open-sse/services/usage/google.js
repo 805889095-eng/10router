@@ -132,10 +132,11 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
     }
     const plan = subscriptionInfo?.currentTier?.name || "Antigravity";
 
-    // 1) Prefer the dual-window summary (per-family 5h + weekly).
+    // 1) Dual-window summary (per-family 5h + weekly).
+    let summaryQuotas = null;
     if (accessToken && projectId) {
       try {
-        const summaryQuotas = await fetchAndParseAntigravityQuotaSummary(
+        summaryQuotas = await fetchAndParseAntigravityQuotaSummary(
           accessToken,
           projectId,
           U("antigravity").quotaSummaryApiUrls,
@@ -143,15 +144,12 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
           proxyOptions,
           { forceRefresh: options.force === true || options.forceRefresh === true }
         );
-        if (summaryQuotas && Object.keys(summaryQuotas).length > 0) {
-          return { plan, quotas: summaryQuotas, subscriptionInfo };
-        }
       } catch (summaryErr) {
         console.warn("[Antigravity Usage] Quota summary unavailable, falling back to models:", summaryErr?.message);
       }
     }
 
-    // 2) Fallback: parse the per-model fetchAvailableModels catalog.
+    // 2) Per-model catalog (for image generation models, or fallback when summary is unavailable).
     const response = await fetchWithTimeout(ANTIGRAVITY_CONFIG.quotaApiUrl, {
       method: "POST",
       headers: {
@@ -166,64 +164,71 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
       }),
     }, 10000, proxyOptions);
 
-    if (response.status === 403) {
-      return { message: "Antigravity quota API access forbidden. Chat may still work.", quotas: {} };
+    if (!summaryQuotas || Object.keys(summaryQuotas).length === 0) {
+      if (response.status === 403) {
+        return { message: "Antigravity quota API access forbidden. Chat may still work.", quotas: {} };
+      }
+      if (response.status === 401) {
+        return { message: "Antigravity quota API authentication expired. Chat may still work.", quotas: {} };
+      }
+      if (!response.ok) {
+        throw new Error(`Antigravity API error: ${response.status}`);
+      }
     }
-    if (response.status === 401) {
-      return { message: "Antigravity quota API authentication expired. Chat may still work.", quotas: {} };
-    }
-    if (!response.ok) {
-      throw new Error(`Antigravity API error: ${response.status}`);
-    }
 
-    const data = await response.json();
-    const quotas = {};
+    const quotas = summaryQuotas ? { ...summaryQuotas } : {};
 
-    // Parse model quotas (inspired by vscode-antigravity-cockpit)
-    if (data.models) {
-      // Filter only recommended/important models (must match PROVIDER_MODELS ag ids)
-      const importantModels = [
-        'gemini-3.8-flash-high',
-        'gemini-3.8-flash-medium',
-        'gemini-3.8-flash-low',
-        'gemini-3.7-flash-high',
-        'gemini-3.7-flash-medium',
-        'gemini-3.7-flash-low',
-        'gemini-3.6-flash-high',
-        'gemini-3.6-flash-medium',
-        'gemini-3.6-flash-low',
-        'gemini-3.5-flash-low',
-        'gemini-3.5-flash-extra-low',
-        'gemini-pro-agent',
-        'gemini-3.1-pro-low',
-        'claude-sonnet-4-6',
-        'claude-opus-4-6-thinking',
-        'gpt-oss-120b-medium',
-        // Image generation models
-        'gemini-3.1-flash-image',
-        'gemini-3-pro-image',
-        'gemini-2.5-flash-image',
-        'imagen-3.0-generate-002',
-      ];
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      if (data.models) {
+        // If summaryQuotas exists, we only need to append Image generation models.
+        // If summaryQuotas is absent, we fallback to all important models.
+        const importantModels = [
+          'gemini-3.8-flash-high',
+          'gemini-3.8-flash-medium',
+          'gemini-3.8-flash-low',
+          'gemini-3.7-flash-high',
+          'gemini-3.7-flash-medium',
+          'gemini-3.7-flash-low',
+          'gemini-3.6-flash-high',
+          'gemini-3.6-flash-medium',
+          'gemini-3.6-flash-low',
+          'gemini-3.5-flash-low',
+          'gemini-3.5-flash-extra-low',
+          'gemini-pro-agent',
+          'gemini-3.1-pro-low',
+          'claude-sonnet-4-6',
+          'claude-opus-4-6-thinking',
+          'gpt-oss-120b-medium',
+          // Image generation models
+          'gemini-3.1-flash-image',
+          'gemini-3-pro-image',
+          'gemini-2.5-flash-image',
+          'imagen-3.0-generate-002',
+        ];
 
-      for (const [modelKey, info] of Object.entries(data.models)) {
-        if (!info.quotaInfo) continue;
-        if (info.isInternal || !importantModels.includes(modelKey)) continue;
+        for (const [modelKey, info] of Object.entries(data.models)) {
+          if (!info.quotaInfo) continue;
+          if (info.isInternal) continue;
+          const isImageModel = modelKey.includes("image") || modelKey.includes("imagen");
+          if (summaryQuotas && !isImageModel) continue;
+          if (!summaryQuotas && !importantModels.includes(modelKey)) continue;
 
-        const remainingFraction = info.quotaInfo.remainingFraction || 0;
-        const remainingPercentage = remainingFraction * 100;
-        const total = 1000; // Normalized base (fallback path only)
-        const remaining = Math.round(total * remainingFraction);
-        const used = total - remaining;
+          const remainingFraction = info.quotaInfo.remainingFraction || 0;
+          const remainingPercentage = remainingFraction * 100;
+          const total = 1000;
+          const remaining = Math.round(total * remainingFraction);
+          const used = total - remaining;
 
-        quotas[modelKey] = {
-          used,
-          total,
-          resetAt: parseResetTime(info.quotaInfo.resetTime),
-          remainingPercentage,
-          unlimited: false,
-          displayName: info.displayName || modelKey,
-        };
+          quotas[modelKey] = {
+            used,
+            total,
+            resetAt: parseResetTime(info.quotaInfo.resetTime),
+            remainingPercentage,
+            unlimited: false,
+            displayName: info.displayName || modelKey,
+          };
+        }
       }
     }
 

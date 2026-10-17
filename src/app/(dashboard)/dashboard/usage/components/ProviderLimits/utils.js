@@ -505,73 +505,91 @@ export function parseQuotaData(provider, data) {
 
       case "antigravity":
         if (data.quotas) {
-          // Group the per-model quota pool into family rows: the pool is
-          // shared per family upstream, so N model rows with identical
-          // numbers are noise. The row shows the most-exhausted member —
-          // that is the binding limit for the family.
           const entries = Object.entries(data.quotas);
-          const geminiModels = entries.filter(([k]) => k.startsWith("gemini-") && !k.includes("image"));
-          const claudeModels = entries.filter(([k]) => k.startsWith("claude-") || k.startsWith("gpt-"));
-          const imageModels = entries.filter(([k]) => k.includes("image"));
-          const otherModels = entries.filter(([k]) => !k.startsWith("gemini-") && !k.startsWith("claude-") && !k.startsWith("gpt-") && !k.includes("image"));
+          // Check if quotas are already dual-window summary format (e.g. gemini_5h, gemini_weekly, claude_gpt_weekly)
+          const isSummaryFormat = entries.some(([k]) => /_(5h|weekly)$/i.test(k));
 
-          if (geminiModels.length > 0) {
-            const rep = geminiModels.reduce((min, cur) =>
-              (cur[1].remainingPercentage ?? 100) < (min[1].remainingPercentage ?? 100) ? cur : min
-            )[1];
-            normalizedQuotas.push({
-              name: "Gemini (Flash / Pro)",
-              modelKey: "gemini",
-              used: rep.used || 0,
-              total: rep.total || 0,
-              resetAt: rep.resetAt || null,
-              remainingPercentage: rep.remainingPercentage,
-              recurring: rep.recurring === true,
-              percentScale: true,
+          if (isSummaryFormat) {
+            entries.forEach(([modelKey, quota]) => {
+              normalizedQuotas.push({
+                name: quota.displayName || modelKey,
+                modelKey,
+                used: quota.used || 0,
+                total: quota.total || 100,
+                resetAt: quota.resetAt || null,
+                remainingPercentage: quota.remainingPercentage,
+                recurring: quota.recurring !== false,
+                percentScale: quota.percentScale !== false,
+              });
+            });
+          } else {
+            // Group the per-model quota pool into family rows: the pool is
+            // shared per family upstream, so N model rows with identical
+            // numbers are noise. The row shows the most-exhausted member —
+            // that is the binding limit for the family.
+            const geminiModels = entries.filter(([k]) => k.startsWith("gemini-") && !k.includes("image"));
+            const claudeModels = entries.filter(([k]) => k.startsWith("claude-") || k.startsWith("gpt-"));
+            const imageModels = entries.filter(([k]) => k.includes("image"));
+            const otherModels = entries.filter(([k]) => !k.startsWith("gemini-") && !k.startsWith("claude-") && !k.startsWith("gpt-") && !k.includes("image"));
+
+            if (geminiModels.length > 0) {
+              const rep = geminiModels.reduce((min, cur) =>
+                (cur[1].remainingPercentage ?? 100) < (min[1].remainingPercentage ?? 100) ? cur : min
+              )[1];
+              normalizedQuotas.push({
+                name: "Gemini (Flash / Pro)",
+                modelKey: "gemini",
+                used: rep.used || 0,
+                total: rep.total || 0,
+                resetAt: rep.resetAt || null,
+                remainingPercentage: rep.remainingPercentage,
+                recurring: true,
+                percentScale: true,
+              });
+            }
+
+            if (claudeModels.length > 0) {
+              const rep = claudeModels.reduce((min, cur) =>
+                (cur[1].remainingPercentage ?? 100) < (min[1].remainingPercentage ?? 100) ? cur : min
+              )[1];
+              normalizedQuotas.push({
+                name: "Claude (Sonnet / Opus / GPT)",
+                modelKey: "claude",
+                used: rep.used || 0,
+                total: rep.total || 0,
+                resetAt: rep.resetAt || null,
+                remainingPercentage: rep.remainingPercentage,
+                recurring: true,
+                percentScale: true,
+              });
+            }
+
+            imageModels.forEach(([modelKey, quota]) => {
+              normalizedQuotas.push({
+                name: quota.displayName || modelKey,
+                modelKey,
+                used: quota.used || 0,
+                total: quota.total || 0,
+                resetAt: quota.resetAt || null,
+                remainingPercentage: quota.remainingPercentage,
+                recurring: quota.recurring === true,
+                percentScale: true,
+              });
+            });
+
+            otherModels.forEach(([modelKey, quota]) => {
+              normalizedQuotas.push({
+                name: quota.displayName || modelKey,
+                modelKey,
+                used: quota.used || 0,
+                total: quota.total || 0,
+                resetAt: quota.resetAt || null,
+                remainingPercentage: quota.remainingPercentage,
+                recurring: quota.recurring === true,
+                percentScale: true,
+              });
             });
           }
-
-          if (claudeModels.length > 0) {
-            const rep = claudeModels.reduce((min, cur) =>
-              (cur[1].remainingPercentage ?? 100) < (min[1].remainingPercentage ?? 100) ? cur : min
-            )[1];
-            normalizedQuotas.push({
-              name: "Claude (Sonnet / Opus / GPT)",
-              modelKey: "claude",
-              used: rep.used || 0,
-              total: rep.total || 0,
-              resetAt: rep.resetAt || null,
-              remainingPercentage: rep.remainingPercentage,
-              recurring: rep.recurring === true,
-              percentScale: true,
-            });
-          }
-
-          imageModels.forEach(([modelKey, quota]) => {
-            normalizedQuotas.push({
-              name: quota.displayName || modelKey,
-              modelKey,
-              used: quota.used || 0,
-              total: quota.total || 0,
-              resetAt: quota.resetAt || null,
-              remainingPercentage: quota.remainingPercentage,
-              recurring: quota.recurring === true,
-              percentScale: true,
-            });
-          });
-
-          otherModels.forEach(([modelKey, quota]) => {
-            normalizedQuotas.push({
-              name: quota.displayName || modelKey,
-              modelKey,
-              used: quota.used || 0,
-              total: quota.total || 0,
-              resetAt: quota.resetAt || null,
-              remainingPercentage: quota.remainingPercentage,
-              recurring: quota.recurring === true,
-              percentScale: true,
-            });
-          });
         }
         break;
 

@@ -19,10 +19,10 @@ const sizes = {
 };
 
 const iconSizes = {
-  xs: "text-[10px]",
-  sm: "text-[12px]",
-  md: "text-[14px]",
-  lg: "text-[16px]",
+  xs: "10px",
+  sm: "12px",
+  md: "14px",
+  lg: "16px",
 };
 
 export default function Badge({
@@ -57,10 +57,8 @@ export default function Badge({
       )}
       {icon && (
         <span
-          className={cn(
-            "material-symbols-outlined",
-            iconSizes[size] || "text-[12px]"
-          )}
+          className="material-symbols-outlined shrink-0 leading-none"
+          style={{ fontSize: iconSizes[size] || "12px", width: iconSizes[size] || "12px", height: iconSizes[size] || "12px" }}
         >
           {icon}
         </span>

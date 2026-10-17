@@ -74,12 +74,11 @@ export function buildAccountValidationMessage(bodyText) {
   try {
     url = JSON.parse(`"${url}"`); // unescape \/ and friends from the JSON encoding
   } catch { /* keep the raw capture — still a usable URL */ }
+  // Place the actionable URL upfront so even if the error text is sliced/truncated,
+  // the verification link remains intact and reachable.
   return (
-    "Google requires account verification (VALIDATION_REQUIRED). "
-    + "Most often this means the account's 18+ age verification is missing — "
-    + "complete it at https://myaccount.google.com/age-verification (check the birthdate at "
-    + "https://myaccount.google.com/birthday first). "
-    + `Otherwise open this URL in a browser signed in to the affected account, complete "Verify your account", then retry: ${url}`
+    `Google requires account verification (VALIDATION_REQUIRED): ${url} `
+    + "(Complete 'Verify your account' in a browser signed in to the affected account, or check 18+ age verification at https://myaccount.google.com/age-verification)"
   );
 }
 

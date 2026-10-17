@@ -446,11 +446,9 @@ export async function markAccountUnavailable(connectionId, status, errorText, pr
     return { shouldFallback: true, cooldownMs, channelScope: true };
   }
 
-  // Keep enough of the upstream text for the UI to extract reset info
-  // (quotaResetDelay / quotaResetTimeStamp live deep in the JSON body — a
-  // 100-char cut dropped them and the friendly message rendered empty
-  // placeholders). 500 is still short enough for the dashboard row.
-  const reason = typeof errorText === "string" ? errorText.slice(0, 500) : "Provider error";
+  // Keep enough of the upstream text for the UI to extract reset info and verification URLs.
+  // Verification URLs (e.g. Google VALIDATION_REQUIRED) can easily exceed 600 characters.
+  const reason = typeof errorText === "string" ? errorText.slice(0, 1000) : "Provider error";
   const lockModel = githubResetAtMs ? null : model;
   const lockUpdate = buildModelLockUpdate(lockModel, cooldownMs);
 
