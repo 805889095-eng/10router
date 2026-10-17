@@ -51,6 +51,11 @@ export default function ModelSelectModal({
   }, [activeProviders, kindFilter]);
   const { getCaps } = useModelCaps();
   const [searchQuery, setSearchQuery] = useState("");
+  const [onlyConnected, setOnlyConnected] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const saved = window.localStorage.getItem("modelSelectOnlyConnected");
+    return saved !== null ? saved === "1" : true;
+  });
   const [combos, setCombos] = useState([]);
   const [providerNodes, setProviderNodes] = useState([]);
   const [customModels, setCustomModels] = useState([]);
@@ -300,6 +305,7 @@ export default function ModelSelectModal({
             alias: alias,
             color: providerInfo.color,
             models: combined,
+            isConnected,
           };
         }
       } else if (isCustomProvider) {
@@ -443,12 +449,13 @@ export default function ModelSelectModal({
     return [...added, ...rest];
   };
 
-  // Filter models by search query
+  // Filter models by search query and connection status
   const filteredGroups = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
     const filtered = {};
     Object.entries(groupedModels).forEach(([providerId, group]) => {
+      if (onlyConnected && !group.isConnected) return;
       let models = group.models;
       // Filter by input-modality capability (vision/pdf/audioInput/videoInput).
       if (capFilter) {
@@ -471,7 +478,16 @@ export default function ModelSelectModal({
     });
 
     return filtered;
-  }, [groupedModels, searchQuery, addedModelValues]);
+  }, [groupedModels, searchQuery, addedModelValues, onlyConnected, capFilter]);
+
+  const handleToggleOnlyConnected = (val) => {
+    setOnlyConnected(val);
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("modelSelectOnlyConnected", val ? "1" : "0");
+      }
+    } catch {}
+  };
 
   const handleSelect = (model) => {
     const value = model?.value || model?.name || model;
@@ -507,9 +523,9 @@ export default function ModelSelectModal({
         <span>{translate("Click to add, click again to remove. Changes are saved automatically.")}</span>
       </div>
 
-      {/* Search - compact */}
-      <div className="mb-3">
-        <div className="relative">
+      {/* Search and filter controls - compact */}
+      <div className="mb-3 flex items-center gap-2.5">
+        <div className="relative flex-1 min-w-0">
           <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[16px]">
             search
           </span>
@@ -521,6 +537,15 @@ export default function ModelSelectModal({
             className="w-full pl-8 pr-3 py-1.5 bg-surface border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
         </div>
+        <label className="flex items-center gap-1.5 shrink-0 text-xs text-text-muted cursor-pointer select-none hover:text-text-main transition-colors">
+          <input
+            type="checkbox"
+            checked={onlyConnected}
+            onChange={(e) => handleToggleOnlyConnected(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer accent-primary"
+          />
+          <span>{translate("Connected providers only")}</span>
+        </label>
       </div>
 
       {/* Models grouped by provider - compact */}

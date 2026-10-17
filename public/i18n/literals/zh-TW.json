@@ -282,6 +282,7 @@
   "Bonus Pack": "贈送包",
   "Turn off Empty": "關閉空帳號",
   "Turn on Available": "可用帳號",
+  "Connected providers only": "僅已連線的提供商",
   "Hide no-quota provider cards": "隱藏無配額提供者卡片",
   "Hide zero-balance provider cards": "隱藏零餘額提供者卡片",
   "Quota page view: hide cards whose quota is fully depleted (0 balance / 0 credits)": "配額頁檢視：隱藏配額已耗盡（0 餘額 / 0 積分）的卡片",
