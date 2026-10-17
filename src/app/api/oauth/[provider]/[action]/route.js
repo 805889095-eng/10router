@@ -304,6 +304,31 @@ export async function GET(request, { params }) {
 export async function POST(request, { params }) {
   try {
     const { provider, action } = await params;
+
+    // Zero-body actions (check-in, claim-compensation) don't require JSON payloads
+    if (action === "checkin") {
+      if (provider === "codebuddy-cn") {
+        const { runCodebuddyCheckinTick } = await import("@/sse/services/codebuddyCheckin.js");
+        const results = await runCodebuddyCheckinTick();
+        return NextResponse.json({ success: true, results });
+      }
+      if (provider === "qoder" || provider === "qoder-cn") {
+        const { claimAllQoderAccounts } = await import("@/sse/services/qoderCheckin.js");
+        const results = await claimAllQoderAccounts(provider);
+        return NextResponse.json({ success: true, results });
+      }
+      return NextResponse.json({ error: `Check-in not supported for ${provider}` }, { status: 400 });
+    }
+
+    if (action === "claim-compensation") {
+      if (provider === "codebuddy-cn") {
+        const { runCodebuddyCompensationTick } = await import("@/sse/services/codebuddyCheckin.js");
+        const results = await runCodebuddyCompensationTick();
+        return NextResponse.json({ success: true, results });
+      }
+      return NextResponse.json({ error: `Claim compensation not supported for ${provider}` }, { status: 400 });
+    }
+
     let body;
     try {
       body = await request.json();
