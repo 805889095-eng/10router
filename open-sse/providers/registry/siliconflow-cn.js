@@ -16,7 +16,7 @@ export default {
     textIcon: "SF",
     website: "https://siliconflow.cn",
     notice: {
-      apiKeyUrl: "https://cloud.siliconflow.cn/account/asicKey",
+      apiKeyUrl: "https://cloud.siliconflow.cn/i/OzcMUfeM",
     },
   },
   category: "apikey",
