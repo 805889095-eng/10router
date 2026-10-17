@@ -2053,5 +2053,11 @@
   "Quota card display preferences have moved to the Quota Tracker toolbar.": "配额卡片显示偏好已移至配额追踪器工具栏统一配置。",
   "Filter providers by connection status": "按连接状态筛选供应商",
   "No providers match this filter": "没有符合此筛选条件的供应商",
-  "No custom providers match this filter": "没有符合此筛选条件的自定义供应商"
+  "No custom providers match this filter": "没有符合此筛选条件的自定义供应商",
+  "CodeBuddy CN auto compensation claim": "CodeBuddy CN 额外补偿自动领取",
+  "Automatically claim temporary campaign compensation and gifts for CodeBuddy CN accounts": "自动领取 CodeBuddy CN 账号的临时活动额外补偿与赠礼（全天重试，当日确认完成即停）",
+  "No CodeBuddy CN connections found": "未找到有效的 CodeBuddy CN 连接",
+  "Compensation credits already claimed": "额外补偿与赠礼已领取完毕",
+  "Claim extra compensation & gifts": "领取额外补偿与赠礼",
+  "Claim Compensation": "领取额外补偿"
 }

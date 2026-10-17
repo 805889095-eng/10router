@@ -15,6 +15,8 @@ import {
   msUntilNextTick,
   runCodebuddyCheckinTick,
   runCodebuddyIntlSessionTick,
+  runCodebuddyCompensationTick,
+  claimCompensationOne,
 } from "../../src/sse/services/codebuddyCheckin.js";
 
 // Build a fake unverified JWT whose payload carries the given claims.
@@ -280,3 +282,61 @@ describe("runCodebuddyIntlSessionTick", () => {
     expect(byId.b).toBe("failed");
   });
 });
+
+describe("runCodebuddyCompensationTick", () => {
+  it("claims compensation and gift for eligible accounts and skips with memo", async () => {
+    const memo = {};
+    memo["cb-done"] = new Date().toLocaleDateString("sv-SE");
+    const loadConnections = vi.fn(async () => [
+      cnConn({ id: "cb-done" }),
+      cnConn({ id: "cb-active" }),
+      cnConn({ id: "cb-none" }),
+    ]);
+
+    const claimConnection = vi.fn(async (conn) => {
+      if (conn.id === "cb-active") {
+        return {
+          status: "claimed",
+          claimedAmount: 500,
+          details: [{ type: "compensation", amount: 500, endTime: "2026-10-22 23:59:59" }],
+        };
+      }
+      return { status: "no-activity", claimedAmount: 0 };
+    });
+
+    const results = await runCodebuddyCompensationTick({ loadConnections, claimConnection, memo });
+
+    expect(loadConnections).toHaveBeenCalledTimes(1);
+    expect(claimConnection).toHaveBeenCalledTimes(2);
+    expect(results).toEqual([
+      {
+        id: "cb-active",
+        name: "<account>",
+        status: "claimed",
+        claimedAmount: 500,
+        details: [{ type: "compensation", amount: 500, endTime: "2026-10-22 23:59:59" }],
+      },
+      {
+        id: "cb-none",
+        name: "<account>",
+        status: "no-activity",
+        claimedAmount: 0,
+      },
+    ]);
+    expect(memo["cb-active"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(memo["cb-none"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("fail-open: individual throwing connection is reported as failed", async () => {
+    const loadConnections = vi.fn(async () => [cnConn({ id: "cb-err" })]);
+    const claimConnection = vi.fn(async () => {
+      throw new Error("timeout");
+    });
+
+    const results = await runCodebuddyCompensationTick({ loadConnections, claimConnection });
+    expect(results).toEqual([
+      { id: "cb-err", name: "<account>", status: "failed", error: "timeout" },
+    ]);
+  });
+});
+

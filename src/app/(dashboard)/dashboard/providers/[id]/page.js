@@ -85,9 +85,11 @@ export default function ProviderDetailPage() {
   const [customModels, setCustomModels] = useState([]);
   const [oauthTransferEnabled, setOauthTransferEnabled] = useState(false); // per-provider toggle (falls back to legacy global)
   const [codeBuddyCheckinEnabled, setCodeBuddyCheckinEnabled] = useState(false); // experimental auto daily check-in toggle
+  const [codeBuddyCompensationEnabled, setCodeBuddyCompensationEnabled] = useState(false); // experimental auto compensation toggle
   // cbcn check-in manual trigger: running flag (per-account results go to the
   // summary toast + [CB_CN_CHECKIN] server log, not an inline list).
   const [cbCheckinRunning, setCbCheckinRunning] = useState(false);
+  const [cbCompRunning, setCbCompRunning] = useState(false);
   const [qoderCheckinRunning, setQoderCheckinRunning] = useState(false);
   // cbcn export/import re-auth: { open, action: 'export'|'import', value }
   const [cbPw, setCbPw] = useState({ open: false, action: null, value: "" });
@@ -256,6 +258,48 @@ export default function ProviderDetailPage() {
     }
   };
 
+  // Manual CodeBuddy CN compensation & gift claim trigger.
+  const handleCodeBuddyCompensation = async () => {
+    setCbCompRunning(true);
+    try {
+      const res = await fetch("/api/oauth/codebuddy-cn/claim-compensation", {
+        method: "POST",
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Request failed: ${res.status}`);
+      const list = Array.isArray(data?.results) ? data.results : [];
+      if (list.length === 0) {
+        notify.warning(translate("No CodeBuddy CN connections found"));
+        return;
+      }
+      const claimedList = list.filter((r) => r.status === "claimed");
+      const alreadyList = list.filter((r) => r.status === "already");
+      const noneList = list.filter((r) => r.status === "no-activity");
+      const failedList = list.filter((r) => r.status === "failed");
+
+      const totalCredits = claimedList.reduce((acc, cur) => acc + (cur.claimedAmount || 0), 0);
+
+      if (claimedList.length > 0) {
+        notify.success(
+          `${translate("Claim successful")}: +${totalCredits} Credits (${claimedList.length} ${translate("accounts")})`
+        );
+      } else if (failedList.length > 0) {
+        notify.error(
+          `${translate("Claim failed")}: ${failedList.map(f => f.error).join(", ")}`
+        );
+      } else if (alreadyList.length > 0) {
+        notify.info(translate("Compensation credits already claimed"));
+      } else {
+        notify.info(translate("No claimable activity available for this account"));
+      }
+    } catch (e) {
+      notify.error(translate("Claim failed") + ": " + e.message);
+    } finally {
+      setCbCompRunning(false);
+    }
+  };
+
   // Check-in control block (button with hover note). Rendered in place of the
   // import/export buttons when the auto check-in toggle is on.
   const renderCbCheckinBlock = () => (
@@ -269,6 +313,17 @@ export default function ProviderDetailPage() {
         title={translate("CodeBuddy CN auto-checks in daily (retries all day until confirmed)")}
       >
         {cbCheckinRunning ? translate("Checking in...") : translate("Check in now")}
+      </Button>
+      <Button
+        size="sm"
+        icon="redeem"
+        variant="secondary"
+        onClick={handleCodeBuddyCompensation}
+        disabled={cbCompRunning}
+        className="w-full sm:w-auto"
+        title={translate("Claim extra compensation & gifts")}
+      >
+        {cbCompRunning ? translate("Claiming...") : translate("Claim Compensation")}
       </Button>
     </div>
   );
@@ -369,8 +424,8 @@ export default function ProviderDetailPage() {
   // auth mode (not just codebuddy). When CN check-in is on it hides the
   // buttons in favor of the check-in block — surface a reminder then.
   const oauthTransferOn = isOAuth && providerInfo?.authModes?.includes("oauth") && oauthTransferEnabled;
-  // Experimental auto daily check-in — mutually exclusive display vs import/export.
-  const codeBuddyCheckinOn = isCodeBuddy && codeBuddyCheckinEnabled;
+  // Experimental auto daily check-in / compensation — mutually exclusive display vs import/export.
+  const codeBuddyCheckinOn = isCodeBuddy && (codeBuddyCheckinEnabled || codeBuddyCompensationEnabled);
   /**
    * The Export/Import button pair, hoisted out of the dual-auth-only branch.
    *
@@ -777,6 +832,9 @@ export default function ProviderDetailPage() {
         setOauthTransferEnabled(data.codeBuddyOAuthImport === true);
         if (typeof data.codeBuddyCheckin === "boolean") {
           setCodeBuddyCheckinEnabled(data.codeBuddyCheckin);
+        }
+        if (typeof data.codeBuddyCompensation === "boolean") {
+          setCodeBuddyCompensationEnabled(data.codeBuddyCompensation);
         }
       })
       .catch((e) => console.log("Error reading settings:", e));

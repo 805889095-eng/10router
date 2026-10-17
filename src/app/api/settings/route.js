@@ -147,12 +147,13 @@ export async function PATCH(request) {
         .catch((error) => console.warn("[AutoPing] settings update failed:", error.message));
     }
 
-    // Experimental CodeBuddy CN auto check-in: when the toggle flips on at
-    // runtime, (re)start the scheduler. It re-reads the flag on every fire, so
+    // Experimental CodeBuddy CN auto check-in / compensation: when any toggle flips on at
+    // runtime, (re)start the scheduler. It re-reads the flags on every fire, so
     // turning it off later needs no extra wiring. Module is idempotent.
     if (
-      Object.prototype.hasOwnProperty.call(body, "codeBuddyCheckin") &&
-      settings.codeBuddyCheckin === true
+      (Object.prototype.hasOwnProperty.call(body, "codeBuddyCheckin") && settings.codeBuddyCheckin === true) ||
+      (Object.prototype.hasOwnProperty.call(body, "codeBuddyCompensation") && settings.codeBuddyCompensation === true) ||
+      (Object.prototype.hasOwnProperty.call(body, "codeBuddyIntlSession") && settings.codeBuddyIntlSession === true)
     ) {
       import("@/sse/services/codebuddyCheckin.js")
         .then(({ startCodebuddyCheckin }) => startCodebuddyCheckin())

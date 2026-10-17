@@ -23,6 +23,12 @@ import { isNeedsReauthCooling } from "open-sse/services/accountFallback.js";
 const DAILY_CHECKIN_URL = "https://www.codebuddy.cn/v2/billing/meter/daily-checkin";
 const STATUS_URL = "https://www.codebuddy.cn/v2/billing/meter/checkin-activity-status";
 
+// CodeBuddy CN compensation & gift claim endpoints (no /v2 prefix, same host & auth).
+const COMPENSATION_STATUS_URL = "https://www.codebuddy.cn/billing/meter/compensation-status";
+const CLAIM_COMPENSATION_URL = "https://www.codebuddy.cn/billing/meter/claim-compensation";
+const GIFT_STATUS_URL = "https://www.codebuddy.cn/billing/meter/check-gift-claimed";
+const CLAIM_GIFT_URL = "https://www.codebuddy.cn/billing/meter/claim-gift";
+
 // intl daily active-session probe. Free-tier model (rateMultiplier 0) so the
 // request itself costs ~0 credits; body shape mirrors executors/codebuddy-intl
 // (stream-only gateway: leading system prompt + user content as typed blocks,
@@ -45,6 +51,7 @@ let timerHandle = null;
 // entries are pruned to today on every write. The manual check-in route never
 // touches this memo.
 let doneMap = null;
+let compensationDoneMap = null;
 
 async function getDoneMap() {
   if (doneMap) return doneMap;
@@ -52,6 +59,14 @@ async function getDoneMap() {
   const raw = settings?.codeBuddyDailyDone;
   doneMap = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
   return doneMap;
+}
+
+async function getCompensationDoneMap() {
+  if (compensationDoneMap) return compensationDoneMap;
+  const settings = await loadSettingsSafe();
+  const raw = settings?.codeBuddyCompensationDone;
+  compensationDoneMap = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
+  return compensationDoneMap;
 }
 
 // Write the in-memory memo back to settings, pruned to today. Called by the
@@ -72,6 +87,25 @@ async function persistDoneMap() {
     // Persist is best-effort — the in-memory cache still prevents same-process
     // repeats; a failed write just means one extra status check after restart.
     log.warn("CB_CN_CHECKIN", "Persist daily-done map failed (swallowed)", {
+      error: err?.message ?? String(err),
+    });
+  }
+}
+
+async function persistCompensationDoneMap() {
+  if (!compensationDoneMap) return;
+  const today = dayKey();
+  const pruned = {};
+  for (const [id, day] of Object.entries(compensationDoneMap)) {
+    if (day === today) pruned[id] = day;
+  }
+  try {
+    const { updateSettings } = await import("../../lib/localDb.js");
+    await updateSettings({ codeBuddyCompensationDone: pruned });
+    for (const k of Object.keys(compensationDoneMap)) delete compensationDoneMap[k];
+    Object.assign(compensationDoneMap, pruned);
+  } catch (err) {
+    log.warn("CB_CN_COMP", "Persist compensation-done map failed (swallowed)", {
       error: err?.message ?? String(err),
     });
   }
@@ -230,10 +264,10 @@ function cnHeaders(accessToken, uid) {
 }
 
 // One account check-in POST (no 401 retry here — caller decides) → raw result.
-async function postDailyCheckin(accessToken, uid, proxyOptions) {
+async function postCnApi(url, accessToken, uid, proxyOptions) {
   const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
   const res = await proxyAwareFetch(
-    DAILY_CHECKIN_URL,
+    url,
     { method: "POST", headers: cnHeaders(accessToken, uid), body: "{}" },
     proxyOptions
   );
@@ -248,8 +282,13 @@ async function postDailyCheckin(accessToken, uid, proxyOptions) {
     httpStatus: res.status,
     code: body?.code ?? body?.error_code,
     msg: body?.msg ?? body?.message,
+    data: body?.data,
     rawBody: body,
   };
+}
+
+async function postDailyCheckin(accessToken, uid, proxyOptions) {
+  return postCnApi(DAILY_CHECKIN_URL, accessToken, uid, proxyOptions);
 }
 
 async function postStatus(accessToken, uid, proxyOptions) {
@@ -549,6 +588,199 @@ export async function runCodebuddyIntlSessionTick(deps = {}) {
   return results;
 }
 
+/**
+ * Claim compensation and first-month gifts for one connection (with single 401 -> refresh -> retry).
+ * @param {object} conn
+ * @param {{ refreshConnection?: Function }} [deps]
+ * @returns {Promise<{status: string, claimedAmount?: number, details?: Array, error?: string}>}
+ */
+export async function claimCompensationOne(conn, deps) {
+  const refresh = deps?.refreshConnection || ((c) => refreshOne("codebuddy-cn", c));
+  let accessToken = conn.accessToken;
+  const claims = decodeJwt(accessToken) || {};
+  const uid = claims.sub || conn.id;
+  const proxyOptions = proxyOptionsOf(conn);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      // 1. Check compensation status
+      const compStatusRes = await postCnApi(COMPENSATION_STATUS_URL, accessToken, uid, proxyOptions);
+      if (compStatusRes.httpStatus === 401 && attempt === 0) {
+        log.info("CB_CN_COMP", "401 on compensation status, refreshing token once", { id: conn.id });
+        const refreshed = await refresh(conn);
+        if (refreshed?.accessToken) {
+          accessToken = refreshed.accessToken;
+          continue;
+        }
+        return { status: "failed", error: "refresh_failed" };
+      }
+
+      // 2. Check gift status (best effort)
+      let giftStatusRes = null;
+      try {
+        giftStatusRes = await postCnApi(GIFT_STATUS_URL, accessToken, uid, proxyOptions);
+        if (giftStatusRes.httpStatus === 401 && attempt === 0) {
+          log.info("CB_CN_COMP", "401 on gift status, refreshing token once", { id: conn.id });
+          const refreshed = await refresh(conn);
+          if (refreshed?.accessToken) {
+            accessToken = refreshed.accessToken;
+            continue;
+          }
+        }
+      } catch {
+        // gift check error is non-fatal
+      }
+
+      if (compStatusRes.httpStatus !== 200) {
+        return { status: "failed", error: compStatusRes.msg || `http_${compStatusRes.httpStatus}` };
+      }
+
+      const compData = compStatusRes.data || {};
+      const giftData = giftStatusRes?.data || {};
+
+      let totalClaimed = 0;
+      const claimedItems = [];
+      let anyClaimFailed = false;
+      let lastClaimError = null;
+
+      // Claim compensation if active and not claimed
+      if (compData.active === true && !compData.claimed) {
+        const claimRes = await postCnApi(CLAIM_COMPENSATION_URL, accessToken, uid, proxyOptions);
+        if (claimRes.httpStatus === 200 && (claimRes.code === 0 || claimRes.code === "0")) {
+          const amount = Number(compData.credit_num) || 0;
+          totalClaimed += amount;
+          claimedItems.push({ type: "compensation", amount, endTime: compData.end_time });
+        } else {
+          anyClaimFailed = true;
+          lastClaimError = claimRes.msg || `http_${claimRes.httpStatus}`;
+        }
+      }
+
+      // Claim gift if active and not claimed
+      if (giftData.active === true && !giftData.claimed) {
+        const claimGiftRes = await postCnApi(CLAIM_GIFT_URL, accessToken, uid, proxyOptions);
+        if (claimGiftRes.httpStatus === 200 && (claimGiftRes.code === 0 || claimGiftRes.code === "0")) {
+          const amount = Number(giftData.credit_num) || 0;
+          totalClaimed += amount;
+          claimedItems.push({ type: "gift", amount, endTime: giftData.end_time });
+        } else {
+          anyClaimFailed = true;
+          lastClaimError = claimGiftRes.msg || `http_${claimGiftRes.httpStatus}`;
+        }
+      }
+
+      if (totalClaimed > 0) {
+        return {
+          status: "claimed",
+          claimedAmount: totalClaimed,
+          details: claimedItems,
+        };
+      }
+
+      if (anyClaimFailed) {
+        return { status: "failed", error: lastClaimError || "claim_failed" };
+      }
+
+      if (compData.claimed === true || giftData.claimed === true) {
+        return { status: "already", claimedAmount: 0 };
+      }
+
+      if (compData.active === false && (!giftData || giftData.active === false)) {
+        return { status: "no-activity", claimedAmount: 0 };
+      }
+
+      return { status: "already", claimedAmount: 0 };
+    } catch (err) {
+      return { status: "failed", error: err?.message || String(err) };
+    }
+  }
+
+  return { status: "failed", error: "unexpected" };
+}
+
+/**
+ * One CN compensation pass: list active codebuddy-cn connections and claim any
+ * active temporary compensation or gifts. Fail-open.
+ *
+ * @param {{ loadConnections?: Function, refreshConnection?: Function,
+ *           claimConnection?: Function, memo?: Record<string, string> }} [deps]
+ * @returns {Promise<Array<{id: string, name: string, status: string, claimedAmount?: number, details?: Array, error?: string}>>}
+ */
+export async function runCodebuddyCompensationTick(deps = {}) {
+  const results = [];
+  const load = deps.loadConnections || loadActiveConnections;
+  let connections = [];
+  try {
+    connections = await load();
+  } catch (err) {
+    log.warn("CB_CN_COMP", "Tick: failed to load codebuddy-cn connections (swallowed)", {
+      error: err?.message ?? String(err),
+    });
+    return results;
+  }
+
+  const eligible = (Array.isArray(connections) ? connections : []).filter(isEligibleCbcnConnection);
+  if (eligible.length === 0) {
+    log.debug("CB_CN_COMP", "Tick: no eligible codebuddy-cn connections", {
+      total: Array.isArray(connections) ? connections.length : 0,
+    });
+    return results;
+  }
+
+  log.info("CB_CN_COMP", "Compensation pass started", {
+    eligible: eligible.length,
+    ids: eligible.map((c) => c.id).filter(Boolean),
+  });
+
+  const memo = deps.memo || null;
+  const today = dayKey();
+  const claimFn = deps.claimConnection || claimCompensationOne;
+
+  for (const conn of eligible) {
+    try {
+      if (memo && memo[conn.id] === today) {
+        log.debug("CB_CN_COMP", `${conn.name || conn.id}: 已确认今日完成,跳过`, {
+          id: conn.id,
+        });
+        continue;
+      }
+      const outcome = await claimFn(conn, deps);
+      if (
+        memo &&
+        (outcome.status === "claimed" || outcome.status === "already" || outcome.status === "no-activity")
+      ) {
+        memo[conn.id] = today;
+      }
+      results.push({
+        id: conn.id,
+        name: conn.name || conn.id,
+        status: outcome.status,
+        claimedAmount: outcome.claimedAmount || 0,
+        ...(outcome.details ? { details: outcome.details } : {}),
+        ...(outcome.error ? { error: outcome.error } : {}),
+      });
+      const statusLabel =
+        outcome.status === "claimed"
+          ? `领取成功 +${outcome.claimedAmount || 0} 积分`
+          : outcome.status === "already"
+            ? "已领取"
+            : outcome.status === "no-activity"
+              ? "暂无活动"
+              : `失败${outcome.error ? `(${outcome.error})` : ""}`;
+      log.info("CB_CN_COMP", `${conn.name || conn.id}: ${statusLabel}`, {
+        id: conn.id,
+      });
+    } catch (err) {
+      results.push({ id: conn.id, name: conn.name || conn.id, status: "failed", error: err?.message || String(err) });
+      log.warn("CB_CN_COMP", "Connection compensation claim failed (swallowed)", {
+        id: conn?.id,
+        error: err?.message ?? String(err),
+      });
+    }
+  }
+  return results;
+}
+
 // ─── Scheduler ─────────────────────────────────────────────────────────────
 
 // Run one guarded pass, reading both enable flags each fire so toggling off
@@ -562,6 +794,13 @@ async function safeTick(how) {
       await persistDoneMap();
     } else {
       log.debug("CB_CN_CHECKIN", `Scheduled ${how}: setting off, skipping`);
+    }
+    if (settings.codeBuddyCompensation === true) {
+      const compDone = await getCompensationDoneMap();
+      await runCodebuddyCompensationTick({ memo: compDone });
+      await persistCompensationDoneMap();
+    } else {
+      log.debug("CB_CN_COMP", `Scheduled ${how}: setting off, skipping`);
     }
     if (settings.codeBuddyIntlSession === true) {
       await runCodebuddyIntlSessionTick({ memo: done });
@@ -635,11 +874,17 @@ export const __internals = {
   isIdempotentAlready,
   DAILY_CHECKIN_URL,
   STATUS_URL,
+  COMPENSATION_STATUS_URL,
+  CLAIM_COMPENSATION_URL,
+  GIFT_STATUS_URL,
+  CLAIM_GIFT_URL,
   INTL_CHAT_URL,
   INTL_PROBE_MODEL,
   dayKey,
   msUntilNextTick,
   getDoneMap,
   persistDoneMap,
+  getCompensationDoneMap,
+  persistCompensationDoneMap,
   isEligibleCbIntlConnection,
 };

@@ -897,5 +897,11 @@
   "Quota card display preferences have moved to the Quota Tracker toolbar.": "配額卡片顯示偏好已移至配額追蹤器工具列統一設定。",
   "Filter providers by connection status": "依連線狀態篩選供應商",
   "No providers match this filter": "沒有符合此篩選條件的供應商",
-  "No custom providers match this filter": "沒有符合此篩選條件的自訂供應商"
+  "No custom providers match this filter": "沒有符合此篩選條件的自訂供應商",
+  "CodeBuddy CN auto compensation claim": "CodeBuddy CN 額外補償自動領取",
+  "Automatically claim temporary campaign compensation and gifts for CodeBuddy CN accounts": "自動領取 CodeBuddy CN 帳號的臨時活動額外補償與贈禮（全天重試，當日確認完成即停）",
+  "No CodeBuddy CN connections found": "未找到有效的 CodeBuddy CN 連線",
+  "Compensation credits already claimed": "額外補償與贈禮已領取完畢",
+  "Claim extra compensation & gifts": "領取額外補償與贈禮",
+  "Claim Compensation": "領取額外補償"
 }

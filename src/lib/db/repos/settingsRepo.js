@@ -91,10 +91,14 @@ const DEFAULT_SETTINGS = {
   codeBuddyCheckin: false,
   // Experimental: intl daily active-session probe (campaign credits).
   codeBuddyIntlSession: false,
+  // Experimental: auto compensation & gift claim for CodeBuddy CN accounts.
+  codeBuddyCompensation: false,
   // Daily-done memo for both passes: { [connectionId]: "YYYY-MM-DD" } (local).
   // Persisted so a restart doesn't re-verify already-done accounts; entries
   // are pruned to today on every write.
   codeBuddyDailyDone: {},
+  // Daily-done memo for compensation pass: { [connectionId]: "YYYY-MM-DD" }
+  codeBuddyCompensationDone: {},
   // Auto daily credit claim for Qoder & Qoder CN accounts.
   qoderCheckin: false,
   // Daily-done memo for Qoder: { [connectionId]: "YYYY-MM-DD" }
