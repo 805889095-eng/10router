@@ -301,7 +301,14 @@ npx vitest run --dir tests
   <a href="https://github.com/weltyang1216" title="weltyang1216 — issue 反馈"><img src="https://github.com/weltyang1216.png?size=80" width="48" height="48" alt="weltyang1216" /></a>
   <a href="https://github.com/anupamme" title="anupamme — PR 贡献"><img src="https://github.com/anupamme.png?size=80" width="48" height="48" alt="anupamme" /></a>
   <a href="https://github.com/yet791080885-jpg" title="yet791080885-jpg — PR 贡献"><img src="https://github.com/yet791080885-jpg.png?size=80" width="48" height="48" alt="yet791080885-jpg" /></a>
+  <a href="https://github.com/FavoriteYet" title="FavoriteYet — PR 贡献"><img src="https://github.com/FavoriteYet.png?size=80" width="48" height="48" alt="FavoriteYet" /></a>
+  <a href="https://github.com/ZIRAN456" title="ZIRAN456 — PR 贡献"><img src="https://github.com/ZIRAN456.png?size=80" width="48" height="48" alt="ZIRAN456" /></a>
+  <a href="https://github.com/xinminzi" title="xinminzi — issue 反馈"><img src="https://github.com/xinminzi.png?size=80" width="48" height="48" alt="xinminzi" /></a>
+  <a href="https://github.com/Osinglehh" title="Osinglehh — issue 反馈"><img src="https://github.com/Osinglehh.png?size=80" width="48" height="48" alt="Osinglehh" /></a>
+  <a href="https://github.com/paynetsang" title="paynetsang — issue 反馈"><img src="https://github.com/paynetsang.png?size=80" width="48" height="48" alt="paynetsang" /></a>
   <a href="https://github.com/fenixggg" title="fenixggg — issue 反馈"><img src="https://github.com/fenixggg.png?size=80" width="48" height="48" alt="fenixggg" /></a>
+</p>
+<p>
   <a href="https://github.com/windcloud01" title="windcloud01 — issue 反馈"><img src="https://github.com/windcloud01.png?size=80" width="48" height="48" alt="windcloud01" /></a>
   <a href="https://github.com/ThedoRap" title="ThedoRap — issue 反馈"><img src="https://github.com/ThedoRap.png?size=80" width="48" height="48" alt="ThedoRap" /></a>
   <a href="https://github.com/rua-aaa" title="rua-aaa — issue 反馈"><img src="https://github.com/rua-aaa.png?size=80" width="48" height="48" alt="rua-aaa" /></a>
