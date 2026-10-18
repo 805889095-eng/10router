@@ -14,6 +14,7 @@ import { HTTP_STATUS, TOKEN_SAVER_HEADER } from "../config/runtimeConfig.js";
 import { handleBypassRequest } from "../utils/bypassHandler.js";
 import { trackPendingRequest, appendRequestLog, saveRequestDetail } from "@/lib/usageDb.js";
 import { getExecutor } from "../executors/index.js";
+import { isOversizedForCbcn, describeCbcnOversize } from "../executors/codebuddy-cn.js";
 import { supportsGrokCliReasoningEffort } from "../config/grokCli.js";
 import { buildRequestDetail, extractRequestConfig } from "./chatCore/requestDetail.js";
 import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.js";
@@ -295,6 +296,29 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   const rtkStats = compressMessages(translatedBody, tokenSaverEnabled && rtkEnabled);
   const rtkLine = formatRtkLog(rtkStats);
   if (rtkLine) console.log(rtkLine);
+
+  // CodeBuddy CN extreme-size backstop — evaluated AFTER the token savers.
+  //
+  // It used to live in src/sse/handlers/chat.js, which runs BEFORE handleChatCore
+  // is even called, so it measured the *uncompressed* body. RTK routinely removes
+  // 40%+ of a long agentic session (log evidence: "saved 78322B / 187931B (41.7%)"),
+  // so requests a few KB over the threshold were rejected locally while a retry
+  // after compression would have fit comfortably. Moving the check here measures
+  // the body that actually leaves the process.
+  //
+  // The threshold itself is unchanged and still conservative: upstream evidence
+  // shows 11128 is content/shape-driven, not size-driven (a ~60KB request was
+  // rejected while 113KB on the same account succeeded), so this is a
+  // pathological-case backstop only — real 11128 handling is the channel breaker.
+  if (provider === "codebuddy-cn" && isOversizedForCbcn(translatedBody)) {
+    const stats = describeCbcnOversize(translatedBody);
+    const savedNote = rtkStats?.bytesBefore > rtkStats?.bytesAfter
+      ? `｜RTK 已压缩 ${rtkStats.bytesBefore}→${rtkStats.bytesAfter} B，压缩后仍超限`
+      : "｜RTK 无压缩收益";
+    log?.warn?.("CHAT", `[${provider}/${model}] payload exceeds extreme-size backstop after compression (${stats})${savedNote}; rejected locally`);
+    trackPendingRequest(model, provider, connectionId, false, true);
+    return createErrorResult(HTTP_STATUS.BAD_REQUEST, describeCbcnOversizeHint(provider, model, stats, savedNote));
+  }
 
   // Headroom: optional external proxy compression; fail open if proxy is absent.
   const headroomDiagnostics = {};

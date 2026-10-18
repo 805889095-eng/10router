@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { isOversizedForCbcn, describeCbcnOversize, CBCN_PAYLOAD_LIMITS } from "../../open-sse/executors/codebuddy-cn.js";
+import { isOversizedForCbcn, describeCbcnOversize, describeCbcnOversizeHint, CBCN_PAYLOAD_LIMITS } from "../../open-sse/executors/codebuddy-cn.js";
+import { compressMessages } from "../../open-sse/rtk/index.js";
 import { buildErrorBody, unavailableResponse } from "../../open-sse/utils/error.js";
 import { checkFallbackError } from "../../open-sse/services/accountFallback.js";
 
@@ -36,6 +37,50 @@ describe("CodeBuddy CN oversized payload pre-check", () => {
     expect(isOversizedForCbcn(null)).toBe(false);
     expect(isOversizedForCbcn(undefined)).toBe(false);
     expect(isOversizedForCbcn("string")).toBe(false);
+  });
+
+  // The guard now runs AFTER RTK compression (open-sse/handlers/chatCore.js),
+  // so the body it sees is the compressed one. These two cases pin down the
+  // behaviour that made the move worthwhile: a tool_result-heavy body that is
+  // over the limit as-sent, but under it once RTK has trimmed the tool output.
+  it("a tool_result-heavy body can drop below the limit after RTK compression", () => {
+    // RTK only shrinks content that autoDetectFilter recognises (git-diff,
+    // build output, grep listings, long line-oriented logs via smart-truncate).
+    // A wall of "aaaa…" matches no filter and is passed through untouched — so
+    // build a realistic repetitive build-log blob instead.
+    const line = "[INFO] compiling module alpha/beta/gamma ... ok (12ms)\n";
+    const big = line.repeat(Math.ceil((3.5 * 1024 * 1024) / line.length));
+    const body = {
+      messages: [
+        { role: "user", content: "run the build" },
+        { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "f", arguments: "{}" } }] },
+        { role: "tool", tool_call_id: "c1", content: big },
+      ],
+    };
+    // As sent it is oversized ...
+    expect(isOversizedForCbcn(body)).toBe(true);
+    // ... and compression is what decides whether the request survives. This is
+    // the whole reason the guard moved after compressMessages().
+    const stats = compressMessages(body, true);
+    expect(stats).not.toBeNull();
+    expect(stats.bytesBefore).toBeGreaterThan(3.2 * 1024 * 1024);
+    expect(stats.bytesAfter).toBeLessThan(stats.bytesBefore);
+  });
+
+  it("the rejection hint says it was blocked LOCALLY and reports the RTK delta", () => {
+    const oversized = { messages: [{ role: "user", content: "a".repeat(3.5 * 1024 * 1024) }] };
+    const stats = describeCbcnOversize(oversized);
+    const note = "｜RTK 已压缩 3670016→1887436 B，压缩后仍超限";
+    const hint = describeCbcnOversizeHint("codebuddy-cn", "deepseek-v4.1-flash", stats, note);
+
+    // Users must be able to tell this apart from a real upstream 11128.
+    expect(hint).toContain("本机拦截");
+    expect(hint).toContain("请求没有发到上游");
+    // The RTK delta explains WHY clearing the session is the only option left.
+    expect(hint).toContain("RTK 已压缩");
+    // Fallback wiring depends on these two literals (open-sse/config/errorConfig.js).
+    expect(hint).toContain("请求体积已达极端量级");
+    expect(describeCbcnOversizeHint("codebuddy-cn", "m", stats, "")).toContain("请求体积已达极端量级");
   });
 });
 

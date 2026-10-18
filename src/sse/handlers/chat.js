@@ -13,7 +13,6 @@ import {
 import { getSettings, getChannelBlock, setChannelBlock, clearChannelBlock } from "@/lib/localDb";
 import { buildChannelBlock, channelBlockRemainingMs, formatRetryAfter, withChannelScopeHint, withRateLimitHint, withInsufficientBalanceHint } from "open-sse/services/accountFallback.js";
 import { getModelInfo, getComboModels } from "../services/model.js";
-import { isOversizedForCbcn, describeCbcnOversize } from "open-sse/executors/codebuddy-cn.js";
 import { handleChatCore } from "open-sse/handlers/chatCore.js";
 import { DEFAULT_HEADROOM_URL } from "@/lib/headroom/detect";
 import { getTransform as getPxpipeTransform } from "@/lib/pxpipe/loader.js";
@@ -285,24 +284,18 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   let lastStatus = null;
   let lastHeaders = null;
 
-  // Pre-emptive protection for CodeBuddy CN — EXTREME-SIZE BACKSTOP ONLY.
+  // CodeBuddy CN extreme-size backstop — intentionally NOT checked here.
   //
-  // Evidence (2026-09-17, cbcn requestDetails + app log): 11128 fires on
-  // requests as small as ~60KB while a 113KB request on the same account
-  // succeeded. Payload size is therefore NOT the discriminating factor — the
-  // upstream WAF keys on request *content/shape*, which we cannot evaluate
-  // locally. This guard exists only to stop the pathological case (a ~5MB
-  // agentic session, measured failing 100% of the time) from burning a
-  // channel-breaker strike; it does NOT and cannot prevent ordinary 11128.
-  // Real 11128 handling is the channel breaker below.
-  if (provider === "codebuddy-cn" && isOversizedForCbcn(body)) {
-    const stats = describeCbcnOversize(body);
-    log.warn("CHAT", `[${provider}/${model}] payload exceeds extreme-size backstop (${stats}); rejected locally`);
-    const hint = withChannelScopeHint(
-      `[${provider}/${model}] 请求体积已达极端量级（${stats}），已在本地拦截，避免触发上游渠道级风控。`
-    );
-    return errorResponse(HTTP_STATUS.BAD_REQUEST, hint);
-  }
+  // It used to live at this point, which meant it measured the request before
+  // any token saver had run: a 3.23MB session was rejected locally even when
+  // RTK would have shrunk it to ~1.9MB (RTK routinely saves 40%+, see the
+  // "saved 78322B / 187931B (41.7%)" log line). The check now lives in
+  // open-sse/handlers/chatCore.js, immediately after compressMessages(), so it
+  // measures the body that actually leaves the process.
+  //
+  // Do not re-add it here without also removing the chatCore one — this one
+  // runs first, so whichever sits here wins and the post-compression check
+  // never gets a say.
 
   // A channel-scope failure (e.g. CodeBuddy 11128 "unapproved channel") is a
   // property of the channel, not of one account: every sibling answers exactly
