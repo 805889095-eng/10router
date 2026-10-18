@@ -6,6 +6,7 @@
 
 ### ✨ 新增
 
+- **WorkBuddy / CodeBuddy 国际版 DeepSeek-V4.1-Flash 限免开放 & 渠道门禁打通**：补齐官方客户端的 `X-Conversation-ID` 等一整套会话协议头，不再被上游 11128「未授权渠道」拦截；国际版 `deepseek-v4.1-flash` 标记为限免至 10-31，卡片显示绿色 `free` 角标，到期自动恢复 0.11x 计费。
 - **CodeBuddy CN 额外补偿与首月赠礼自动/手动领取**：支持全天后台自动重试检查并领取 CodeBuddy CN 临时补偿（如 500 点数）与首月赠礼（带实验开关 `codeBuddyCompensation`）；提供商详情页新增一键手动领取按钮；401 自动刷新 Token。
 - **组合（Combo）模型选择器「仅显示已连接提供商」**：组合编排弹窗支持一键过滤未连接提供商，快速挑选可用模型。
 

@@ -6,6 +6,10 @@
 
 ### ✨ 新增
 
+- **WorkBuddy / CodeBuddy 国际版 DeepSeek-V4.1-Flash 限免与 `X-Conversation` 协议头全通**:
+  1. **协议头完整注入**:逆向 WorkBuddy 官方客户端（`codebuddy-headless.js`）的请求头构造逻辑，在 `codebuddy-cn` 与 `codebuddy-intl` 两条线的 `buildHeaders` 中统一注入 `X-Conversation-ID`（由下游会话身份派生 MD5 32 位 hex，保持同一会话内稳定以维持上下文连续性）、`X-Conversation-Request-ID` / `X-Conversation-Message-ID` / `X-Request-ID`（每轮独立 32 位随机 hex）、`X-Agent-Intent: "craft"` 与 `X-Agent-Type: "main"`。上游 WAF 的 `11128 Illegal API invocation from an unapproved channel` 门禁按这套标识判定渠道合法性，补齐后实测不再触发；
+  2. **国际版限免标记**:`codebuddy-intl` 的 `deepseek-v4.1-flash` 增加 `promoFreeUntil: "2026-11-01"`（UTC 11-01 零点 = 北京时间 10-31 08:00 起恢复计费），限免窗口内仪表盘显示绿色 `free` 角标；`rateMultiplier` 仍保留 0.11，窗口一过自动回落，无需人工改表，也维持了 CN/intl 同一积分倍率的奇偶校验不变量；
+  3. **实测**:经 NAS 网关调用 `cbai/deepseek-v4.1-flash` 上游返回 200 且响应体 `"credit": 0`，确认限免真实生效；`deepseek-v4.1-flash-1017` 这类带日期后缀的变体实测回 11102（`model service info not found`），因此不登记，官方网关的服务端模型名就叫 `deepseek-v4.1-flash`，V4.1-Flash-1017 是底层权重版本而非新的 id。
 - **CodeBuddy CN 额外补偿与首月赠礼自动/手动领取（Issue #67）**:
   1. 支持全天定时任务自动检查并领取 CodeBuddy CN 临时活动补偿（如 DeepSeek 服务异常补偿 500 点数）与首月赠送礼包，受实验性功能开关 `codeBuddyCompensation` 管控；
   2. 具备 fail-open 容错语义，遇到 401 自动触发 Token 刷新并重发，失败不阻断核心路由；

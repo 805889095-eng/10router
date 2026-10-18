@@ -6,6 +6,7 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 
 ### ✨ New
 
+- **WorkBuddy / CodeBuddy Intl DeepSeek-V4.1-Flash free period & channel unblocked**: The full set of official client conversation headers (`X-Conversation-ID`, `X-Conversation-Request-ID`, `X-Conversation-Message-ID`, `X-Request-ID`, `X-Agent-Intent`, `X-Agent-Type`) is now injected on both CodeBuddy lanes, clearing the upstream 11128 "unapproved channel" WAF gate. `deepseek-v4.1-flash` on the intl gateway is marked free through Oct 31 (green `free` badge) and reverts to 0.11x automatically afterwards.
 - **CodeBuddy CN compensation & gift claim**: Automatic periodic checks & background claim for CodeBuddy CN temporary compensation (e.g. 500 bonus points) and first-month gifts, guarded by experimental toggle `codeBuddyCompensation`; manual one-click claim button in provider settings; auto-refresh token on 401.
 - **Combo model picker "Connected providers only"**: Filter provider choices in combo setup to easily pick active, connected models.
 
