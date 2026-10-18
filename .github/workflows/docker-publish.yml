@@ -1,9 +1,25 @@
 name: Build and Push Docker Image
 
+# Builds a ready-to-run container image from THIS repo's source, so a patched
+# tree never has to be hot-patched into a running container by hand.
+#
+# Triggers:
+#   * push to main          -> :main, :sha-<short>, :latest
+#   * push of a v* tag      -> :<semver>, :latest
+#   * manual dispatch       -> whatever ref you pick
+#
+# The upstream 24 GB heap requirement in `npm run build`
+# (`--max-old-space-size=24576`) is an upper bound, not a demand — the
+# ubuntu-latest runner (16 GB RAM / 4 vCPU) builds this tree fine because Node
+# only commits what it actually touches. Do NOT add NODE_OPTIONS overrides
+# here; the script's own flag already wins for the build step.
+
 on:
   push:
     tags:
       - "v*"
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -36,7 +52,9 @@ jobs:
             ${{ env.GHCR_IMAGE }}
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -47,6 +65,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache,mode=max
-          platforms: linux/amd64,linux/arm64
+          # amd64 only by default: the arm64 leg runs under QEMU on the same
+          # 4-vCPU runner and roughly triples wall time for a tree this size.
+          # Uncomment the second platform (and raise the job timeout) if an
+          # ARM box ever needs to pull this image.
+          platforms: linux/amd64
+          # platforms: linux/amd64,linux/arm64
           provenance: false
           sbom: false
+          build-args: |
+            NODE_IMAGE=node:22-alpine
