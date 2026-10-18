@@ -2,6 +2,26 @@
 
 这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.5.1 (2026-10-18)
+
+### ✨ 新增
+
+- **CodeBuddy CN 额外补偿与首月赠礼自动/手动领取**：支持全天后台自动重试检查并领取 CodeBuddy CN 临时补偿（如 500 点数）与首月赠礼（带实验开关 `codeBuddyCompensation`）；提供商详情页新增一键手动领取按钮；401 自动刷新 Token。
+- **组合（Combo）模型选择器「仅显示已连接提供商」**：组合编排弹窗支持一键过滤未连接提供商，快速挑选可用模型。
+
+### 🐛 修复
+
+- **Antigravity 周期配额桶与完整身份验证链接**：
+  - 完美适配官方 5小时/每周 周期配额双窗口（Gemini 与 Claude/GPT 独立桶），并收敛共享配额的生图冗余模型项；
+  - 完整保留长达 600+ 字符的 Google 身份验证（VALIDATION_REQUIRED）跳转 URL，不再被截断。
+- **Claude SDK 非流式重试报错根治**：
+  - 补全 Antigravity/Gemini 非流式响应到标准 Claude Message 格式转换，彻底解决 Claude CLI 报 `body is JSON but not a Message (HTTP 200)`；
+  - 强制补齐规范的 `req_` 响应头，消除 `request-id present but not Anthropic-issued` 报错。
+- **视觉模型 tool_result 图片恢复**：修复 Claude 转 OpenAI 格式时工具返回图片被过滤的问题，多模态模型现可正常接收工具产生的图像。
+- **多轮对话工具名称防冲突**：修复工具调用 ID 复用时 `functionResponse` 工具名被后序轮次覆盖导致的 400 错误。
+- **组合模型自动压缩与熔断降级**：无前缀组合模型名支持能力聚合触发压缩；CodeBuddy CN 极端载荷拦截加入快速降级规则。
+- **界面角标优化**：修复 CodeBuddy「付费档」与「订阅优先」图标尺寸过大的问题。
+
 ## v1.5.0 (2026-10-15)
 
 ### ✨ 新增

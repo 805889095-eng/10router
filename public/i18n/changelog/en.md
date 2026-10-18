@@ -2,6 +2,26 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.5.1 (2026-10-18)
+
+### ✨ New
+
+- **CodeBuddy CN compensation & gift claim**: Automatic periodic checks & background claim for CodeBuddy CN temporary compensation (e.g. 500 bonus points) and first-month gifts, guarded by experimental toggle `codeBuddyCompensation`; manual one-click claim button in provider settings; auto-refresh token on 401.
+- **Combo model picker "Connected providers only"**: Filter provider choices in combo setup to easily pick active, connected models.
+
+### 🐛 Fixes
+
+- **Antigravity dual-window quota & full verification link**:
+  - Full support for Google's official 5h/weekly dual-window quota summary for Gemini & Claude/GPT; stripped redundant standalone image entries sharing the same quota pool;
+  - Preserved full 600+ character Google account verification URLs without truncation.
+- **Claude SDK / CLI non-streaming response format & headers**:
+  - Fixed Antigravity/Gemini non-streaming retries returning raw Gemini structures to Claude clients by translating to standard Claude Message objects (`body is JSON but not a Message (HTTP 200)`);
+  - Enforced compliant `req_` request-id headers expected by Claude CLI validation.
+- **Tool result image preservation**: Fixed Claude-to-OpenAI translation dropping base64 images inside `tool_result` blocks, restoring image perception for multimodal models.
+- **Cross-turn tool name consistency**: Preserved original function names when identical `tool_call_id`s are reused across conversational turns (PR #66).
+- **Combo auto-compact & fast fallback**: Enabled capability aggregation for unqualified combo IDs; allowed fast fallback on CodeBuddy CN extreme payload rejections.
+- **Badge icon sizing**: Fixed CodeBuddy "Paid Tier" and "Sub Priority" badge icons overflowing cards in compact views.
+
 ## v1.5.0 (2026-10-15)
 
 ### ✨ New

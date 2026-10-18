@@ -2,6 +2,39 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.5.1 (2026-10-18)
+
+### ✨ 新增
+
+- **CodeBuddy CN 额外补偿与首月赠礼自动/手动领取（Issue #67）**:
+  1. 支持全天定时任务自动检查并领取 CodeBuddy CN 临时活动补偿（如 DeepSeek 服务异常补偿 500 点数）与首月赠送礼包，受实验性功能开关 `codeBuddyCompensation` 管控；
+  2. 具备 fail-open 容错语义，遇到 401 自动触发 Token 刷新并重发，失败不阻断核心路由；
+  3. 提供商详情页新增「领取补偿」手动触发按钮与状态反馈 Toast；
+  4. 修复 Next.js App Router 空请求体时通配动态路由 `[provider]/[action]` 抛错的问题，支持零 Body 操作直接触发。
+- **组合（Combo）模型选择器支持仅看已连接供应商**:组合模型编排弹窗新增「仅显示已连接提供商」复选框，海量模型列表中可一键过滤只看可用提供商，提升编排效率。
+
+### 🐛 修复
+
+- **Antigravity 配额桶与身份验证体验优化**:
+  1. **配额桶双窗口结构适配**:适配 Google 官方 `retrieveUserQuotaSummary` 接口的 4 个周期双窗口桶（Gemini 5h / 每周、Claude与GPT 5h / 每周），并在前端配额卡片中以百分比进度条与倒计时规范渲染；同时确认并移除共享同一配额池的生图冗余模型项；
+  2. **验证长链接完整保留**:Google 403 `VALIDATION_REQUIRED` 返回的长重定向验证 URL 包含大量参数，将其移至提示最前端，并将数据库 `lastError` 存储截断上限放宽至 1000 字符，彻底解决验证 URL 被掐头去尾导致用户无法点击完成验证的问题。
+- **Claude SDK / CLI 非流式响应转换与规范请求头**:
+  1. 修复 Antigravity / Gemini 非流式重试响应下发给 Claude 客户端时直接透传 Gemini 结构的问题，补全转换为标准 Claude Message 格式链路，彻底根治 Claude SDK `body is JSON but not a Message (HTTP 200)` 报错；
+  2. 强制补齐以 `req_` 开头的 `request-id` 响应头，满足 Claude CLI 对 Anthropic 官方请求 ID 格式的严格校验正则。
+- **多轮对话中 tool_call_id 复用时工具名称保持（PR #66）**:OpenAI 转 Gemini 格式时，在 `toolCallPairs` 中记录各轮次原始工具名称，避免当客户端复用相同 `tool_call_id` 时后序轮次覆盖 lookup 导致上游 Google 报错 400（Invalid Function Call）。
+- **tool_result 视觉图片丢失修复（Issue #68）**:在 Claude 转 OpenAI 格式时，提取 `tool_result` 内容中的 base64 image 块并包装为 `image_url` 注入 parts 通道，确保下游多模态/视觉模型能够正常获取工具返回的图像。
+- **组合模型自动压缩未触发（Issue #64）与超大载荷熔断降级（Issue #65）**:
+  1. 修复未带斜杠的组合模型名在 `resolveModelWindow` 中直接跳过的问题，增加成员能力动态聚合支持；
+  2. 将 CodeBuddy CN 极端载荷熔断错误（如 11133 与超大请求拦截）设为可重试降级错误（`cooldownMs: 0`），允许组合自动切换尝试后续后备模型。
+- **四大类高频报错与边界场景友好化**:
+  1. 402 余额不足时提取结构化人话提示，不再向客户端抛出误导性的限流倒计时（`reset after ...`）；
+  2. CodeBuddy 11133 拦截提取中文人话说明；
+  3. CodeBuddy CN 会话消息条数拦截上限放宽至 1800 条，避免真实深度对话被误拦截。
+- **角标尺寸与字体继承修复**:
+  1. 为 Badge 组件新增 `xs` 紧凑尺寸，显式绑定 10px 图标内联样式；
+  2. `globals.css` 增加 Material Symbols 字体大小继承规则，解决 CodeBuddy「付费档」与「订阅优先」图标撑大卡片的问题。
+- **SiliconFlow CN 密钥链接更新**:更新为最新合作推广链接（`https://cloud.siliconflow.cn/i/OzcMUfeM`）。
+
 ## v1.5.0 (2026-10-15)
 
 ### ✨ 新增
