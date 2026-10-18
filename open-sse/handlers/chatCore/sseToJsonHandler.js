@@ -8,6 +8,7 @@ import { buildRequestDetail, extractRequestConfig, saveUsageStats, formatDoneLin
 import { usageOrEstimate } from "../../utils/usageTracking.js";
 import { ROLE, RESPONSES_ITEM } from "../../translator/schema/index.js";
 import { restoreToolNames } from "../../utils/opencodeFingerprint.js";
+import { upstreamResponseHeaders } from "../../utils/upstreamHeaders.js";
 
 // Responses-API providers (e.g. codex) may emit SSE without content-type + use Responses output shape
 const isResponsesProvider = (p) => PROVIDERS[p]?.format === FORMATS.OPENAI_RESPONSES;
