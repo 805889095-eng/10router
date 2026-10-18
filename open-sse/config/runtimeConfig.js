@@ -61,6 +61,24 @@ export const STREAM_FIRST_CHUNK_TIMEOUT_MS = envMs("STREAM_FIRST_CHUNK_TIMEOUT_M
 // Fetch connect timeout: abort if upstream doesn't return response headers within this duration
 export const FETCH_CONNECT_TIMEOUT_MS = envMs("FETCH_CONNECT_TIMEOUT_MS", 60 * 1000);
 
+// ─── Proxy resilience ──────────────────────────────────────────────────────
+//
+// A single proxy hiccup used to be enough to abandon the proxy and retry the
+// request "direct". That is the wrong trade for any host the local network
+// cannot reach on its own: the direct attempt cannot succeed, so the retry
+// burns a full connect timeout (60s by default) and then fails anyway — while
+// the proxy, one second later, would have answered fine.
+//
+// So: retry the proxy a couple of times with a short backoff before giving up
+// on it, and allow callers to mark a request proxy-only so a proxy outage is
+// reported as such instead of being masked by a doomed direct attempt.
+//
+// Env overrides (all in milliseconds where applicable):
+//   PROXY_RETRY_ATTEMPTS      — extra attempts after the first failure (default 2)
+//   PROXY_RETRY_BASE_DELAY_MS — first backoff step, doubled each retry (default 400)
+export const PROXY_RETRY_ATTEMPTS = envMs("PROXY_RETRY_ATTEMPTS", 2);
+export const PROXY_RETRY_BASE_DELAY_MS = envMs("PROXY_RETRY_BASE_DELAY_MS", 400);
+
 // chat→responses 直连路由里,response.completed 为等真实 usage 尾部 chunk 而
 // 延迟(见 translator/response/openai-responses.js)。上游 stall(无尾部 chunk、
 // 无 [DONE]、连接不断开)时这个等待不能无界:watchdog 超时兜底补发终态事件。

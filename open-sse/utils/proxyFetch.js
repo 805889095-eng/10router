@@ -1,5 +1,5 @@
 import { Readable } from "stream";
-import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
+import { MEMORY_CONFIG, PROXY_RETRY_ATTEMPTS, PROXY_RETRY_BASE_DELAY_MS } from "../config/runtimeConfig.js";
 import { dbg } from "./debugLog.js";
 
 const originalFetch = globalThis.fetch;
@@ -230,6 +230,36 @@ async function getDispatcher(proxyUrl) {
 }
 
 /**
+ * Call `attempt()` and retry it on failure with exponential backoff.
+ *
+ * Used for the proxy leg only. A proxy hiccup ("fetch connect timeout") is
+ * usually transient — the very next second often succeeds — so a couple of
+ * cheap retries is far better than abandoning the proxy for a "direct" attempt
+ * that has no chance of working for a blocked host.
+ *
+ * Returns { ok: true, value } on success, or { ok: false, error } after the
+ * last attempt fails. The caller decides what failure means (fall back to
+ * direct, or hard-fail when the host is proxy-only).
+ */
+async function retryAsync(attempt, { attempts, baseDelayMs, onRetry } = {}) {
+  const total = Math.max(0, Number(attempts) || 0) + 1;
+  let lastError = null;
+  for (let i = 0; i < total; i++) {
+    try {
+      return { ok: true, value: await attempt(i) };
+    } catch (error) {
+      lastError = error;
+      if (i === total - 1) break;
+      const delay = (Number(baseDelayMs) || 0) * Math.pow(2, i);
+      try { onRetry?.({ attempt: i + 1, total, delayMs: delay, error }); } catch { }
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  return { ok: false, error: lastError };
+}
+
+
+/**
  * Create HTTPS request with manual socket connection (bypass DNS)
  */
 async function createBypassRequest(parsedUrl, realIP, options) {
@@ -310,19 +340,32 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   // MITM DNS bypass: for known MITM-intercepted hosts, resolve real IP to avoid DNS spoof
   if (shouldBypassMitmDns(targetUrl)) {
     if (proxyUrl) {
-      // Proxy resolves DNS externally (not affected by /etc/hosts) — use proxy directly
-      try {
-        const dispatcher = await getDispatcher(proxyUrl);
-        return await originalFetch(url, { ...options, dispatcher });
-      } catch (proxyError) {
-        if (proxyOptions?.strictProxy === true) {
-          throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
-        }
-        if (proxyOptions?.onProxyFallback) {
-          try { proxyOptions.onProxyFallback(proxyError); } catch {}
-        }
-        console.warn(`[ProxyFetch] Proxy failed, falling back to direct bypass: ${proxyError.message}`);
+      // Proxy resolves DNS externally (not affected by /etc/hosts) — use proxy directly.
+      // Retry the proxy first: a connect timeout here is usually a blip, and the
+      // direct-bypass fallback below cannot work for a host we cannot resolve.
+      const proxyAttempt = await retryAsync(
+        async () => {
+          const dispatcher = await getDispatcher(proxyUrl);
+          return await originalFetch(url, { ...options, dispatcher });
+        },
+        {
+          attempts: PROXY_RETRY_ATTEMPTS,
+          baseDelayMs: PROXY_RETRY_BASE_DELAY_MS,
+          onRetry: ({ attempt, total, delayMs, error }) => {
+            console.warn(`[ProxyFetch] Proxy attempt ${attempt}/${total} failed (${error?.message || error}); retrying in ${delayMs}ms`);
+          },
+        },
+      );
+      if (proxyAttempt.ok) return proxyAttempt.value;
+
+      const proxyError = proxyAttempt.error;
+      if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
+        throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
       }
+      if (proxyOptions?.onProxyFallback) {
+        try { proxyOptions.onProxyFallback(proxyError); } catch {}
+      }
+      console.warn(`[ProxyFetch] Proxy failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s), falling back to direct bypass: ${proxyError.message}`);
     }
     // No proxy — manually resolve real IP to bypass DNS spoof
     try {
@@ -338,20 +381,39 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   }
 
   if (proxyUrl) {
-    try {
-      const dispatcher = await getDispatcher(proxyUrl);
-      return await originalFetch(url, { ...options, dispatcher });
-    } catch (proxyError) {
-      // If strictProxy is enabled, fail hard instead of falling back to direct
-      if (proxyOptions?.strictProxy === true) {
-        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
-      }
-      if (proxyOptions?.onProxyFallback) {
-        try { proxyOptions.onProxyFallback(proxyError); } catch {}
-      }
-      console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
-      return originalFetch(url, options);
+    // Retry the proxy before giving up on it. A "fetch connect timeout" is
+    // usually a blip — the next second often succeeds — whereas the direct
+    // fallback below cannot work at all for a host the local network cannot
+    // reach. Burning a 60s direct attempt first made every blip look like an
+    // outage.
+    const proxyAttempt = await retryAsync(
+      async () => {
+        const dispatcher = await getDispatcher(proxyUrl);
+        return await originalFetch(url, { ...options, dispatcher });
+      },
+      {
+        attempts: PROXY_RETRY_ATTEMPTS,
+        baseDelayMs: PROXY_RETRY_BASE_DELAY_MS,
+        onRetry: ({ attempt, total, delayMs, error }) => {
+          console.warn(`[ProxyFetch] Proxy attempt ${attempt}/${total} failed (${error?.message || error}); retrying in ${delayMs}ms`);
+        },
+      },
+    );
+    if (proxyAttempt.ok) return proxyAttempt.value;
+
+    const proxyError = proxyAttempt.error;
+    // strictProxy: never replay through a direct connection. directFallback:
+    // false is the softer form — the caller knows the origin is unreachable
+    // without a proxy, so a doomed direct attempt only wastes a connect timeout
+    // and hides the real cause.
+    if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
+      throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
     }
+    if (proxyOptions?.onProxyFallback) {
+      try { proxyOptions.onProxyFallback(proxyError); } catch {}
+    }
+    console.warn(`[ProxyFetch] Proxy failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s), falling back to direct: ${proxyError.message}`);
+    return originalFetch(url, options);
   }
 
   // 严格模式即"绝不走直连 IP"。走到这里说明调用方有代理意图但一个代理

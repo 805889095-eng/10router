@@ -383,12 +383,28 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   });
 
   let proxyFallbackWarning = null;
+  // Providers whose upstream is unreachable without a proxy. Falling back to a
+  // direct connection for these cannot succeed — it only burns a full connect
+  // timeout and reports a generic "gateway timeout" instead of the real cause
+  // (proxy down). Google-fronted providers are the canonical case: with the
+  // proxy up they answer in ~1s, with it down the direct attempt times out and
+  // the retry never had a chance.
+  const PROXY_ONLY_PROVIDERS = new Set(["antigravity"]);
+  const providerNeedsProxy = PROXY_ONLY_PROVIDERS.has(provider);
   const proxyOptions = {
     connectionProxyEnabled: credentials?.providerSpecificData?.connectionProxyEnabled === true,
     connectionProxyUrl: credentials?.providerSpecificData?.connectionProxyUrl || "",
     connectionNoProxy: credentials?.providerSpecificData?.connectionNoProxy || "",
     vercelRelayUrl: credentials?.providerSpecificData?.vercelRelayUrl || "",
     strictProxy: credentials?.providerSpecificData?.strictProxy === true,
+    // An explicit per-connection override wins; otherwise proxy-only providers
+    // default to no direct fallback. Only meaningful when a proxy is actually
+    // configured — a connection with no proxy keeps working as before.
+    directFallback: credentials?.providerSpecificData?.directFallback === true
+      ? true
+      : credentials?.providerSpecificData?.directFallback === false
+        ? false
+        : !providerNeedsProxy,
     onProxyFallback: (err) => {
       proxyFallbackWarning = `Proxy failed (${err?.message || err}); fell back to direct connection`;
       log?.warn?.("PROXY", `${provider.toUpperCase()} | ${model} | ⚠️ ${proxyFallbackWarning}`);
