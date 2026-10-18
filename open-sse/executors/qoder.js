@@ -228,6 +228,22 @@ async function buildQoderRequestBody({ model, body, credentials, log, proxyOptio
   const sessionId = stableHash("qoder-session", psd.userId, qoderKey);
   const recordId = stableChatRecordId(qoderKey, messages, tools, maxTokens);
 
+  // Qoder upstream IGNORES the top-level `system` field — it only honours a
+  // role:"system" entry inside `messages`. Verified against qoder-cn
+  // (2026-10-18): the same instruction sent only through the top-level `system`
+  // slot comes back with the assistant denying any persona ("我是GLM…"), while
+  // putting it in messages[0] applies it verbatim. The official
+  // @qodercn-ai/qoderclicn v1.1.73 carries BOTH (`system: E` at the top level
+  // AND `p.unshift({role:"system", content:E})` into messages), so mirror that
+  // double-carry: keep the top-level field and also prepend the system text to
+  // messages. Without this, everything living in the system prompt (persona,
+  // injected memory, tool-usage instructions) is silently dropped upstream.
+  // NOTE: done AFTER recordId so the session identity stays stable whether or
+  // not a system message was supplied.
+  if (systemText) {
+    messages.unshift({ role: "system", content: systemText });
+  }
+
   return {
     qoderKey,
     payload: {
