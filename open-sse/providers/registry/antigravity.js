@@ -24,6 +24,14 @@ export default {
     headers: {
       "User-Agent": ANTIGRAVITY_IDE_USER_AGENT,
     },
+    // Antigravity fronts Gemini with extended thinking, and the reasoning pass
+    // emits nothing on the wire until it finishes. A large agentic session
+    // (observed: 35 messages, 80 tools, ~55k prompt tokens) can sit silent well
+    // past the 120s global default, at which point the stall watchdog aborted a
+    // request that was still being worked on upstream — the client then saw a
+    // bare "gateway_timeout". 300s matches the first-chunk budget below and
+    // covers the deepest reasoning pass we have measured (117s) with headroom.
+    stallTimeoutMs: 300000,
     retry: {
       "429": {
         attempts: 3,
