@@ -176,14 +176,11 @@ export default {
     { id: "kimi-k2.7", name: "Kimi-K2.7-Code", rateMultiplier: 0.57 },
     { id: "kimi-k2.8-preview", name: "Kimi-K2.8-Preview", rateMultiplier: 0.77, subPriority: true },
     { id: "kimi-k2.6", name: "Kimi-K2.6", rateMultiplier: 0.52 },
-    // Promo: free for the two weeks after the upstream V4.1-Flash launch
-    // (2026-09-10 — DeepSeek's "set your model to deepseek-flash" announcement).
-    // The paid multiplier (0.03, CN credit page; CN and intl share one credit
-    // system) stays written here on purpose: `promoFreeUntil` only drives the
-    // badge, which shows `free` while the window is open and falls back to
-    // 0.03x by itself afterwards — no hand cleanup, and the CN/intl parity
-    // invariant in tests/unit/codebuddy-intl-models.test.js keeps holding.
-    { id: "deepseek-v4.1-flash", name: "DeepSeek-V4.1-Flash", rateMultiplier: 0.11 },
+    // Promo: free through Oct 31 (WorkBuddy Intl official update on 2026-10-17:
+    // "WorkBuddy Intl is updated to the latest too, and it's free through Oct 31").
+    // The standard rateMultiplier is 0.11 (matches CN credit page), but promoFreeUntil
+    // marks it free (0.00x) until Nov 1 UTC, after which it smoothly reverts.
+    { id: "deepseek-v4.1-flash", name: "DeepSeek-V4.1-Flash", rateMultiplier: 0.11, promoFreeUntil: "2026-11-01" },
   ],
   oauth: {
     baseUrl: "https://www.codebuddy.ai",
