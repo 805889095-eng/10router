@@ -2,6 +2,7 @@ import { register } from "../index.js";
 import { FORMATS } from "../formats.js";
 import { DEFAULT_THINKING_AG_SIGNATURE, DEFAULT_THINKING_GEMINI_CLI_SIGNATURE } from "../../config/defaultThinkingSignature.js";
 import { openaiToClaudeRequestForAntigravity } from "./openai-to-claude.js";
+import { getGeminiThoughtSignatureSync } from "../../services/thoughtSignatureStore.js";
 function generateUUID() {
   return crypto.randomUUID();
 }
@@ -32,7 +33,7 @@ function declaredToolNames(tools) {
 }
 
 // Core: Convert OpenAI request to Gemini format (base for all variants)
-function openaiToGeminiBase(model, body, stream, signature = DEFAULT_THINKING_AG_SIGNATURE) {
+function openaiToGeminiBase(model, body, stream, signature = DEFAULT_THINKING_AG_SIGNATURE, sessionId = null) {
   const result = {
     model: model,
     contents: [],
@@ -125,6 +126,13 @@ function openaiToGeminiBase(model, body, stream, signature = DEFAULT_THINKING_AG
 
         if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
           const toolCallPairs = [];
+          // Gemini 3+ requires a thoughtSignature on functionCall parts, and in a
+          // parallel batch only the FIRST call may carry one — sibling calls must
+          // stay unsigned or the upstream answers 400 "Corrupted thought signature."
+          // Prefer the signature the model actually produced for this call id
+          // (captured on the response side); fall back to the default for the
+          // first call only.
+          let firstFunctionCallSeen = false;
           for (const tc of msg.tool_calls) {
             if (tc.type !== OPENAI_BLOCK.FUNCTION) continue;
 
@@ -137,14 +145,20 @@ function openaiToGeminiBase(model, body, stream, signature = DEFAULT_THINKING_AG
               uniqueId = `${rawId}_dup${seenCount}`;
             }
 
-            parts.push({
-              thoughtSignature: signature,
+            // Look up by the ORIGINAL id — the signature was stored against it.
+            const cachedSig = rawId ? getGeminiThoughtSignatureSync(rawId, sessionId, model) : null;
+            const callSig = cachedSig || (!firstFunctionCallSeen ? signature : undefined);
+            firstFunctionCallSeen = true;
+
+            const fcPart = {
               functionCall: {
                 id: uniqueId,
                 name: toolNamer.name(tc.function.name),
                 args: args
               }
-            });
+            };
+            if (callSig) fcPart.thoughtSignature = callSig;
+            parts.push(fcPart);
             toolCallPairs.push({ rawId, uniqueId, name: tc.function.name });
           }
 
@@ -240,8 +254,14 @@ export function openaiToGeminiRequest(model, body, stream) {
 }
 
 // OpenAI -> Gemini CLI (Cloud Code Assist)
-export function openaiToGeminiCLIRequest(model, body, stream) {
-  const gemini = openaiToGeminiBase(model, body, stream, DEFAULT_THINKING_GEMINI_CLI_SIGNATURE);
+export function openaiToGeminiCLIRequest(model, body, stream, credentials = null) {
+  // Resolve the session id up front so tool_call thought-signature lookups use
+  // the same namespace the response side stored them under. Falls back to null
+  // (no session scoping) when there are no credentials yet.
+  const clientSessionId = credentials
+    ? (toNumericSessionId(credentials?._clientSessionId) || deriveSessionId(credentials?.email || credentials?.connectionId))
+    : null;
+  const gemini = openaiToGeminiBase(model, body, stream, DEFAULT_THINKING_GEMINI_CLI_SIGNATURE, clientSessionId);
   // Thinking is normalized centrally by applyThinking (thinkingUnified.js) after translation.
 
   // Clean schema for tools
@@ -436,11 +456,11 @@ export function openaiToAntigravityRequest(model, body, stream, credentials = nu
     return wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials);
   }
 
-  const geminiCLI = openaiToGeminiCLIRequest(model, body, stream);
+  const geminiCLI = openaiToGeminiCLIRequest(model, body, stream, credentials);
   return wrapInCloudCodeEnvelope(model, geminiCLI, credentials, true);
 }
 
 // Register
 register(FORMATS.OPENAI, FORMATS.GEMINI, openaiToGeminiRequest, null);
-register(FORMATS.OPENAI, FORMATS.GEMINI_CLI, (model, body, stream, credentials) => wrapInCloudCodeEnvelope(model, openaiToGeminiCLIRequest(model, body, stream), credentials), null);
+register(FORMATS.OPENAI, FORMATS.GEMINI_CLI, (model, body, stream, credentials) => wrapInCloudCodeEnvelope(model, openaiToGeminiCLIRequest(model, body, stream, credentials), credentials), null);
 register(FORMATS.OPENAI, FORMATS.ANTIGRAVITY, openaiToAntigravityRequest, null);
