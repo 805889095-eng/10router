@@ -104,11 +104,26 @@ export function createDisconnectAwareStream(transformStream, streamController, o
   // 见 cancel():只有在上游 [DONE] 之前被取消才算真断连。
   let sawUpstreamDone = false;
 
-  // TTFT keep-alive: large-context upstreams (codebuddy DeepSeek/GLM on 100K+ token
-  // prompts) can take 20-30s before the first byte. During that silence the client
-  // (gateway/card sidecar) sees an idle connection and times out → ResponseAborted
-  // loop. SSE comment lines (`: keep-alive`) are spec-legal and ignored by every
-  // OpenAI/Claude/Gemini client parser, so emit them while waiting for first byte.
+  // Keep-alive: SSE comment lines (`: keep-alive`) are spec-legal and ignored
+  // by every OpenAI/Claude/Gemini client parser.
+  //
+  // Originally this only covered the TTFT window, because that is where the
+  // classic 20-30s wait happens (large-context prompts before the first byte).
+  // That left the other idle window uncovered: once the first byte lands, the
+  // timer stopped — so a model that thinks for a long stretch *mid-response*
+  // (reasoning models with 80 tools in context, for example) sits silent and
+  // gets cut by whatever sits between us and the client. Observed in
+  // production: a 3-message / 80-tool antigravity request ended with
+  // `TerminateError: terminated`, firstByteSeen=true, wasConnected=true,
+  // sinceStart=117600ms — i.e. the stream was healthy and then simply went
+  // quiet long enough to be reaped.
+  //
+  // So the timer now runs for the whole stream and is only reset by actual
+  // output: any chunk we forward pushes the next tick out by a full interval,
+  // and the timer emits only after a genuinely quiet interval. A stream that
+  // keeps producing chunks therefore emits zero keep-alives, and one that goes
+  // quiet gets a comment line every KEEPALIVE_INTERVAL_MS until it either
+  // resumes or ends.
   const KEEPALIVE_INTERVAL_MS = 5000;
   let firstByteSeen = false;
   let keepAliveTimer = null;
@@ -117,8 +132,9 @@ export function createDisconnectAwareStream(transformStream, streamController, o
     if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
   };
   const startKeepAlive = (controller) => {
+    stopKeepAlive();
     keepAliveTimer = setInterval(() => {
-      if (!streamController.isConnected() || firstByteSeen) { stopKeepAlive(); return; }
+      if (!streamController.isConnected()) { stopKeepAlive(); return; }
       try {
         controller.enqueue(new TextEncoder().encode(": keep-alive\n\n"));
         pendingKeepAlives++;
@@ -146,13 +162,12 @@ export function createDisconnectAwareStream(transformStream, streamController, o
       }
 
       try {
-        // While waiting for the first upstream byte, emit keep-alive comments so
-        // the downstream connection stays active during long TTFT windows.
-        if (!firstByteSeen && !keepAliveTimer) startKeepAlive(controller);
+        // Keep the downstream connection warm for the whole stream, not just
+        // the TTFT window (see the KEEPALIVE comment above).
+        if (!keepAliveTimer) startKeepAlive(controller);
         const { done, value } = await reader.read();
         if (!firstByteSeen && value) {
           firstByteSeen = true;
-          stopKeepAlive();
         }
         // 上游的 [DONE] 从这里路过(是普通 chunk,不是 done 状态),留个记号给 cancel()。
         // 字节级、刻意不做文本解析:分片边界、CRLF/双换行、`data: [DONE]` 前缀
@@ -168,6 +183,9 @@ export function createDisconnectAwareStream(transformStream, streamController, o
           return;
         }
         controller.enqueue(value);
+        // Real output just went out — restart the idle window so keep-alives
+        // only appear after a genuinely quiet interval.
+        startKeepAlive(controller);
       } catch (error) {
         stopKeepAlive();
         const wasConnected = streamController.isConnected();
