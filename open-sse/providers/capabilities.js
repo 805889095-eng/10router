@@ -310,6 +310,11 @@ export const MODEL_CAPABILITIES = {
   // 131072、thinkingCanDisable 语义错位——全是静默掉档，没有任何报错。
   "MiniMax-M3.1-Flash":         { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "MiniMax-M3.1-Flash-Preview": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
+  // 小写 / 命名空间拼写（tokenrouter 的 `minimax/minimax-m3.1-flash` 一类）。
+  // canonical 查表区分大小写，不写这两行会落到 `*minimax-m3*` 家族兜底：
+  // videoInput 丢、maxOutput 从 512000 压到 131072——与 #71 同一类静默掉档。
+  "minimax-m3.1-flash":         { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
+  "minimax-m3.1-flash-preview": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "MiniMax-M3":                 { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 131072 },
   // Fledge Alpha Free（opencode zen 目录；models.dev opencode 条目 2026-10-02）：
   // text+image 进、1M/131072、reasoning/tool_call 均 true——与 space-bunny-free

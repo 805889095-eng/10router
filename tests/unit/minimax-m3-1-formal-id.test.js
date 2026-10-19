@@ -42,3 +42,17 @@ describe("MiniMax M3.1 Flash 正式 id", () => {
     expect(caps.videoInput).toBe(true);
   });
 });
+
+describe("TokenRouter 的 M3.1 拼写", () => {
+  it("种子表同时含裸 id 与命名空间形态", async () => {
+    const tr = (await import("../../open-sse/providers/registry/tokenrouter.js")).default;
+    const ids = tr.models.map((m) => m.id);
+    expect(ids).toContain("MiniMax-M3.1-Flash");
+    expect(ids).toContain("minimax/minimax-m3.1-flash");
+  });
+
+  it("命名空间小写拼写同样不落家族兜底", () => {
+    const caps = getCapabilitiesForModel("tokenrouter", "minimax/minimax-m3.1-flash");
+    expect(caps).toMatchObject({ videoInput: true, maxOutput: 512000, contextWindow: 1000000 });
+  });
+});
