@@ -58,6 +58,7 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v6
+        id: build
         with:
           context: .
           push: true
@@ -75,3 +76,32 @@ jobs:
           sbom: false
           build-args: |
             NODE_IMAGE=node:22-alpine
+
+      # The image lands in GHCR, but pulling it needs a token with `packages:read`.
+      # A box that only has a fine-grained PAT without that scope (or no
+      # credentials at all) cannot pull it — which is exactly the situation on the
+      # Hong Kong VPS. Export the same image to a tar so it can travel as a plain
+      # Release asset and be loaded with `docker load`, no registry auth involved.
+      - name: Export image tarball
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          OUT="10router-image-${VERSION}-amd64.tar.gz"
+          # Buildx leaves the single-platform image in the local store under the
+          # first tag metadata-action produced; load it explicitly by digest.
+          docker pull "${GHCR_IMAGE}:${VERSION}"
+          docker save "${GHCR_IMAGE}:${VERSION}" | gzip -9 > "$OUT"
+          ls -lh "$OUT"
+          sha256sum "$OUT" > "$OUT.sha256"
+          cat "$OUT.sha256"
+
+      - name: Attach image tarball to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            10router-image-*-amd64.tar.gz
+            10router-image-*-amd64.tar.gz.sha256
+          fail_on_unmatched_files: false
+
