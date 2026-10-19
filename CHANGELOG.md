@@ -2,10 +2,27 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.5.5 (2026-10-19)
+
+> 合并上游 v1.5.2 的五项改动，并保留本仓库自有的代理/流式/antigravity 修复。
+
+### 🐛 修复
+
+- **CodeBuddy CN 体积守卫：位置取上游之后、阈值取上游 32MB（两侧最优组合）**：上游把守卫留在 `src/sse/handlers/chat.js`（压缩前测原始 body），只是把阈值从 3.2MB 一路提到 32MB；本仓库此前把守卫挪进 `open-sse/handlers/chatCore.js` 的 `compressMessages()` 之后，测的是真正发出去的 body。两者各有取舍——位置对但阈值低会误伤，阈值高但位置错则压缩收益全丢。本版合并为「**守卫在 RTK 压缩之后执行，阈值 32MB**」：五个各 9MB 的 tool_result（合计 45MB）经 RTK 压到近 0 后正常放行，单个 33MB 无法压缩的 blob 仍被本地拦下。
+  - 另修一处合并遗留：用户可见提示文案里硬编码的「约 3.2MB」改为按 `CBCN_PAYLOAD_LIMITS.maxBytes` 实时计算，避免阈值已放宽而文案仍报旧值。
+  - 补充 `RAW_CAP` 相关单测：RTK 对单个 >10MiB 的 blob 会跳过压缩（`rtk/constants.js` `RAW_CAP`），因此「压缩后再测」并非万能——这类请求仍由阈值兜底。这两条用例锁住该边界，防止后人把阈值重新降到 10MB 以下。
+- **CodeBuddy CN 体积守卫阈值 3.2MB → 32MB**（上游）：原 3.2MB 守卫来自 2026-09-17 的 4.5MB 样本，但同批实测里 60KB 被拒、113KB 通过——体积与 11128 无因果，只是相关（真正判据是请求形态）。现放宽至 32MB：这道守卫只用来在「几乎必然被上游拒绝」的极端量级上提前止损（对 next.config 的 128MB body 上限仍留 4 倍余量，且远高于观测到的最长真实会话 4.5MB）。消息数上限保持 1800。
+- **CodeBuddy 注入 X-Conversation 协议头规避 11128 门禁**（上游）：逆向 WorkBuddy 官方客户端协议头构造逻辑，补齐 `X-Conversation-ID`（基于会话派生 32 位 hex，保持上下文连续性）、`X-Conversation-Request-ID` / `X-Conversation-Message-ID` / `X-Request-ID`（32 位独立随机 hex）、`X-Agent-Intent: craft` 与 `X-Agent-Type: main`，在 CodeBuddy CN 与 CodeBuddy Intl 两条线上统一注入，规避上游 WAF 11128 (unapproved channel) 拦截。
+- **深寻 V4.1-Flash 国际版限免标记**（上游）：标记 `deepseek-v4.1-flash` 国际版限免至 2026-10-31（`promoFreeUntil: '2026-11-01'`），到期后平滑自动恢复计费。
+
 ## v1.5.1 (2026-10-18)
 
 ### ✨ 新增
 
+- **WorkBuddy / CodeBuddy 国际版 DeepSeek-V4.1-Flash 限免与 `X-Conversation` 协议头全通**:
+  1. **协议头完整注入**:逆向 WorkBuddy 官方客户端（`codebuddy-headless.js`）的请求头构造逻辑，在 `codebuddy-cn` 与 `codebuddy-intl` 两条线的 `buildHeaders` 中统一注入 `X-Conversation-ID`（由下游会话身份派生 MD5 32 位 hex，保持同一会话内稳定以维持上下文连续性）、`X-Conversation-Request-ID` / `X-Conversation-Message-ID` / `X-Request-ID`（每轮独立 32 位随机 hex）、`X-Agent-Intent: "craft"` 与 `X-Agent-Type: "main"`。上游 WAF 的 `11128 Illegal API invocation from an unapproved channel` 门禁按这套标识判定渠道合法性，补齐后实测不再触发；
+  2. **国际版限免标记**:`codebuddy-intl` 的 `deepseek-v4.1-flash` 增加 `promoFreeUntil: "2026-11-01"`（UTC 11-01 零点 = 北京时间 10-31 08:00 起恢复计费），限免窗口内仪表盘显示绿色 `free` 角标；`rateMultiplier` 仍保留 0.11，窗口一过自动回落，无需人工改表，也维持了 CN/intl 同一积分倍率的奇偶校验不变量；
+  3. **实测**:经 NAS 网关调用 `cbai/deepseek-v4.1-flash` 上游返回 200 且响应体 `"credit": 0`，确认限免真实生效；`deepseek-v4.1-flash-1017` 这类带日期后缀的变体实测回 11102（`model service info not found`），因此不登记，官方网关的服务端模型名就叫 `deepseek-v4.1-flash`，V4.1-Flash-1017 是底层权重版本而非新的 id。
 - **CodeBuddy CN 额外补偿与首月赠礼自动/手动领取（Issue #67）**:
   1. 支持全天定时任务自动检查并领取 CodeBuddy CN 临时活动补偿（如 DeepSeek 服务异常补偿 500 点数）与首月赠送礼包，受实验性功能开关 `codeBuddyCompensation` 管控；
   2. 具备 fail-open 容错语义，遇到 401 自动触发 Token 刷新并重发，失败不阻断核心路由；

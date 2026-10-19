@@ -1,4 +1,6 @@
+import crypto from "crypto";
 import { DefaultExecutor } from "./default.js";
+import { resolveSessionId } from "../utils/sessionManager.js";
 
 /**
  * CodeBuddyExecutor — talks to https://copilot.tencent.com/v2/chat/completions
@@ -12,6 +14,43 @@ import { DefaultExecutor } from "./default.js";
 export class CodeBuddyExecutor extends DefaultExecutor {
   constructor() {
     super("codebuddy-cn");
+  }
+
+  buildHeaders(credentials, stream = true, url, model, transformedBody) {
+    const headers = super.buildHeaders(credentials, stream, url, model, transformedBody);
+
+    // X-Conversation headers: CodeBuddy / WorkBuddy WAF requires session/conversation
+    // identity headers (X-Conversation-ID, X-Conversation-Request-ID, X-Conversation-Message-ID).
+    // Deriving a stable conversationId from downstream session keeps conversation continuity
+    // while satisfying upstream channel/WAF checks (prevents 11128 unapproved channel errors).
+    try {
+      const sessionId = resolveSessionId({
+        headers: credentials?.rawHeaders,
+        body: transformedBody,
+        connectionId: credentials?.connectionId,
+        scope: "codebuddy-cn"
+      });
+      // Conversation ID: 32-char hex derived from session identity
+      const convId = crypto.createHash("md5").update(sessionId || "codebuddy-cn-default").digest("hex");
+      // Turn / Request ID: unique 32-char hex per request turn
+      const reqHex = crypto.randomBytes(16).toString("hex");
+
+      headers["X-Conversation-ID"] = convId;
+      headers["X-Conversation-Request-ID"] = reqHex;
+      headers["X-Conversation-Message-ID"] = reqHex;
+      headers["X-Request-ID"] = reqHex;
+      headers["X-Agent-Intent"] = "craft";
+      headers["X-Agent-Type"] = "main";
+    } catch {
+      // Fallback: safe random hex IDs if session resolution fails
+      const fallbackId = crypto.randomBytes(16).toString("hex");
+      headers["X-Conversation-ID"] = fallbackId;
+      headers["X-Conversation-Request-ID"] = fallbackId;
+      headers["X-Conversation-Message-ID"] = fallbackId;
+      headers["X-Request-ID"] = fallbackId;
+    }
+
+    return headers;
   }
 
   transformRequest(model, body, stream, credentials) {
@@ -168,9 +207,19 @@ export function parseCodeBuddyFrequencyLimit(bodyText) {
  * 若上游对「工具多但体积小」的请求仍然 11128，由下方渠道熔断按设计处理。
  */
 export const CBCN_PAYLOAD_LIMITS = {
-  maxBytes: 3.2 * 1024 * 1024, // 3.2MB threshold (4.5MB is known to trigger)
+  // 3.2MB -> 32MB（2026-10-18）：原阈值来自 09-17 的 4.5MB 样本，但同批实测里
+  // 60KB 被拒、113KB 通过——体积与 11128 并无因果，只是相关（真正判据是请求形态）。
+  // 3.2MB 的保守守卫因此长期误伤真实长会话（4.5MB 的 1676 条会话本可放行）。
+  //
+  // 为什么是 32MB 而不是 16MB：这道守卫的唯一作用，是在「几乎必然被上游拒绝」的
+  // 极端量级上提前止损（少烧一次渠道熔断 strike），与 11128 的判定毫无关系。
+  // 既然它拦不出正确性，就应当把阈值放到「连真实长会话都碰不到」的高度，
+  // 而不是卡在一个用户真能触达的中间值上——低阈值只会把上游本可正常处理的请求
+  // 在本地打死。32MB 对 next.config 的 proxyClientMaxBodySize（128MB）仍留 4 倍
+  // 余量，同时远高于本项目观测到的最长真实会话（4.5MB）。
+  maxBytes: 32 * 1024 * 1024,
   // 1200 -> 1500 -> 1800: 真实长会话在带丰富工具调用上下文时很容易达到 1500+，
-  // 将上限放宽至 1800，避免在会话正常运行（如 1502 条）且体积未触及 3.2MB 时被过早误拦截。
+  // 将上限放宽至 1800，避免在会话正常运行（如 1502 条）且体积未触及守卫线时被过早误拦截。
   maxMessages: 1800,
 };
 
@@ -216,11 +265,12 @@ export function describeCbcnOversize(body) {
  * "压过了还是超" —— 否则无法判断该不该去清会话。
  */
 export function describeCbcnOversizeHint(provider, model, stats, savedNote = "") {
+  const limitMb = (CBCN_PAYLOAD_LIMITS.maxBytes / 1024 / 1024).toFixed(0);
   return (
     `[${provider}/${model}] 请求体积已达极端量级（${stats}）${savedNote}，超过 10Router 本地极值守卫。` +
     `\n\n` +
     `说明：这是**本机拦截**，请求没有发到上游，账号与渠道都没问题，不需要等风控窗口。` +
-    `守卫只拦极端体量（约 3.2MB / 1800 条消息的会话），目的是避免一次必挂的请求把整个渠道熔断 60 秒。` +
+    `守卫只拦极端体量（约 ${limitMb}MB / ${CBCN_PAYLOAD_LIMITS.maxMessages} 条消息的会话），目的是避免一次必挂的请求把整个渠道熔断 60 秒。` +
     `\n\n` +
     `出路：\n` +
     `1. 输入 /compact 压缩会话后重试（最小代价，保留上下文）；\n` +

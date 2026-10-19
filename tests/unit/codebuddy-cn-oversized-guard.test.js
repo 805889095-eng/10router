@@ -27,10 +27,20 @@ describe("CodeBuddy CN oversized payload pre-check", () => {
   });
 
   it("detects payload exceeding byte size threshold", () => {
-    const bigContent = "a".repeat(3.5 * 1024 * 1024);
+    // 守卫线 32MB（2026-10-18 由 3.2MB 放宽：体积与 11128 无因果，低阈值只会误伤真实会话）
+    const bigContent = "a".repeat(33 * 1024 * 1024);
     const oversized = { messages: [{ role: "user", content: bigContent }] };
     expect(isOversizedForCbcn(oversized)).toBe(true);
-    expect(describeCbcnOversize(oversized)).toContain("MB >");
+    expect(describeCbcnOversize(oversized)).toContain("33.00MB > 32.0MB");
+  });
+
+  it("lets real long sessions through (4.5MB and 20MB are both under the guard)", () => {
+    // 09-17 的 11128 样本体积正好是 4.5MB；20MB 则是比任何观测到的真实会话都大的
+    // 压力值——两者都必须放行，交给上游判定。
+    for (const mb of [4.5, 20]) {
+      const body = { messages: [{ role: "user", content: "a".repeat(mb * 1024 * 1024) }] };
+      expect(isOversizedForCbcn(body)).toBe(false);
+    }
   });
 
   it("handles null or non-object body safely", () => {
@@ -43,28 +53,60 @@ describe("CodeBuddy CN oversized payload pre-check", () => {
   // so the body it sees is the compressed one. These two cases pin down the
   // behaviour that made the move worthwhile: a tool_result-heavy body that is
   // over the limit as-sent, but under it once RTK has trimmed the tool output.
-  it("a tool_result-heavy body can drop below the limit after RTK compression", () => {
-    // RTK only shrinks content that autoDetectFilter recognises (git-diff,
-    // build output, grep listings, long line-oriented logs via smart-truncate).
-    // A wall of "aaaa…" matches no filter and is passed through untouched — so
-    // build a realistic repetitive build-log blob instead.
-    const line = "[INFO] compiling module alpha/beta/gamma ... ok (12ms)\n";
-    const big = line.repeat(Math.ceil((3.5 * 1024 * 1024) / line.length));
-    const body = {
-      messages: [
-        { role: "user", content: "run the build" },
-        { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "f", arguments: "{}" } }] },
-        { role: "tool", tool_call_id: "c1", content: big },
-      ],
-    };
-    // As sent it is oversized ...
+  it("a multi-tool_result body shrinks below the 32MB guard after RTK compression", () => {
+    // This is the case the guard move actually buys us, and the reason a plain
+    // threshold bump is not enough.
+    //
+    // RAW_CAP (open-sse/rtk/constants.js) is 10MiB: any SINGLE text blob over
+    // 10MB is skipped by compressText and left byte-for-byte intact. So one
+    // 33MB tool_result is never compressed, and "compress then measure" ==
+    // "measure as sent" for it — the threshold alone decides.
+    //
+    // But compression is PER BLOB. Several 9MB tool_results each sit under the
+    // cap, each gets crushed, and the TOTAL drops far below the limit. That body
+    // is over 32MB as sent (a threshold-only guard kills it) yet tiny once
+    // compressed (the moved guard lets it through).
+    //
+    // Real-world shape: an agentic session that ran five big log/grep commands.
+    const line = "[WARN] retrying fetch after transient network error, attempt in progress";
+    const chunk = Array(Math.floor((9 * 1024 * 1024) / (line.length + 1))).fill(line).join("\n");
+    const messages = [{ role: "user", content: "go" }];
+    for (let i = 0; i < 5; i++) {
+      messages.push({ role: "assistant", content: null, tool_calls: [{ id: `c${i}`, type: "function", function: { name: "f", arguments: "{}" } }] });
+      messages.push({ role: "tool", tool_call_id: `c${i}`, content: chunk });
+    }
+    const body = { messages };
+
+    // Over the 32MB guard line as sent — a threshold-only check rejects here.
     expect(isOversizedForCbcn(body)).toBe(true);
-    // ... and compression is what decides whether the request survives. This is
-    // the whole reason the guard moved after compressMessages().
+
+    // RTK crushes each 9MB blob, so what actually leaves the process fits.
     const stats = compressMessages(body, true);
     expect(stats).not.toBeNull();
-    expect(stats.bytesBefore).toBeGreaterThan(3.2 * 1024 * 1024);
     expect(stats.bytesAfter).toBeLessThan(stats.bytesBefore);
+    expect(isOversizedForCbcn(body)).toBe(false);
+  });
+
+  it("does NOT compress a single oversized blob, so the guard still fires (RAW_CAP)", () => {
+    // Guard against over-trusting compression: RAW_CAP makes a single >10MB
+    // blob uncompressed. Pinned so nobody later assumes "RTK always saves us"
+    // and drops the threshold back to a value below RAW_CAP.
+    const line = "[WARN] retrying fetch after transient network error, attempt in progress";
+    const chunk = Array(Math.floor((33 * 1024 * 1024) / (line.length + 1))).fill(line).join("\n");
+    const body = { messages: [{ role: "user", content: "go" }, { role: "tool", tool_call_id: "c1", content: chunk }] };
+
+    const stats = compressMessages(body, true);
+    expect(stats.bytesAfter).toBe(stats.bytesBefore); // skipped by RAW_CAP
+    expect(isOversizedForCbcn(body)).toBe(true);       // so the guard is what saves us
+  });
+
+  it("the rejection hint states the actual guard line, not a stale 3.2MB", () => {
+    // The hint is user-facing copy. When the threshold moved 3.2MB -> 32MB the
+    // literal was left behind, telling users a 32MB guard was a 3.2MB one.
+    const oversized = { messages: [{ role: "user", content: "a".repeat(33 * 1024 * 1024) }] };
+    const hint = describeCbcnOversizeHint("codebuddy-cn", "m", describeCbcnOversize(oversized), "");
+    expect(hint).toContain("32MB");
+    expect(hint).not.toContain("3.2MB");
   });
 
   it("the rejection hint says it was blocked LOCALLY and reports the RTK delta", () => {
@@ -100,7 +142,7 @@ describe("Error body shape compatibility", () => {
   });
 
   it("triggers fallback without cooldown on oversized rejection (Issue #65)", () => {
-    const errText = "[codebuddy-cn/kimi-k3] 请求体积已达极端量级（3.5MB > 3.2MB），已在本地拦截，避免触发上游渠道级风控。";
+    const errText = "[codebuddy-cn/kimi-k3] 请求体积已达极端量级（33.0MB > 32.0MB），已在本地拦截，避免触发上游渠道级风控。";
     const { shouldFallback, cooldownMs } = checkFallbackError(400, errText, 0, "codebuddy-cn");
     expect(shouldFallback).toBe(true);
     expect(cooldownMs).toBe(0);
