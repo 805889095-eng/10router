@@ -2,6 +2,12 @@
 
 这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.5.6 (2026-10-19)
+
+### 🔧 构建 / CI
+
+- **镜像 tar 包随 Release 发布**：GHCR 拉取需要带 `packages:read` 的凭据，没有该权限的机器会拿到 `unauthorized`。现在 v\* 版本额外提供 `10router-image-<版本>-amd64.tar.gz`，用普通 HTTPS 下载后 `docker load` 即可导入，无需 registry 登录。
+
 ## v1.5.5 (2026-10-19)
 
 ### 🐛 修复

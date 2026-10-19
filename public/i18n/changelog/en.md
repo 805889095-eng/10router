@@ -2,6 +2,12 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.5.6 (2026-10-19)
+
+### 🔧 Build / CI
+
+- **Image tarball shipped with the Release**: pulling from GHCR needs a token with `packages:read`, so machines without that scope get `unauthorized`. Each v\* release now also ships `10router-image-<ver>-amd64.tar.gz`, downloadable over plain HTTPS and loadable with `docker load` — no registry login required.
+
 ## v1.5.5 (2026-10-19)
 
 ### 🐛 Fixes

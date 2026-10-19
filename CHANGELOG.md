@@ -2,6 +2,14 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.5.6 (2026-10-19)
+
+> CI 与发布面改进，无运行时行为变更。
+
+### 🔧 构建 / CI
+
+- **v\* tag 额外导出镜像 tar 包到 Release**：GHCR 镜像拉取需要带 `packages:read` 的凭据，而只有 fine-grained PAT（无该 scope）或完全无凭据的机器会拿到 `unauthorized` —— 香港 VPS 正是这种情况。镜像本身没问题，卡的只是传输方式。现在打 v\* tag 时，除推 GHCR 外还会 `docker save` 出一份 `10router-image-<ver>-amd64.tar.gz`（含 `.sha256`）挂到 GitHub Release，任何机器都能用普通 HTTPS 取回并 `docker load` 导入，无需任何 registry 认证。
+
 ## v1.5.5 (2026-10-19)
 
 > 合并上游 v1.5.2 的五项改动，并保留本仓库自有的代理/流式/antigravity 修复。
