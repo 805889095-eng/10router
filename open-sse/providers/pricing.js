@@ -174,6 +174,11 @@ export const MODEL_PRICING = {
   "glm-5":                        { input: 1.00,  output: 4.00,  cached: 0.50,  reasoning: 6.00,   cache_creation: 1.00  },
 
   // === MiniMax ===
+  // M3.1-Flash（2026-10 正式版）：models.dev 的 minimax / minimax-cn 条目一致报
+  // $0.15 / $0.6、cache_read $0.015（USD/1M tok），比 M3 的 0.30/1.20 便宜一半。
+  // 大小写与命名空间两种拼写都列，否则用量成本会落到 `minimax-*` 通配价（0.50/2.00）。
+  "MiniMax-M3.1-Flash":           { input: 0.15,  output: 0.60,  cached: 0.015, reasoning: 0.90,   cache_creation: 0.15  },
+  "minimax-m3.1-flash":           { input: 0.15,  output: 0.60,  cached: 0.015, reasoning: 0.90,   cache_creation: 0.15  },
   "MiniMax-M3":                   { input: 0.30,  output: 1.20,  cached: 0.06,  reasoning: 1.80,   cache_creation: 0.30  },
   "MiniMax-M2.1":                 { input: 0.50,  output: 2.00,  cached: 0.25,  reasoning: 3.00,   cache_creation: 0.50  },
   "MiniMax-M2.5":                 { input: 0.50,  output: 2.00,  cached: 0.25,  reasoning: 3.00,   cache_creation: 0.50  },
