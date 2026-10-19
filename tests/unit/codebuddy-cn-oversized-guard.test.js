@@ -26,19 +26,20 @@ describe("CodeBuddy CN oversized payload pre-check", () => {
   });
 
   it("detects payload exceeding byte size threshold", () => {
-    // 守卫线 16MB（2026-10-18 由 3.2MB 放宽：体积与 11128 无因果，旧值长期误伤 3-16MB 的真实长会话）
-    const bigContent = "a".repeat(17 * 1024 * 1024);
+    // 守卫线 32MB（2026-10-18 由 3.2MB 放宽：体积与 11128 无因果，低阈值只会误伤真实会话）
+    const bigContent = "a".repeat(33 * 1024 * 1024);
     const oversized = { messages: [{ role: "user", content: bigContent }] };
     expect(isOversizedForCbcn(oversized)).toBe(true);
-    expect(describeCbcnOversize(oversized)).toContain("MB >");
+    expect(describeCbcnOversize(oversized)).toContain("33.00MB > 32.0MB");
   });
 
-  it("lets a 4.5MB real long session through (no longer rejected at 3.2MB)", () => {
-    // 09-17 的 11128 样本体积正好是 4.5MB；放宽后这类会话交给上游判定，
-    // 不再在本地被 3.2MB 守卫拦下。
-    const bigContent = "a".repeat(4.5 * 1024 * 1024);
-    const body = { messages: [{ role: "user", content: bigContent }] };
-    expect(isOversizedForCbcn(body)).toBe(false);
+  it("lets real long sessions through (4.5MB and 20MB are both under the guard)", () => {
+    // 09-17 的 11128 样本体积正好是 4.5MB；20MB 则是比任何观测到的真实会话都大的
+    // 压力值——两者都必须放行，交给上游判定。
+    for (const mb of [4.5, 20]) {
+      const body = { messages: [{ role: "user", content: "a".repeat(mb * 1024 * 1024) }] };
+      expect(isOversizedForCbcn(body)).toBe(false);
+    }
   });
 
   it("handles null or non-object body safely", () => {
@@ -64,7 +65,7 @@ describe("Error body shape compatibility", () => {
   });
 
   it("triggers fallback without cooldown on oversized rejection (Issue #65)", () => {
-    const errText = "[codebuddy-cn/kimi-k3] 请求体积已达极端量级（17.0MB > 16.0MB），已在本地拦截，避免触发上游渠道级风控。";
+    const errText = "[codebuddy-cn/kimi-k3] 请求体积已达极端量级（33.0MB > 32.0MB），已在本地拦截，避免触发上游渠道级风控。";
     const { shouldFallback, cooldownMs } = checkFallbackError(400, errText, 0, "codebuddy-cn");
     expect(shouldFallback).toBe(true);
     expect(cooldownMs).toBe(0);
