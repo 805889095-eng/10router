@@ -305,6 +305,10 @@ export const MODEL_CAPABILITIES = {
   //     显式成行修正 *minimax-m3* pattern 的 canDisable:false（该行写于 M3 无
   //     开关的旧认知）；上下文 512K/1M 两档是 MiniMax 侧的用量分档（1M 用量
   //     较高），能力表按上限声明。
+  // 正式 id 与 -Preview 各占一行、数值一致（issue #71）：不写正式行会落到
+  // `*minimax-m3*` 家族兜底，videoInput 丢失（视频块被剥）、maxOutput 压到
+  // 131072、thinkingCanDisable 语义错位——全是静默掉档，没有任何报错。
+  "MiniMax-M3.1-Flash":         { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "MiniMax-M3.1-Flash-Preview": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "MiniMax-M3":                 { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 131072 },
   // Fledge Alpha Free（opencode zen 目录；models.dev opencode 条目 2026-10-02）：
