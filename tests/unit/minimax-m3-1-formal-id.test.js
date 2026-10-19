@@ -44,11 +44,15 @@ describe("MiniMax M3.1 Flash 正式 id", () => {
 });
 
 describe("TokenRouter 的 M3.1 拼写", () => {
-  it("种子表同时含裸 id 与命名空间形态", async () => {
+  it("种子表含命名空间形态与 :free 变体，且没有上游不存在的裸 id", async () => {
+    // 2026-10-19 用账号 Key 拉 TokenRouter /v1/models（163 条）核对：
+    // 只有 `minimax/minimax-m3.1-flash` 与 `minimax/minimax-m3.1-flash:free`，
+    // 裸 `MiniMax-M3.1-Flash` 并不存在——登记它会给出一个永远 404 的选项。
     const tr = (await import("../../open-sse/providers/registry/tokenrouter.js")).default;
     const ids = tr.models.map((m) => m.id);
-    expect(ids).toContain("MiniMax-M3.1-Flash");
     expect(ids).toContain("minimax/minimax-m3.1-flash");
+    expect(ids).toContain("minimax/minimax-m3.1-flash:free");
+    expect(ids).not.toContain("MiniMax-M3.1-Flash");
   });
 
   it("命名空间小写拼写同样不落家族兜底", () => {

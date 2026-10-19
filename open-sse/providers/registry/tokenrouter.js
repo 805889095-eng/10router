@@ -35,11 +35,6 @@ export default {
   // fetched via modelsFetcher; other ids still accepted via passthroughModels.
   models: [
     { id: "MiniMax-Hailuo-2.3", name: "Minimax Hailuo 2.3", kind: "video" },
-    // M3.1 Flash 正式 id（2026-10，上游限免活动中）。TokenRouter 的 /v1/models
-    // 需要鉴权（匿名请求 401），种子表按官方命名登记；真实是否在售由
-    // modelsFetcher 的在线目录决定，抓到就覆盖、没抓到这条也能直接用
-    // （passthroughModels 放行任意 id）。
-    { id: "MiniMax-M3.1-Flash", name: "Minimax M3.1 Flash" },
     { id: "MiniMax-M3", name: "Minimax M3" },
     { id: "anthropic/claude-fable-5", name: "Claude Fable 5" },
     { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5" },
@@ -88,9 +83,11 @@ export default {
     { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
     { id: "minimax/minimax-m2.7", name: "Minimax M2.7" },
     { id: "minimax/minimax-m2.7-highspeed", name: "Minimax M2.7 Highspeed" },
-    // 命名空间形态（上游 reseller 目录惯例）：与上面的裸 id 是同一个模型的两
-    // 种拼写，能力表另有 `*minimax-m3.1*` canonical 行兜住 1M/512000/video。
+    // M3.1-Flash：TokenRouter 用命名空间形态，且**没有**裸 id
+    // （2026-10-19 用账号 Key 拉 /v1/models 核对，163 条目录里的确切拼写）。
+    // 目录另有 `:free` 变体——它是独立 id，不是同一模型的后缀别名。
     { id: "minimax/minimax-m3.1-flash", name: "Minimax M3.1 Flash" },
+    { id: "minimax/minimax-m3.1-flash:free", name: "Minimax M3.1 Flash (Free)" },
     { id: "miromind/mirothinker-1-7-deepresearch", name: "Mirothinker 1 7 Deepresearch" },
     { id: "miromind/mirothinker-1-7-deepresearch-mini", name: "Mirothinker 1 7 Deepresearch Mini" },
     { id: "mistralai/devstral-2512", name: "Devstral 2512" },

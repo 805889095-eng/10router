@@ -315,6 +315,9 @@ export const MODEL_CAPABILITIES = {
   // videoInput 丢、maxOutput 从 512000 压到 131072——与 #71 同一类静默掉档。
   "minimax-m3.1-flash":         { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "minimax-m3.1-flash-preview": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
+  // tokenrouter 的 `:free` 变体是独立 id（不是别名）：不单独成行会落到
+  // `*minimax-m3*` 兜底，videoInput 丢、maxOutput 压到 131072——踩的正是 #71 那个坑。
+  "minimax-m3.1-flash:free":    { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "MiniMax-M3":                 { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 131072 },
   // Fledge Alpha Free（opencode zen 目录；models.dev opencode 条目 2026-10-02）：
   // text+image 进、1M/131072、reasoning/tool_call 均 true——与 space-bunny-free

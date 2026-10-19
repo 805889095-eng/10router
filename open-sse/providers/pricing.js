@@ -303,6 +303,12 @@ export const PROVIDER_PRICING = {
     "minimax/minimax-m2.5": { input: 0.3, output: 1.2, cached: 0.03, reasoning: 1.2 },
     "minimax/minimax-m2.7": { input: 0.3, output: 1.2, cached: 0.06, reasoning: 1.2 },
     "minimax/minimax-m2.7-highspeed": { input: 0.6, output: 2.4, cached: 0.06, reasoning: 2.4 },
+    // M3.1-Flash（2026-10-19 控制台价目卡实读）：$0.15 / $0.60 / cache_read $0.015，
+    // 与第一方 minimax 同价。`:free` 变体在目录里是独立 id，但上游按账号额度
+    // 计费（实测余额为 0 时同样 403 insufficient_user_quota），因此按同价记录
+    // 而不是 $0 —— 免费是有条件的，不能按永久免费写死。
+    "minimax/minimax-m3.1-flash": { input: 0.15, output: 0.6, cached: 0.015, reasoning: 0.6 },
+    "minimax/minimax-m3.1-flash:free": { input: 0.15, output: 0.6, cached: 0.015, reasoning: 0.6 },
     "miromind/mirothinker-1-7-deepresearch": { input: 4, output: 25.0, reasoning: 25.0 },
     "miromind/mirothinker-1-7-deepresearch-mini": { input: 1.25, output: 10.0, reasoning: 10.0 },
     "mistralai/devstral-2512": { input: 0.4, output: 2.0, cached: 0.04, reasoning: 2.0 },
