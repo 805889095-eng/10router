@@ -82,6 +82,10 @@ export const MODEL_CAPABILITIES = {
   "claude-opus-5-agentic": {pdf: true,  vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 },
   // opus-5.5 (upstream 2026-09-23): family envelope carried over from opus-5 —
   // the *claude*opus* pattern would under-declare it as 200K/claude-budget.
+  // Opus 5.5 rejects thinking.type "disabled" and forced tool_choice (any/tool) with 400.
+  // Sonnet 5.5 turns thinking off with between_tools and caps effort at high.
+  // Upstream declares these quirks on the shared rows (v0.5.104:97-101) — every
+  // channel serving these ids inherits the same upstream restrictions.
   "claude-opus-5-5":   { pdf: true, vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
   "claude-opus-5-5-thinking": { pdf: true, vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
   "claude-opus-5-5-high": { pdf: true, vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
@@ -438,6 +442,22 @@ export const PROVIDER_CAPABILITIES = {
   // cannot identify its thinking support. Keep this provider-specific entry
   // aligned with the Antigravity/CLIProxyAPI model catalog.
   "antigravity": {
+    // Antigravity 上的 Claude 5.5：Opus 5.5 拒 thinking disabled 与强制
+    // tool_choice；Sonnet 5.5 关 thinking 用 between_tools 且 effort 上限 high。
+    // quirks 限定在本 provider——共享行保持中性，别的渠道不受影响。
+    "claude-opus-5-5":         { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
+    "claude-opus-5-5-high":    { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
+    "claude-opus-5-5-medium":  { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
+    "claude-opus-5-5-low":     { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingCanDisable: false, forcedToolChoice: false },
+    "claude-sonnet-5-5":       { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingOffType: "between_tools", forcedToolChoice: false },
+    "claude-sonnet-5-5-high":  { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingOffType: "between_tools", forcedToolChoice: false },
+    "claude-sonnet-5-5-medium": { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingOffType: "between_tools", forcedToolChoice: false },
+    "claude-sonnet-5-5-low":   { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000, thinkingOffType: "between_tools", forcedToolChoice: false },
+    // Gemini 4 Argon: 1M output（上游实测），且不带 3 系的多模态输入尾部。
+    // 覆盖 *gemini-4* pattern 的 64K/多模态判定。
+    "gemini-4-argon-high":     { vision: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 },
+    "gemini-4-argon-medium":   { vision: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 },
+    "gemini-4-argon-low":      { vision: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 },
     "gemini-pro-agent": {
       vision: true,
       audioInput: true,
@@ -806,7 +826,9 @@ export const PATTERN_CAPABILITIES = [
   // Artificial Analysis; output limit also 1M, up from the 64K the rest of the
   // line carries, per the Gemini 4 announcement.
   // Gemini 4 (Argon): no "minimal" tier (400) and no thinkingBudget — LOW/MEDIUM/HIGH only, cannot disable.
-  { pattern: "*gemini-4*",      caps: { vision: true, audioInput: true, videoInput: true, pdf: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 65536 } },
+  // Argon spec (early port, e578dcd0 lineage): 1M output, no audio/video tail —
+  // differs from the 3.x line shape (64K + A/V), so this row is deliberately narrower.
+  { pattern: "*gemini-4*",      caps: { vision: true, pdf: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 } },
   // pdf:true 按第一方数据补声明（models.dev google/google-vertex：Gemini 2.5 与 3.x
   // Flash/Pro 全系 input 含 pdf）。透传层本就放行（未声明 ≠ false，modality 只剥显式
   // false），这里补的是能力徽章的准确性——antigravity/gemini 的模型卡此前不显示 PDF。

@@ -14,7 +14,10 @@ describe("Gemini 4 Argon capabilities", () => {
     expect(caps.thinkingFormat).toBe("gemini-level");
     expect(caps.thinkingCanDisable).toBe(false);
     expect(caps.contextWindow).toBe(1048576);
-    expect(caps.maxOutput).toBe(65536);
+    // 本仓锁定的 Argon 规格：1M output（早期移植 e578dcd0 的判定），无 3 系 A/V 尾部。
+    expect(caps.maxOutput).toBe(1048576);
+    expect(caps.audioInput).toBe(false);
+    expect(caps.videoInput).toBe(false);
     expect(getThinkingLevels(provider, model)).toEqual(["low", "medium", "high"]);
   });
 });
