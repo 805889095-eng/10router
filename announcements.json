@@ -1,6 +1,6 @@
 {
   "_format": {
-    "level": "promo(绿框,免费模型活动) | info(默认) | warning(行为变更) | critical(紧急)",
+    "level": "feature(蓝框,新功能) | promo(绿框,免费模型活动) | info(默认) | warning(行为变更) | critical(紧急)",
     "title/body": "中文主字段，所有界面默认显示",
     "titleEn/bodyEn": "可选英文；英文界面优先显示，缺省回退主字段",
     "date": "YYYY-MM-DD，超过 90 天自动隐藏",
@@ -48,7 +48,7 @@
     {
       "id": "2026-10-20-inception",
       "date": "2026-10-20",
-      "level": "info",
+      "level": "feature",
       "title": "新增 Inception Labs（Mercury 扩散模型）",
       "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens（额度经 CreditDaddy 通用卡推送）。",
       "titleEn": "New provider: Inception Labs (Mercury diffusion models)",
@@ -57,7 +57,7 @@
     {
       "id": "2026-10-20-combo-router",
       "date": "2026-10-20",
-      "level": "info",
+      "level": "feature",
       "title": "组合新增 router 策略",
       "body": "System One 决策模型前置路由，失败/超时自动退回原顺序；决策模型在组合卡上单独选择。",
       "titleEn": "Combo router strategy",
@@ -66,7 +66,7 @@
     {
       "id": "2026-10-20-trae-cn",
       "date": "2026-10-20",
-      "level": "info",
+      "level": "feature",
       "title": "Trae 国内站 (trae.cn) OAuth 登录",
       "body": "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。",
       "titleEn": "Trae CN (trae.cn) OAuth login",
@@ -75,7 +75,7 @@
     {
       "id": "2026-10-20-endpoint-picker",
       "date": "2026-10-20",
-      "level": "info",
+      "level": "feature",
       "title": "端点模型白名单改勾选式",
       "body": "端点「允许调用的模型与组合」由手敲 id 改为勾选式选择器。",
       "titleEn": "Endpoint model allowlist is now checkbox-based",

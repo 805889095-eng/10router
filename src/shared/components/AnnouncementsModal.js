@@ -60,7 +60,7 @@ function normalizeFeed(raw) {
       body: typeof it.body === "string" ? it.body : "",
       bodyEn: typeof it.bodyEn === "string" ? it.bodyEn : "",
       date: typeof it.date === "string" ? it.date : "",
-      level: ["promo", "info", "warning", "critical"].includes(it.level) ? it.level : "info",
+      level: ["feature", "promo", "info", "warning", "critical"].includes(it.level) ? it.level : "info",
       link: typeof it.link === "string" && /^https?:\/\//.test(it.link) ? it.link : "",
     }))
     .filter((it) => {
@@ -70,7 +70,7 @@ function normalizeFeed(raw) {
     // Display order is deterministic regardless of file order: colored levels
     // first (critical > warning > promo), info last; newest date within a group.
     .sort((a, b) => {
-      const rank = { critical: 0, warning: 1, promo: 2, info: 3 };
+      const rank = { critical: 0, warning: 1, promo: 2, feature: 3, info: 4 };
       const da = rank[a.level] ?? 3;
       const db = rank[b.level] ?? 3;
       if (da !== db) return da - db;
@@ -191,7 +191,9 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
                   ? "border-amber-500/30 bg-amber-500/5"
                   : it.level === "promo"
                     ? "border-green-500/40 bg-green-500/5"
-                    : "border-black/10 dark:border-white/10 bg-surface/50"
+                    : it.level === "feature"
+                      ? "border-blue-500/40 bg-blue-500/5"
+                      : "border-black/10 dark:border-white/10 bg-surface/50"
             )}
           >
             <div className="mb-1 flex items-start justify-between gap-2">
