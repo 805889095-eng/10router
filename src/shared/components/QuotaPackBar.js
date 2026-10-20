@@ -13,6 +13,7 @@ import {
   isResettingRow,
   groupRowsByFamily,
   isStoredValueRow,
+  joinsPackPool,
   meterTone,
   splitFamilyWindow,
   nameWithoutUnit,
@@ -349,9 +350,12 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
   // family; singletons are stored-value pools (余额/代金券) → their own rows.
   // Qoder-style 合集行「资源包」已在上游包含全部赠送包：存在时排除赠送包
   // 家族行，防止资源包 Credits 与赠送包被重复计数（用户实测重复）。
+  // joinsPackPool, not a bare !isRecurringQuotaRow: a pushed stored-value
+  // balance can arrive marked recurring (minimax-free's daily refill) and is
+  // still a settled pool — excluding it here blanked the whole card.
   const hasCollectionRow = withNums.some((p) => String(p.name || "") === "资源包");
   const nonRecurring = withNums
-    .filter((p) => !isRecurringQuotaRow(p))
+    .filter((p) => joinsPackPool(p))
     .filter((p) => !(hasCollectionRow && String(p.name || "").startsWith("赠送包")));
   const groups = new Map();
   for (const p of nonRecurring) {
