@@ -8,7 +8,7 @@
 //
 // This module is the pure decision core (payload build + response parse +
 // membership guard). The orchestrator that calls it lives app-side
-// (src/sse/handlers/chatRouterStrategy.js) because routing a decision through
+// (src/sse/handlers/comboRouter.js) because routing a decision through
 // handleSystemone needs the src/sse auth glue.
 
 const TEXT_CAP = 2000;
@@ -82,7 +82,7 @@ export function buildRouterDecisionPayload(body, candidates = [], modelInfoResol
     intent ? `User request: ${intent}` : "User request: (no text content in this turn)",
     `Client expects: ${streaming ? "streaming" : "non-streaming"} reply${wantsTools ? "; tool/function calling in play" : ""}`,
     tools.length ? `Tools offered: ${tools.join(", ")}` : "",
-    `Candidate models (pick exactly one id):${memberLines.join("\n")}`,
+    `Candidate models (pick exactly one id):\n${memberLines.join("\n")}`,
   ].filter(Boolean);
 
   return {
