@@ -27,7 +27,7 @@
       "date": "2026-10-20",
       "level": "info",
       "title": "新增 Inception Labs（Mercury 扩散模型）",
-      "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens。"
+      "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens（额度经 CreditDaddy 通用卡推送）。"
     },
     {
       "id": "2026-10-20-combo-router",
