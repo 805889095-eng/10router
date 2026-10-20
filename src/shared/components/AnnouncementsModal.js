@@ -66,6 +66,15 @@ function normalizeFeed(raw) {
     .filter((it) => {
       const t = Date.parse(it.date);
       return !t || Date.now() - t <= MAX_AGE_MS;
+    })
+    // Display order is deterministic regardless of file order: colored levels
+    // first (critical > warning > promo), info last; newest date within a group.
+    .sort((a, b) => {
+      const rank = { critical: 0, warning: 1, promo: 2, info: 3 };
+      const da = rank[a.level] ?? 3;
+      const db = rank[b.level] ?? 3;
+      if (da !== db) return da - db;
+      return (b.date || "").localeCompare(a.date || "");
     });
 }
 
