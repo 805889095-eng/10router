@@ -894,6 +894,10 @@ export function parseQuotaData(provider, data) {
               // 只读签到状态（CD#33 方案 B）：字段缺席 = 未知，不显示徽章。
               // 这里必须直通，否则推送行在白名单之后、卡面之前就丢掉了它。
               ...(quota.checkinToday !== undefined ? { checkinToday: quota.checkinToday === true } : {}),
+              // CD 旧版不推 isCreditBalance：带签到状态的积分行按储值余额
+              // 渲染（单值卡，minimax-code 同款），而不是 X/Y 订阅包进度条。
+              ...(quota.checkinToday !== undefined && quota.isCreditBalance === undefined
+                ? { isCreditBalance: true } : {}),
               ...(Number.isInteger(quota.streakDays) && quota.streakDays > 0 ? { streakDays: quota.streakDays } : {}),
               ...(Number.isFinite(quota.remainingPercentage) ? { remainingPercentage: quota.remainingPercentage } : {}),
               ...(Number.isFinite(quota.percentScale) && quota.percentScale > 0 ? { percentScale: quota.percentScale } : {}),

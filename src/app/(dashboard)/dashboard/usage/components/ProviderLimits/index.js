@@ -1362,7 +1362,9 @@ export default function ProviderLimits() {
           // CreditDaddy#33 方案 B). Card-level: one signed-in row lights the
           // badge. false and absent both stay dark — absent means the pusher
           // could not check, not that the account skipped today.
-          const checkinRow = rawQuotas.find((q) => q?.checkinToday === true);
+          // Stored-value rows render the badge inside QuotaPackBar (beside the
+          // number, minimax-code style) — only badge here when no row does.
+          const checkinRow = rawQuotas.find((q) => q?.checkinToday === true && q?.isCreditBalance !== true);
           // 逐包明细展开 = 原始数据（用户拍板：不筛选不改序）；顶部块的分段
           // 条/剩余总额由 QuotaPackBar 内部聚合（月度并入，作为以重置日为
           // 到期日的资源包）。

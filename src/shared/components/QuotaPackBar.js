@@ -130,6 +130,9 @@ function QuotaRow({ row, label = null, inset = false }) {
   if (stored) {
     const unit = quotaUnitOf(row.name);
     const hasBalance = remaining > 0;
+    // Read-only daily check-in state pushed with the row (#77) — sits right
+    // after the balance number, mirroring the connection-card badge position.
+    const checkin = row.checkinToday === true;
     return (
       <div className="min-w-0 space-y-1">
         <div className="flex min-w-0 items-baseline justify-between gap-2 tabular-nums">
@@ -137,6 +140,17 @@ function QuotaRow({ row, label = null, inset = false }) {
             <CreditIcon className="size-[11px] shrink-0 self-center text-text-muted" />
             <b className={cn("text-[12px] font-bold", hasBalance ? "text-text" : TONE_TEXT.critical)}>{fmt(remaining)}</b>
             {unit ? <span className="text-[10px] text-text-muted">（{unit}）</span> : null}
+            {checkin && (
+              <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded bg-green-500/10 px-1 py-px text-[10px] font-medium text-green-600 dark:text-green-400" style={{ transform: "translateY(-1px)" }}>
+                <span className="material-symbols-outlined text-[11px]">check_circle</span>
+                {translate("Checked in today")}
+                {Number.isInteger(row.streakDays) && row.streakDays > 1 && (
+                  <span className="text-text-muted">
+                    {" · "}{translate("{count}-day streak").replace("{count}", String(row.streakDays))}
+                  </span>
+                )}
+              </span>
+            )}
           </span>
           <span className="shrink-0 text-[11px] text-text-muted">
             {translateQuotaName(nameWithoutUnit(row.name) || row.name)}
