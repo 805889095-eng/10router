@@ -429,6 +429,10 @@ export default function ProviderDetailPage() {
   const oauthTransferOn = isOAuth && providerInfo?.authModes?.includes("oauth") && oauthTransferEnabled;
   // Experimental auto daily check-in / compensation — mutually exclusive display vs import/export.
   const codeBuddyCheckinOn = isCodeBuddy && (codeBuddyCheckinEnabled || codeBuddyCompensationEnabled);
+  // Manual claim / check-in button (Qoder credits, MiniMax Code daily sign-in).
+  // Must appear in every action row — single-auth providers (minimax-code is
+  // OAuth-only) take the non-dual branch, which once lacked it.
+  const hasClaimCheckin = ["qoder", "qoder-cn", "minimax-code", "minimax-code-global"].includes(providerId);
   /**
    * The Export/Import button pair, hoisted out of the dual-auth-only branch.
    *
@@ -2211,7 +2215,7 @@ export default function ProviderDetailPage() {
                         Cookie
                       </Button>
                     )}
-                    {(providerId === "qoder" || providerId === "qoder-cn" || providerId === "minimax-code" || providerId === "minimax-code-global") && renderQoderCheckinBlock()}
+                    {hasClaimCheckin && renderQoderCheckinBlock()}
                     {providerId === "codex" && (
                       <Button size="sm" icon="playlist_add" variant="secondary" onClick={() => setShowBulkImportCodex(true)}>
                         {translate("Bulk Add")}
@@ -2315,7 +2319,7 @@ export default function ProviderDetailPage() {
                       </Button>
                       {renderOAuthTransferButtons("w-full sm:w-auto")}
                       {codeBuddyCheckinOn && renderCbCheckinBlock()}
-                      {(providerId === "qoder" || providerId === "qoder-cn" || providerId === "minimax-code" || providerId === "minimax-code-global") && renderQoderCheckinBlock()}
+                      {hasClaimCheckin && renderQoderCheckinBlock()}
                     </>
                   ) : (
                     <>
@@ -2328,6 +2332,7 @@ export default function ProviderDetailPage() {
                         Add
                       </Button>
                       {renderOAuthTransferButtons("w-full sm:w-auto")}
+                      {hasClaimCheckin && renderQoderCheckinBlock()}
                     </>
                   )}
                 </div>
