@@ -404,6 +404,27 @@ const QODER_CN_NAME_ALIASES = {
  * Provider-specific capability overrides. Keyed by provider alias/id.
  */
 export const PROVIDER_CAPABILITIES = {
+  // Kilo Gateway 的 `kilo-auto/*` 是**路由器档位**（上游自己决定落到哪个模型），
+  // id 里没有任何模型家族线索，因此全部落 DEFAULT_CAPABILITIES（200K/64K、
+  // vision:false）。kilo 官方条目给出了每档的实际承诺（2026-10-20 models.dev
+  // `kilo` provider 核对）：
+  //   free 256K/32K·纯文本·reasoning；frontier 1M/128K·vision+reasoning；
+  //   balanced 1M/64K·vision+reasoning。
+  // 不写这两行的话，前端调 frontier/balanced 时图片会在 modality 层被剥掉。
+  "kilo-gateway": {
+    "kilo-auto/free": {
+      vision: false, reasoning: true, thinkingFormat: "openai",
+      contextWindow: 256000, maxOutput: 32768,
+    },
+    "kilo-auto/frontier": {
+      vision: true, reasoning: true, thinkingFormat: "openai",
+      contextWindow: 1000000, maxOutput: 128000,
+    },
+    "kilo-auto/balanced": {
+      vision: true, reasoning: true, thinkingFormat: "openai",
+      contextWindow: 1000000, maxOutput: 65536,
+    },
+  },
   // Antigravity's display id is a legacy alias for Gemini 3.1 Pro High. It
   // does not contain the `gemini-3` substring, so the generic Gemini pattern
   // cannot identify its thinking support. Keep this provider-specific entry
