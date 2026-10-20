@@ -1358,6 +1358,11 @@ export default function ProviderLimits() {
           // Subscription cards already show every row; the toggle only appears
           // when the card collapsed something (packs summed into the headline).
           const showDetails = needsPerPackDetails(visibleQuotas);
+          // Read-only daily check-in state pushed on a quota row (#77,
+          // CreditDaddy#33 方案 B). Card-level: one signed-in row lights the
+          // badge. false and absent both stay dark — absent means the pusher
+          // could not check, not that the account skipped today.
+          const checkinRow = rawQuotas.find((q) => q?.checkinToday === true);
           // 逐包明细展开 = 原始数据（用户拍板：不筛选不改序）；顶部块的分段
           // 条/剩余总额由 QuotaPackBar 内部聚合（月度并入，作为以重置日为
           // 到期日的资源包）。
@@ -1423,6 +1428,19 @@ export default function ProviderLimits() {
                           {getConnectionSecondaryLabel(conn)}
                         </p>
                       ) : null}
+                      {checkinRow && (
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-600 dark:text-green-400">
+                            <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                            {translate("Checked in today")}
+                            {Number.isInteger(checkinRow.streakDays) && checkinRow.streakDays > 1 && (
+                              <span className="font-normal">
+                                {" · "}{translate("{count}-day streak").replace("{count}", String(checkinRow.streakDays))}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      )}
                       {conn.provider === "kiro" && (
                         <div className="mt-1 flex flex-wrap items-center gap-1">
                           <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-semibold text-brand-600 dark:text-brand-300">

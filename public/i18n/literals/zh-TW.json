@@ -913,5 +913,7 @@
   "No CodeBuddy CN connections found": "未找到有效的 CodeBuddy CN 連線",
   "Compensation credits already claimed": "額外補償與贈禮已領取完畢",
   "Claim extra compensation & gifts": "領取額外補償與贈禮",
-  "Claim Compensation": "領取額外補償"
+  "Claim Compensation": "領取額外補償",
+  "Checked in today": "今日已簽",
+  "{count}-day streak": "連 {count} 天"
 }

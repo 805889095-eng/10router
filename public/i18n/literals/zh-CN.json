@@ -2068,5 +2068,7 @@
   "No CodeBuddy CN connections found": "未找到有效的 CodeBuddy CN 连接",
   "Compensation credits already claimed": "额外补偿与赠礼已领取完毕",
   "Claim extra compensation & gifts": "领取额外补偿与赠礼",
-  "Claim Compensation": "领取额外补偿"
+  "Claim Compensation": "领取额外补偿",
+  "Checked in today": "今日已签",
+  "{count}-day streak": "连 {count} 天"
 }
