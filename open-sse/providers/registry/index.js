@@ -5,6 +5,7 @@ import p2 from "./alicode-intl.js";
 import p3 from "./alicode.js";
 import p4 from "./alims-intl.js";
 import p5 from "./alitp-intl.js";
+import p5b from "./alitp-cn.js";
 import p6 from "./amd.js";
 import p7 from "./anthropic.js";
 import p8 from "./antigravity.js";
@@ -162,6 +163,7 @@ export default [
   p3,
   p4,
   p5,
+  p5b,
   p6,
   p7,
   p8,
