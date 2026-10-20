@@ -36,6 +36,15 @@ const debugItems = [
   { href: "/dashboard/translator", label: "Translator", icon: "translate" },
 ];
 
+// External community entries (anchor, not router Link). Same for every
+// install; kept out of HeaderMenu (was: aggregate menu) since 2026-10 —
+// they read better as a sidebar section of their own.
+const communityLinks = [
+  { label: "Feishu Group", icon: "groups", href: "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=629nc6fd-1ce9-4822-8242-239f87f471c3&qr_code=true" },
+  { label: "Discord", icon: "forum", href: "https://discord.gg/zDWT6YKav" },
+  { label: "GitHub", icon: "code", href: "https://github.com/techysy/10router" },
+];
+
 const systemItems = [
   { href: "/dashboard/proxy-pools", label: "Proxy Pools", icon: "lan" },
   { href: "/dashboard/skills", label: "Skills", icon: "extension" },
@@ -365,6 +374,31 @@ export default function Sidebar({ onClose }) {
               </span>
               <span className="text-[13px] font-medium">Experimental</span>
             </Link>
+
+            {/* Community — external links, anchor tags (new tab) */}
+            <div className="pt-3 mt-2 space-y-0.5">
+              <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
+                {translate("Community")}
+              </p>
+              {communityLinks.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-3 py-1 rounded-lg transition-all group text-text-muted hover:bg-surface-2 hover:text-text-main"
+                >
+                  <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
+                    {item.icon}
+                  </span>
+                  <span className="text-[13px] font-medium">{translate(item.label)}</span>
+                  <span className="material-symbols-outlined ml-auto text-[14px] text-text-muted/50">
+                    open_in_new
+                  </span>
+                </a>
+              ))}
+            </div>
 
             {/* Settings */}
             <Link

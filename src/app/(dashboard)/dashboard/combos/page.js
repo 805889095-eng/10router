@@ -308,11 +308,12 @@ const fmtK = (n) => {
   return `${Math.round(n / 1000)}k`;
 };
 
+// Labels go through translate() — Select renders option.label verbatim.
 const STRATEGY_OPTIONS = [
-  { value: "fallback", label: "Fallback — try in order" },
-  { value: "round-robin", label: "Round Robin — rotate" },
-  { value: "fusion", label: "Fusion — panel + judge" },
-  { value: "router", label: "Router — decision model picks member" },
+  { value: "fallback", label: translate("Fallback — try in order") },
+  { value: "round-robin", label: translate("Round Robin — rotate") },
+  { value: "fusion", label: translate("Fusion — panel + judge") },
+  { value: "router", label: translate("Router — decision model picks member") },
 ];
 
 function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], copied, onCopy, onEdit, onDelete, strategy = {}, onSetStrategy }) {
@@ -407,7 +408,7 @@ function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], cop
                     : "No decision model set — the combo falls back to the normal order"}
                 >
                   <span className="material-symbols-outlined text-[13px]">alt_route</span>
-                  <span className="truncate">{routerModel || "Select decision model"}</span>
+                  <span className="truncate">{routerModel || translate("Select decision model")}</span>
                 </button>
                 {routerModel && (
                   <button
@@ -504,7 +505,7 @@ function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], cop
           onSelect={(m) => { onSetStrategy({ routerModel: m?.value || "" }); setShowRouterSelect(false); }}
           activeProviders={activeProviders}
           kindFilter="systemone"
-          title="Select Decision Model"
+          title={translate("Select Decision Model")}
           addedModelValues={routerModel ? [routerModel] : []}
           closeOnSelect={true}
         />

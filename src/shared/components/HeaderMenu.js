@@ -47,13 +47,6 @@ MenuItem.propTypes = {
   danger: PropTypes.bool,
 };
 
-// Community links. Kept here (not in settings) — they are the same for every
-// install and an operator should not have to maintain them.
-const COMMUNITY_LINKS = {
-  feishu: "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=629nc6fd-1ce9-4822-8242-239f87f471c3&qr_code=true",
-  discord: "https://discord.gg/zDWT6YKav",
-};
-
 export default function HeaderMenu({ onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -110,22 +103,6 @@ export default function HeaderMenu({ onLogout }) {
               label={translate(theme === "system" ? "Theme: system" : theme === "light" ? "Theme: light" : "Theme: dark")}
               onClick={() => { toggleTheme(); close(); }}
             />
-            <div className="my-1 border-t border-black/5 dark:border-white/5" />
-            <MenuItem
-              icon="groups"
-              label={translate("Feishu Group")}
-              href={COMMUNITY_LINKS.feishu}
-              onClick={close}
-              trailing={<span className="material-symbols-outlined text-[16px] text-text-muted">open_in_new</span>}
-            />
-            <MenuItem
-              icon="forum"
-              label={translate("Discord")}
-              href={COMMUNITY_LINKS.discord}
-              onClick={close}
-              trailing={<span className="material-symbols-outlined text-[16px] text-text-muted">open_in_new</span>}
-            />
-            <div className="my-1 border-t border-black/5 dark:border-white/5" />
             <MenuItem
               icon="power_settings_new"
               label={translate("Shutdown")}
