@@ -2070,5 +2070,6 @@
   "Claim extra compensation & gifts": "领取额外补偿与赠礼",
   "Claim Compensation": "领取额外补偿",
   "Checked in today": "今日已签",
-  "{count}-day streak": "连 {count} 天"
+  "{count}-day streak": "连 {count} 天",
+  "QR code unavailable — open image": "二维码暂不可用 — 打开图片"
 }

@@ -4,6 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { GITHUB_CONFIG } from "@/shared/constants/config";
+import { translate } from "@/i18n/runtime";
+
+// GitHub has no URL that stars a repo in one authenticated click (star is a
+// POST with a session CSRF token), so "one-click Star" opens the repo page —
+// signed-in users are one more click from the button they already know.
+// The login?return_to form skips the sign-in wall for logged-out users.
+const STAR_URL = `https://github.com/login?return_to=${encodeURIComponent(GITHUB_CONFIG.repoUrl)}`;
 
 export default function DonateModal({ isOpen, onClose }) {
   const [data, setData] = useState(null);
@@ -49,13 +56,25 @@ export default function DonateModal({ isOpen, onClose }) {
             <span className="material-symbols-outlined text-pink-500">volunteer_activism</span>
             {data?.title || "Support 10Router"}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-text-muted hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            aria-label="Close"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={STAR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Star 10Router on GitHub (signs you in first if needed)"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-[#24292e] dark:bg-white dark:text-[#24292e] hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-[16px]">star</span>
+              <span>Star</span>
+            </a>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-muted hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              aria-label="Close"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1">
@@ -73,7 +92,7 @@ export default function DonateModal({ isOpen, onClose }) {
               {data.message && (
                 <p className="text-text-muted text-sm mb-6 text-center">{data.message}</p>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {data.channels?.map((ch) => (
                   <DonateChannelCard key={ch.id} channel={ch} />
                 ))}
@@ -89,6 +108,10 @@ export default function DonateModal({ isOpen, onClose }) {
 
 function DonateChannelCard({ channel }) {
   const { label, description, icon, color, url, qr } = channel;
+  // A QR that fails to load must say so: an <img> hidden on error leaves an
+  // empty card with no hint that a scan code was expected. The fallback also
+  // links the image itself so the code is still reachable.
+  const [qrFailed, setQrFailed] = useState(false);
   const content = (
     <>
       <div
@@ -101,14 +124,25 @@ function DonateChannelCard({ channel }) {
       {description && (
         <div className="text-xs text-text-muted mb-3 text-center">{description}</div>
       )}
-      {qr && (
+      {qr && !qrFailed && (
         <img
           src={qr}
           alt={`${label} QR`}
           className="w-full max-w-[180px] aspect-square object-contain rounded-lg bg-white p-1"
-        loading="lazy"
-        decoding="async"
+          loading="lazy"
+          decoding="async"
+          onError={() => setQrFailed(true)}
         />
+      )}
+      {qr && qrFailed && (
+        <a
+          href={qr}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full max-w-[180px] aspect-square items-center justify-center rounded-lg border border-dashed border-black/15 dark:border-white/15 px-2 text-center text-xs text-text-muted hover:text-text-main"
+        >
+          {translate("QR code unavailable — open image")}
+        </a>
       )}
     </>
   );
