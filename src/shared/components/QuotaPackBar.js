@@ -519,6 +519,17 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
             {poolUnit ? (
               <span className="text-[10px] leading-none text-text-muted">（{poolUnit}）</span>
             ) : null}
+            {pool[0]?.checkinToday && (
+              <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded bg-green-500/10 px-1 py-px text-[10px] font-medium text-green-600 dark:text-green-400" style={{ transform: "translateY(-1px)" }}>
+                <span className="material-symbols-outlined text-[11px]">check_circle</span>
+                {translate("Checked in today")}
+                {Number.isInteger(pool[0].streakDays) && pool[0].streakDays > 1 && (
+                  <span className="text-text-muted">
+                    {" · "}{translate("{count}-day streak").replace("{count}", String(pool[0].streakDays))}
+                  </span>
+                )}
+              </span>
+            )}
           </span>
           {/* A settled balance has no denominator worth printing — `14.95 / 14.95`
               just reprinted the big number beside it. Everything else keeps it:
