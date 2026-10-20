@@ -168,7 +168,7 @@ function DonateChannelCard({ channel }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          className="mt-5 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
           style={{ backgroundColor: color }}
         >
           {translate("Open")}
