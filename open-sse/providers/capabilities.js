@@ -796,7 +796,8 @@ export const PATTERN_CAPABILITIES = [
   // source documents them. 1M context and $2/$10 per 1M confirmed via
   // Artificial Analysis; output limit also 1M, up from the 64K the rest of the
   // line carries, per the Gemini 4 announcement.
-  { pattern: "*gemini-4*",      caps: { vision: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 } },
+  // Gemini 4 (Argon): no "minimal" tier (400) and no thinkingBudget — LOW/MEDIUM/HIGH only, cannot disable.
+  { pattern: "*gemini-4*",      caps: { vision: true, audioInput: true, videoInput: true, pdf: true, reasoning: true, search: true, thinkingFormat: "gemini-level", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 65536 } },
   // pdf:true 按第一方数据补声明（models.dev google/google-vertex：Gemini 2.5 与 3.x
   // Flash/Pro 全系 input 含 pdf）。透传层本就放行（未声明 ≠ false，modality 只剥显式
   // false），这里补的是能力徽章的准确性——antigravity/gemini 的模型卡此前不显示 PDF。
