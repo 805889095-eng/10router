@@ -376,31 +376,6 @@ export default function Sidebar({ onClose }) {
               <span className="text-[13px] font-medium">Experimental</span>
             </Link>
 
-            {/* Community — external links, anchor tags (new tab) */}
-            <div className="pt-3 mt-2 space-y-0.5">
-              <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
-                {translate("Community")}
-              </p>
-              {communityLinks.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={onClose}
-                  className="flex items-center gap-3 px-3 py-1 rounded-lg transition-all group text-text-muted hover:bg-surface-2 hover:text-text-main"
-                >
-                  <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
-                    {item.icon}
-                  </span>
-                  <span className="text-[13px] font-medium">{translate(item.label)}</span>
-                  <span className="material-symbols-outlined ml-auto text-[14px] text-text-muted/50">
-                    open_in_new
-                  </span>
-                </a>
-              ))}
-            </div>
-
             {/* Settings */}
             <Link
               href="/dashboard/profile"
@@ -422,6 +397,28 @@ export default function Sidebar({ onClose }) {
               </span>
               <span className="text-[13px] font-medium">Settings</span>
             </Link>
+            {/* Community — external links, anchor tags (new tab) */}
+            <div className="pt-3 mt-2 space-y-0.5">
+              <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
+                {translate("Community")}
+              </p>
+              {communityLinks.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-3 py-1 rounded-lg transition-all group text-text-muted hover:bg-surface-2 hover:text-text-main"
+                >
+                  <span className="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">
+                    {item.icon}
+                  </span>
+                  <span className="text-[13px] font-medium">{translate(item.label)}</span>
+                </a>
+              ))}
+            </div>
+
           </div>
         </nav>
 
