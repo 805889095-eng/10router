@@ -184,11 +184,11 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
             )}
           >
             <div className="mb-1 flex items-start justify-between gap-2">
-              <h3 className="text-[13px] font-semibold leading-5 text-text-main">{it.title}</h3>
+              <h3 className="text-[13px] font-semibold leading-5 text-text-main">{translate(it.title)}</h3>
               {it.date && <time className="shrink-0 text-[10px] text-text-muted">{it.date}</time>}
             </div>
             {it.body && (
-              <p className="whitespace-pre-line text-xs leading-relaxed text-text-muted">{it.body}</p>
+              <p className="whitespace-pre-line text-xs leading-relaxed text-text-muted">{translate(it.body)}</p>
             )}
             {it.link && (
               <a
