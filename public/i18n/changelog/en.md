@@ -2,6 +2,35 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.6.0 (2026-10-21)
+
+> v1.5.2 was never released separately; its content is merged into this version.
+
+### ✨ New
+
+- **Upstream 9router v0.5.95 → v0.5.104 selective port**: Gemini 4 Argon across gemini/vertex/antigravity; antigravity Claude Sonnet/Opus 5.5 with family-shared quota routing; antigravity catalog refresh (default 3.8-flash-medium, IDE fingerprint 2.22.0); Codex GPT-6.1 Sol with the Responses Lite transport; gpt-5.5 family retired; PDF input capability for all current Claude models.
+- **Inception Labs provider**: Mercury diffusion models (~1000 tok/s); mercury-3 at 50% off launch pricing ($0.10/$0.35); new keys include 100M free tokens; quotas arrive via the CreditDaddy generic card.
+- **Combo router strategy**: a System One decision model pre-routes each request; decision failures silently fall back to the original order.
+- **Trae CN (trae.cn) login**: site selection, callback self-verification, bare-token probing; CN/international accounts are not interchangeable and mismatches get a clear message.
+- **MiniMax free lane returns + daily auto check-in on subscription lines**; M3.1 Flash official ids aligned across all lanes.
+- **Header announcement system**: free-model promos and breaking changes pushed live (GitHub raw → Gitee mirror → local cache fallback).
+- **API key permission picker**: allowed models/combos are now checkbox-based.
+- **MiniMax Code "checked in today" badge**: CreditDaddy-pushed check-in state with streak days.
+
+### 🐛 Fixed
+
+- **MITM bypass connect-timeout key typo**: requests were killed by a ~1ms timer and fell back to hijackable direct connections (PR #76 follow-up).
+- **Trae SOLO gateway cross-site race**: tokens no longer hit the wrong site under concurrency.
+- **MiniMax check-in status 404**: the status endpoint was mistakenly POSTed; now GET, check-in works.
+- **Node health punished fast models**: the latency axis now uses TTFT, so long-output fast models are no longer dragged down by total duration.
+- **CodeBuddy intl "daily active session" retired** (upstream cancelled the campaign); **CodeBuddy CN message guard raised to 5000**.
+- **Alibaba Token Plan CN added**, all four Alibaba cards labeled Intl/CN; **Qoder promo rows** show a readable deadline; **API key validation hints** are translated.
+
+### 🎨 UI
+
+- Sidebar font restored to 14px with a new Community section (Feishu/Discord/Telegram/GitHub); the full changelog now opens inside the modal (fixes the fnOS shell being unable to open new tabs); the donate modal was rebuilt (AiFaDian + three vector QR codes + Star button); header announcements with an unread badge.
+
+
 ## v1.5.1 (2026-10-18)
 
 ### ✨ New

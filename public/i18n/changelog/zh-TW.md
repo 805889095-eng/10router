@@ -2,6 +2,35 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.6.0 (2026-10-21)
+
+> v1.5.2 未單獨發版，內容併入本版本。
+
+### ✨ 新增
+
+- **上游 9router v0.5.95 → v0.5.104 擇優移植**：Gemini 4 Argon 三線收錄；antigravity 支援 Claude Sonnet/Opus 5.5（家族共享配額路由）；antigravity 目錄重新整理（預設 3.8-flash-medium、IDE 指紋 2.22.0）；Codex GPT-6.1 Sol 與 Responses Lite 傳輸；gpt-5.5 系下線；現役 Claude 全系補 PDF 輸入。
+- **Inception Labs 供應商**：Mercury 擴散模型（~1000 tok/s），mercury-3 launch 半價 $0.10/$0.35，新 key 送 1 億 tokens；配額經 CreditDaddy 通用卡推送。
+- **組合 router 策略**：System One 決策模型前置路由，失敗/逾時自動退回原順序，不影響可用性。
+- **Trae 國內站（trae.cn）登入**：站點選擇 + 回呼自證 + 裸 token 探測；國內/國際帳號不互通，拿錯端有明確提示。
+- **MiniMax 免費線回歸 + 訂閱線每日自動簽到**；M3.1 Flash 正式 id 全線對齊。
+- **頭部公告系統**：免費模型活動、關鍵變更即時推送（GitHub raw → Gitee 鏡像 → 本地快取三級兜底）。
+- **API Key 權限勾選器**：可呼叫模型/組合白名單改勾選式。
+- **MiniMax Code 卡面「今日已簽」徽章**：CreditDaddy 推送簽到狀態即展示連簽天數。
+
+### 🐛 修復
+
+- **MITM bypass 建連逾時鍵錯誤**：請求被 1ms 計時器秒殺後回落可被劫持的直連（PR #76 收尾）。
+- **Trae SOLO 閘道並發跨站串用**：token 不再打到錯誤站點。
+- **MiniMax 簽到狀態查詢 404**：status 端點誤發 POST，改 GET 後簽到恢復。
+- **節點健康度誤傷極速模型**：延遲軸改用首字延遲（TTFT），長輸出快模型不再被總時長壓分。
+- **CodeBuddy 國際站「每日活躍會話」下線**（上游已撤銷活動，白付請求）；**CodeBuddy CN 訊息數守衛放寬至 5000**。
+- **Alibaba Token Plan 補國內版**，四張阿里卡標明 Intl/CN；**Qoder 限免行**顯示可讀截止時間；**API 金鑰校驗提示**走翻譯。
+
+### 🎨 介面
+
+- 側邊欄字號恢復 14px，新增社群分區（飛書/Discord/Telegram/GitHub）；完整更新日誌改為彈窗內開啟（修飛牛殼打不開新分頁）；捐贈彈窗重做（愛發電 + 三張向量收款碼 + Star 按鈕）；頭部公告入口帶未讀紅點。
+
+
 ## v1.5.1 (2026-10-18)
 
 ### ✨ 新增

@@ -4,24 +4,47 @@
 
 ## v1.6.0 (2026-10-21)
 
-### 🐛 修复
-
-- **CodeBuddy CN 消息数守卫 2048 → 5000**：每轮「assistant 工具调用 + tool 结果」各记两条，Claude Code / codex 挂 MCP 工具集的长会话仍会撞到 2048，触发本地「消息 > 2048 条」拦截——而这一维与上游 11128 无因果（同体积的会话曾正常通过），守卫只该在极端量级上提前止损，不该成为先于体积生效的隐形墙。现放宽至 5000，把消息数推到真实会话触不到的高度；体积仍是 32MB 第一判据，诊断文案、单测与设计文档同步更新。
-
-## v1.5.2 (2026-10-20)
+> v1.5.2 未单独发版，其内容并入本版本。覆盖 v1.5.1 以来的全部 60+ 提交。
 
 ### ✨ 新增
 
-- **Trae 国内站（trae.cn）登录支持（Issue #69）**:此前 Trae 只有国际站（trae.ai）一条 OAuth 线，国内手机号 / 抖音账号的用户无法接入。本次打通国内站全链路：逆向确认国内站与国际站共用同一套 cloudide 接口形态（`GetLoginGuidance` / `ExchangeToken` / `GetUserInfo` 在 `api.trae.com.cn`、`api.marscode.cn`、`api.trae.cn` 全部实测可用，登录域 `www.trae.cn`），但**账号与 refresh token 不互通**——拿错端换必回 20101。因此整条链路按「站点」分叉：
-  1. **登录弹窗站点选择**：Trae 浏览器登录新增「国际站 / 国内站」卡片选择，选择随 `meta.region` 传入 `/authorize`，服务端打对应端网关取 LoginHost；
-  2. **回调站点自证**：回调携带的 `loginHost` 优先于前端选择（含 `trae.com.cn` 子串陷阱判定），拿到的 refresh token 一定在正确的那一端换 Access Token，换错端时给「站点不匹配」人话提示而非裸 401；
-  3. **粘贴 token 自动探测**：粘贴裸 Cloud-IDE-JWT（无回调）时，`postExchange` 用 GetUserInfo 反向探测 token 归属端并纠正站点；
-  4. **站点随连接落库**：`providerSpecificData.site`（`intl`/`cn`）驱动三处分叉——token 刷新按站点选网关（老连接按 loginHost / scope 兜底推断）、SOLO 执行器按站点选网关与 Referer（`x-user-region`/语言/作用域 `marscode-cn` 同步跟随）、连接行展示站点徽章；
-  5. 单测覆盖站点判定、两端白名单不重叠、换 token 打对应端、裸 JWT 探测纠正与人话报错（`tests/unit/trae-cn-region.test.js`）。
+- **上游 9router v0.5.95 → v0.5.104 择优移植**：
+  1. **Gemini 4 Argon 三线收录**（gemini / vertex 钉 global 多区 / antigravity tiered 实体族，thinking 无 minimal 档自动钳 low）；
+  2. **antigravity Claude Sonnet/Opus 5.5**：tiered 实体 8 行、MITM 别名全拼写覆盖、claude_gpt/gemini 家族共享配额路由（5h/每周共享桶 + strike 屏蔽）、Quota 429 精确 resetAt 解析；
+  3. **antigravity 目录刷新**：Gemini 3.5 系下线、默认模型切 3.8-flash-medium、IDE 指纹升级 2.22.0；
+  4. **Codex GPT-6.1 Sol + Responses Lite 传输**：工具/指令走 input 前缀项、reasoning 无 summary、hosted web_search 自动降级常规 Responses；工具 strict 旗标保留；图像用量精确上报（normalizeResponsesUsage）；
+  5. **gpt-5.5 系下线**（后端一律 400）：配额自动 ping 改 gpt-5.6-terra、图像主模型改 gpt-5.6-sol、CLI 预设默认 gpt-6.1-sol；
+  6. **现役 Claude 模型补 PDF 输入能力**（opus/sonnet/fable 4.6–5.5 各拼写 25 行 pdf: true）。
+- **Inception Labs 供应商（Mercury 扩散模型）**：OpenAI 兼容第一方 API；mercury-3（1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35）与 mercury-2.5；新 key 送 1 亿 tokens；配额经 CreditDaddy 通用卡推送。
+- **组合 router 策略（Issue #73）**：System One 决策模型前置路由——读请求上下文与成员能力卡，选出一个成员走正常管道；决策失败/超时/无凭据一律静默退回原 fallback 顺序（8s 决策预算，绝不因决策通道拖垮可用性）。
+- **Trae 国内站（trae.cn）登录支持（Issue #69）**：登录弹窗站点选择；回调 loginHost 优先自证站点（含 trae.com.cn 子串陷阱）；粘贴裸 JWT 反向探测归属端；`providerSpecificData.site` 驱动 token 刷新 / SOLO 网关 / userRegion 三处分叉；拿错端换 token 给「站点不匹配」人话提示（20101）。
+- **MiniMax 免费线回归与签到自动化（Issue #75）**：minimax-free 免登录网关线回归（CreditDaddy 闭环）；minimax-code 订阅线每日自动签到（全天轮询 + 当日确认即停）；M3.1 Flash 正式 id 全线对齐（订阅双线 / 免费线 / TokenRouter）。
+- **头部公告系统**：运营改仓库根 `announcements.json` 推送即生效（GitHub raw → Gitee 镜像 → 本地缓存三级兜底）；未读数红点；level 三级配色；免费模型活动 / 关键变更实时触达。
+- **API Key 细粒度权限勾选器**：端点「允许调用的模型与组合」由手敲 id 改勾选式选择。
+- **minimax-code 卡面「今日已签」徽章（Issue #77）**：external-quota 白名单放行 checkinToday/streakDays，推送即展示连签天数（只读，动作留在 CreditDaddy）。
 
 ### 🐛 修复
 
-- **代理失败直连兜底限时与 strictProxy 默认值修正（PR #76）**:代理失败的直连兜底改为限时生效，不可直连渠道默认 strictProxy，避免代理故障时流量静默改道直连暴露真实出口 IP。
+- **MITM bypass 建连超时引用了不存在的配置键（PR #76 收尾）**：建连计时器读 `mitmBypassConnectTimeoutMs`（从未定义），`setTimeout(fn, undefined)` 约 1ms 即触发——cloudcode/copilot/kiro/cursor 等 MITM 主机的 bypass 请求全部被秒杀后回落可被 hosts 劫持的普通 fetch。改用 `directFallbackTimeoutMs` 并新增逐键存在性守卫测试；顺修 signal 已 abort 时 cleanupAbort 撞 TDZ。
+- **Trae SOLO 网关跨站串用（Issue #69 收尾）**：执行器为全局单例，站点网关存实例字段会让并发的国内/国际请求互相覆盖、token 打到错端；改为每请求局部值。
+- **MiniMax 签到状态查询 404（Issue #75）**：签到共用签名函数按 body 选动词，status 端点被误发 POST（只认 GET）——每次签到都卡在第一步 404。改 GET + realUserID 入签名，动词用测试钉死。
+- **节点健康度误伤极速模型**：延迟轴原用总时长，agent 长输出被生成本身主导——Mercury 级 ~1000 tok/s 模型跑满一分钟延迟轴只有 20 分（速度轴却已满分），长输出快模型被结构性卡在 ~83 分。延迟轴改用 TTFT（首字延迟），无样本回退总延迟。
+- **组合 router 决策候选列表首行换行缺失（Issue #73）**：首个候选粘在标题行上。
+- **minimax-free 图标内外不一致（Issue #75）**：列表卡走了 Lobe 红色 Minimax 标、详情页却是蓝色 Code 图；去映射统一走 PNG。
+- **MiniMax Code 详情页有连接时签到按钮消失（Issue #75）**：按钮只挂在双鉴权分支，OAuth-only 的 minimax-code 有连接后落到单鉴权分支；hasClaimCheckin 收敛三处判断并补进该分支。
+- **CodeBuddy 国际站「每日活跃会话」下线**：上游已撤销该活动，探针只剩每天白付一次请求；开关、调度、实现、测试全删。
+- **CodeBuddy CN 消息数守卫 2048 → 5000**：挂 MCP 工具集的长会话仍会撞 2048；推到真实会话触不到的高度，体积仍是 32MB 第一判据。
+- **API 密钥校验提示与维护错误走翻译**：「Check endpoint」徽章与「Endpoint unreachable…」维护文案中文界面下混排英文。
+- **Qoder 限免行不再被实时 0x 覆盖**：tooltip 显示可读的限免截止时间。
+- **Alibaba Token Plan 补国内版（Issue #74）**：alitp-cn 上架，四张阿里系卡名标注 (Intl)/(CN)，全卡换官方 AlibabaCloud 矢量图标。
+
+### 🎨 界面
+
+- **侧边栏**：字号恢复 text-sm（14px，上游某次同步误降 13px）；新增 Community 分区（飞书群 / Discord / Telegram / GitHub）；设置归位系统分区。
+- **完整更新日志改为弹窗内打开**：飞牛桌面壳 webview 打不开 target=_blank，此前点了没反应。
+- **捐赠弹窗重做**：爱发电置顶渠道 + 微信/支付宝/爱发电矢量收款码（解码重编码 SVG，扫码验证一致）；GitHub Sponsors 保留；Star 按钮主题橙；文案全部走翻译并致谢赞助者。
+- **节点健康度展开明细**：列可见性按轴判定（TTFT/速度可独立缺样本）。
+
 
 ## v1.5.1 (2026-10-18)
 
