@@ -333,7 +333,8 @@ export default function ProviderDetailPage() {
     setQoderCheckinRunning(true);
     try {
       // minimax-code / minimax-code-global share the generic [provider]/checkin
-      // action route (no dedicated per-provider route files needed).
+      // action route. minimax-free never reaches here: the button is not
+      // rendered for it (its check-in lives inside CreditDaddy).
       const endpoint = providerId === "qoder-cn" ? "/api/oauth/qoder-cn/checkin" : providerId === "qoder" ? "/api/oauth/qoder/checkin" : `/api/oauth/${providerId}/checkin`;
       const res = await fetch(endpoint, {
         method: "POST",

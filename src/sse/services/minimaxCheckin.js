@@ -1,9 +1,11 @@
 // MiniMax Code 每日签到（免费体验包算力币）— minimax-code / minimax-code-global。
 //
 // 免费体验包的算力币靠每日签到累积（signin/status → status:3 = 已领、1 = 待领，
-// POST signin/claim 领取；接口幂等，与 CreditDaddy 侧先到先得、互不冲突）。
-// 鉴权直接用 10R 连接上已有的 accessToken（与 M Plan 用量探针同一把），无需
-// CreditDaddy 网关参与——签到是账号动作，不是路由动作。
+// POST signin/claim 领取；接口幂等）。鉴权直接用 10R 订阅线连接上已有的
+// accessToken（与 M Plan 用量探针同一把）——签到是账号动作，不是路由动作。
+//
+// 边界（issue #75 讨论）：本服务只扫订阅线连接；minimax-free 免登录网关线的
+// 签到与配额都在 CreditDaddy 内闭环，10R 不做、也不显示任何签到入口。
 //
 // Scheduler ticks every ~2h (+ jitter), same shape as qoderCheckin: an account
 // is checked until today's claim is confirmed, then memoized for the rest of
@@ -220,7 +222,7 @@ export async function runMinimaxCheckinTick(deps = {}) {
     try {
       if (deps.skipIfCheckedToday && memo[conn.id] === today) {
         log.debug("MINIMAX_CHECKIN", `${accountLabel(conn)}：今日已确认完成，跳过`);
-        results.push({ ...{}, connectionId: conn.id, account: conn.name || conn.email || conn.id, provider: conn.provider, status: "already", memoized: true });
+        results.push({ connectionId: conn.id, account: conn.name || conn.email || conn.id, provider: conn.provider, status: "already", memoized: true });
         continue;
       }
 

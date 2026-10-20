@@ -1,15 +1,12 @@
-// MiniMax Code 免费体验包（算力币 / 每日签到，MiniMax-M3）→ CreditDaddy 本地网关。
+// MiniMax Code 免费体验包（算力币，MiniMax-M3）→ CreditDaddy 本地网关。
 // 上游是 MiniMax Code 的标准 Anthropic Messages 协议（CreditDaddy 侧转发）：
 //   POST http://127.0.0.1:<port>/gateway/minimax/v1/messages
 //   （上游 https://agent.minimax.cn/mavis/api/v1/llm/v1/messages，模型透传）
-// CreditDaddy 负责账号多路轮换、401 自动 OAuth 刷新、429 冷却与局域网白名单；
-// 本条目只做端点映射。模型面对齐当前订阅双线的正式目录（issue #75 回归）。
+// CreditDaddy 负责账号多路轮换、401 自动 OAuth 刷新、429 冷却、局域网白名单
+// 与每日签到（CD 内已闭环）；本条目只做端点映射。模型面对齐当前订阅双线的
+// 正式目录（issue #75 回归）。
 // 前提：CreditDaddy 桌面版运行 + 面板「MiniMax 网关」开启 + 已添加 MiniMax 账号；
 // 无账号时网关按轮换队列为空处理（错误文案会说明）。
-//
-// 签到：免费体验包的算力币靠每日签到（CD 侧同接口已稳定运行，幂等先到先得），
-// 10R 侧的 minimaxCheckin 调度器走同一对 signin/status + signin/claim 接口，
-// 设置开关 minimaxCheckin 控制自动领取。
 export default {
   id: "minimax-free",
   priority: 57,

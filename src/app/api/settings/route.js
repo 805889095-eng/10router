@@ -173,7 +173,7 @@ export async function PATCH(request) {
       }
     }
 
-    // Auto daily check-in for MiniMax Code (issue #75)
+    // Auto daily check-in for MiniMax Code subscriptions (issue #75)
     if (Object.prototype.hasOwnProperty.call(body, "minimaxCheckin")) {
       if (settings.minimaxCheckin === true) {
         import("@/sse/services/minimaxCheckin.js")

@@ -38,6 +38,12 @@ describe("minimaxCheckin unit tests", () => {
       expect(isEligibleMinimaxConnection({ provider: "minimax-code", apiKey: "sk-1", isActive: true })).toBe(false);
       expect(isEligibleMinimaxConnection(null)).toBe(false);
     });
+
+    it("never sweeps minimax-free — the no-auth gateway line is CreditDaddy's closed loop", () => {
+      // 签到与配额都在 CD 内闭环；10R 侧调度器即使误配置也扫不到它。
+      expect(isEligibleMinimaxConnection({ provider: "minimax-free", accessToken: "at-1", isActive: true })).toBe(false);
+      expect(isEligibleMinimaxConnection({ provider: "minimax-free", apiKey: "x", isActive: true })).toBe(false);
+    });
   });
 
   describe("checkinOneMinimax", () => {
@@ -145,6 +151,16 @@ describe("minimaxCheckin unit tests", () => {
     it("skips non-minimax connections entirely", async () => {
       mockConns.length = 0;
       mockConns.push({ id: "q1", provider: "qoder", accessToken: "dt-1", isActive: true });
+
+      const results = await runMinimaxCheckinTick({
+        checkinConnection: async () => { throw new Error("should not be called"); },
+      });
+      expect(results).toHaveLength(0);
+    });
+
+    it("skips minimax-free (CreditDaddy closed loop) even if a stray connection exists", async () => {
+      mockConns.length = 0;
+      mockConns.push({ id: "mf1", provider: "minimax-free", accessToken: "whatever", isActive: true });
 
       const results = await runMinimaxCheckinTick({
         checkinConnection: async () => { throw new Error("should not be called"); },
