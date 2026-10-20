@@ -1,33 +1,68 @@
 {
-  "updatedAt": "2026-10-20T23:00:00+08:00",
+  "updatedAt": "2026-10-20T23:30:00+08:00",
   "items": [
     {
-      "id": "2026-10-20-free-models",
+      "id": "2026-10-20-qoder-qfmodel-free",
       "date": "2026-10-20",
       "level": "info",
-      "title": "免费模型动态",
-      "body": "Qoder qfmodel（DeepSeek-V4.1-Flash 1017）国际/国内双线限免至 10-25；CodeBuddy CN V4.1-Flash 1017 限免中；MiniMax Code Free 回归（CreditDaddy 闭环），订阅线支持每日自动签到且已对齐 M3.1 Flash 正式 id；新增 Inception Labs（Mercury 3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens）。"
+      "title": "Qoder qfmodel 双线限免至 10-25",
+      "body": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。"
     },
     {
-      "id": "2026-10-20-features",
+      "id": "2026-10-20-cb-v41-flash",
       "date": "2026-10-20",
       "level": "info",
-      "title": "新功能",
-      "body": "组合新增 router 策略——System One 决策模型前置路由，失败/超时自动退回原顺序；Trae 国内站 (trae.cn) OAuth 登录（站点选择，token 不互通）；端点「允许调用的模型与组合」改勾选式选择器。"
+      "title": "CodeBuddy CN V4.1-Flash 1017 限免中",
+      "body": "codebuddy-cn 的 V4.1-Flash 1017 限免窗口内倍率 0x，结束后恢复发布倍率。"
     },
     {
-      "id": "2026-10-20-proxy-change",
+      "id": "2026-10-20-minimax-free-back",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "MiniMax Code Free 回归",
+      "body": "minimax-free 免登录网关线回归（CreditDaddy 闭环）；订阅线支持每日自动签到，模型面已对齐 M3.1 Flash 正式 id。"
+    },
+    {
+      "id": "2026-10-20-inception",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "新增 Inception Labs（Mercury 扩散模型）",
+      "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens。"
+    },
+    {
+      "id": "2026-10-20-combo-router",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "组合新增 router 策略",
+      "body": "System One 决策模型前置路由，失败/超时自动退回原顺序；决策模型在组合卡上单独选择。"
+    },
+    {
+      "id": "2026-10-20-trae-cn",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "Trae 国内站 (trae.cn) OAuth 登录",
+      "body": "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。"
+    },
+    {
+      "id": "2026-10-20-proxy-strict",
       "date": "2026-10-20",
       "level": "warning",
       "title": "代理行为变更：不可直连渠道默认严格模式",
-      "body": "Google Cloud Code、Gemini CLI 等无法直连的渠道：代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。MITM bypass 建连超时键已修。连接级显式 strictProxy 设置优先于渠道默认。"
+      "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。"
+    },
+    {
+      "id": "2026-10-20-endpoint-picker",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "端点模型白名单改勾选式",
+      "body": "端点「允许调用的模型与组合」由手敲 id 改为勾选式选择器。"
     },
     {
       "id": "2026-10-20-community",
       "date": "2026-10-20",
       "level": "info",
-      "title": "社区入口",
-      "body": "侧边栏新增 Community 分区：飞书群、Discord、Telegram、GitHub 仓库。捐赠渠道：GitHub Sponsors / 爱发电 / 支付宝 / 微信（弹窗内扫码）。"
+      "title": "社区与捐赠",
+      "body": "侧边栏新增 Community 分区：飞书群 / Discord / Telegram / GitHub。捐赠渠道：GitHub Sponsors / 爱发电 / 支付宝 / 微信。"
     }
   ]
 }
