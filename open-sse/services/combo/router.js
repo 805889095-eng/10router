@@ -51,7 +51,8 @@ function extractToolName(t) {
  *   questions = one `choice` question: which member should answer
  *
  * Member descriptions come from the resolved model info (name / provider /
- * capabilities) so the decision model has real criteria to rank on. The
+ * capabilities) plus optional live health (7d success rate, when the app side
+ * has traffic data) so the decision model has real criteria to rank on. The
  * answer vocabulary is the exact candidate ids — anything outside is guarded
  * downstream and degrades to fallback.
  *
@@ -74,8 +75,14 @@ export function buildRouterDecisionPayload(body, candidates = [], modelInfoResol
     if (info?.pdf) caps.push("pdf");
     if (info?.search) caps.push("search");
     const ctx = info?.contextWindow ? ` ~${Math.round(info.contextWindow / 1000)}k ctx` : "";
+    // Live 7d health, when the caller has traffic data — lets the decision
+    // model deprioritize "capable but currently flaky" members. Absent for
+    // cold members: say so, never fabricate a number.
+    const health = info?.health != null
+      ? `, health ${info.health}/100 (success ${info.successRate}%)`
+      : "";
     const label = clampText(info?.name || m, 80);
-    return `- ${m} (${label}${ctx ? `,${ctx}` : ""}${caps.length ? `, ${caps.join("/")}` : ""})`;
+    return `- ${m} (${label}${ctx ? `,${ctx}` : ""}${caps.length ? `, ${caps.join("/")}` : ""}${health})`;
   });
 
   const stateParts = [

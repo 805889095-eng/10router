@@ -11,7 +11,11 @@ const mockAuth = {
 };
 const mockModel = { getModelInfo: vi.fn() };
 const mockCore = { handleSystemoneCore: vi.fn() };
-const mockUsage = { saveRequestUsage: vi.fn(async () => {}) };
+const mockUsage = {
+  saveRequestUsage: vi.fn(async () => {}),
+  // health lookup goes through the same shim; default to no traffic data
+  getUsageDashboard: vi.fn(async () => ({ models: [] })),
+};
 
 vi.mock("../../src/sse/services/auth.js", () => mockAuth);
 vi.mock("../../src/sse/services/model.js", () => mockModel);
@@ -61,6 +65,16 @@ describe("buildRouterDecisionPayload", () => {
     const { state } = buildRouterDecisionPayload(chatBody(), CANDIDATES, resolver);
     expect(state).toMatch(/gemini-2\.5-pro \(Gemini 2\.5 Pro, ~1049k ctx, vision\)/);
     expect(state).toContain("- claude/claude-sonnet-4.5 (claude/claude-sonnet-4.5)");
+  });
+
+  it("live health rides on the card when present; cold members stay unlabeled (health-aware routing)", () => {
+    const resolver = (id) => id === CANDIDATES[0]
+      ? { name: "Gemini 2.5 Pro", vision: true, health: 91, successRate: 97 }
+      : { name: "Sonnet", tools: true };
+    const { state } = buildRouterDecisionPayload(chatBody(), CANDIDATES, resolver);
+    expect(state).toContain("health 91/100 (success 97%)");
+    expect(state).toContain("- claude/claude-sonnet-4.5 (Sonnet, tools)");
+    expect(state).not.toContain("health /100");
   });
 
   it("handles empty messages without throwing", () => {

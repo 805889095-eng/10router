@@ -32,6 +32,8 @@ async function resolveMemberCaps(memberId) {
     if (!caps) return null;
     return {
       name: info.model,
+      provider: info.provider,
+      model: info.model,
       vision: !!caps.vision,
       tools: !!caps.tools,
       pdf: !!caps.pdf,
@@ -41,6 +43,29 @@ async function resolveMemberCaps(memberId) {
   } catch {
     return null;
   }
+}
+
+// Live 7d health from the usage dashboard (same rows the Node Health page
+// shows), keyed by provider|model. Fail-open + snapshot read: a slow or
+// broken DB never blocks the decision — members without data simply render
+// "no recent traffic data" on their card. Memoized per process (the dashboard
+// query is heavier than the decision itself); 60s TTL keeps it fresh enough.
+let healthCache = { at: 0, byKey: new Map() };
+const HEALTH_TTL_MS = 60_000;
+async function resolveMemberHealth(candidates) {
+  if (Date.now() - healthCache.at < HEALTH_TTL_MS) return healthCache.byKey;
+  try {
+    const { getUsageDashboard } = await import("../../lib/usageDb.js");
+    const dash = await getUsageDashboard({ minRequests: 10 });
+    const byKey = new Map();
+    for (const m of dash.models || []) {
+      byKey.set(`${m.provider}|${m.model}`, { health: m.score, successRate: m.successRate });
+    }
+    healthCache = { at: Date.now(), byKey };
+  } catch {
+    // stale cache is better than nothing; otherwise cold
+  }
+  return healthCache.byKey;
 }
 
 // The decision is best-effort by contract: any throw, timeout, non-success,
@@ -80,10 +105,14 @@ async function decisionOnce({ routerModel, body, candidates, logTag = "COMBO", a
     }
 
     // Resolve per-member cards before building the payload (async here, the
-    // builder stays a pure sync function over the resolver result).
+    // builder stays a pure sync function over the resolver result). Live 7d
+    // health rides along on each card when this instance has traffic for it.
+    const healthByKey = await resolveMemberHealth(candidates);
     const capsMap = new Map();
     for (const m of candidates) {
-      capsMap.set(m, await resolveMemberCaps(m));
+      const card = (await resolveMemberCaps(m)) || {};
+      const health = card.provider ? healthByKey.get(`${card.provider}|${card.model}`) : null;
+      capsMap.set(m, health ? { ...card, ...health } : card);
     }
     const payload = buildRouterDecisionPayload(body, candidates, (id) => capsMap.get(id) || null);
     const decisionBody = { ...payload, model: `${modelInfo.provider}/${modelInfo.model}` };
