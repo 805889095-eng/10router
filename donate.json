@@ -29,10 +29,11 @@
     {
       "id": "ifdian",
       "label": "AiFaDian",
-      "description": "Monthly plans or one-time tips",
+      "description": "Scan to power me / open for monthly plans",
       "icon": "electric_bolt",
       "color": "#7c3aed",
-      "url": "https://ifdian.net/a/10router"
+      "url": "https://afdian.com/a/yu_shiyang",
+      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/ifdian.svg"
     }
   ]
 }
