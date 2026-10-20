@@ -359,6 +359,15 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
 
     const resolvedProxy = await resolveConnectionProxyConfig(connection.providerSpecificData || {});
 
+    // strictProxy 保持三态:连接上显式设置过(true/false)时透传原值;未设置时
+    // undefined,让 chatCore 应用 provider 注册表里的渠道默认(Issue #76,
+    // 不可直连渠道默认 strict)。这里不能沿用 resolvedProxy 的布尔强转——
+    // 那会把"未设置"和"显式 false"混在一起,渠道默认永远无法生效。
+    const rawConnectionStrict = connection.providerSpecificData?.strictProxy;
+    const connectionStrictProxy = resolvedProxy.strictProxy === true
+      ? true
+      : (rawConnectionStrict === true || rawConnectionStrict === false ? rawConnectionStrict : undefined);
+
     return {
       authType: connection.authType,
       apiKey: connection.apiKey,
@@ -378,7 +387,7 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
         connectionNoProxy: resolvedProxy.connectionNoProxy,
         connectionProxyPoolId: resolvedProxy.proxyPoolId || null,
         vercelRelayUrl: resolvedProxy.vercelRelayUrl || "",
-        strictProxy: resolvedProxy.strictProxy === true,
+        strictProxy: connectionStrictProxy,
       },
       connectionId: connection.id,
       // Include current status for optimization check
