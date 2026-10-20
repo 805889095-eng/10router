@@ -317,6 +317,11 @@ export async function POST(request, { params }) {
         const results = await claimAllQoderAccounts(provider);
         return NextResponse.json({ success: true, results });
       }
+      if (provider === "minimax-code" || provider === "minimax-code-global") {
+        const { runMinimaxCheckinTick } = await import("@/sse/services/minimaxCheckin.js");
+        const results = await runMinimaxCheckinTick({ skipIfCheckedToday: false, provider });
+        return NextResponse.json({ success: true, results });
+      }
       return NextResponse.json({ error: `Check-in not supported for ${provider}` }, { status: 400 });
     }
 

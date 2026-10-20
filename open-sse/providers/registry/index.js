@@ -84,6 +84,7 @@ import p80 from "./mimo-free.js";
 import p81 from "./minimax-cn.js";
 import p82 from "./minimax-code-global.js";
 import p83 from "./minimax-code.js";
+import p84 from "./minimax-free.js";
 import p85 from "./minimax.js";
 import p86 from "./mistral.js";
 import p87 from "./mmf.js";
@@ -242,6 +243,7 @@ export default [
   p81,
   p82,
   p83,
+  p84,
   p85,
   p86,
   p87,

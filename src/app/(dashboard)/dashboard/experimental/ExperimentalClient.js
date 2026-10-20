@@ -103,6 +103,25 @@ export default function ExperimentalClient() {
               />
             </div>
 
+            {/* MiniMax Code auto daily check-in (free-pack credits, issue #75) */}
+            <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base">{translate("MiniMax Code auto daily check-in")}</p>
+                <p className="text-xs sm:text-sm text-text-muted">
+                  {translate("Automatically check in daily for MiniMax Code accounts to earn free-pack credits (idempotent; safe alongside CreditDaddy)")}
+                </p>
+              </div>
+              <Toggle
+                checked={settings.minimaxCheckin === true}
+                onChange={() =>
+                  patch(
+                    { minimaxCheckin: !(settings.minimaxCheckin === true) },
+                    "Error toggling MiniMax auto check-in:"
+                  )
+                }
+              />
+            </div>
+
             {/* CodeBuddy intl daily active-session probe (campaign credits) */}
             <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
               <div className="flex-1 min-w-0">
