@@ -38,8 +38,6 @@ const ICON_ALIASES = {
 const ICON_EXTENSIONS = {
   bai: ".svg",
   // 官方百炼 wordmark 只有 SVG（docs.bailian.console.aliyun.com/logo/）
-  alitp: ".svg",
-  "alitp-intl": ".svg",
 };
 
 // Runtime only — first 404 remembers id for the whole session
