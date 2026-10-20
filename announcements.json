@@ -1,0 +1,26 @@
+{
+  "updatedAt": "2026-10-20T00:00:00+08:00",
+  "items": [
+    {
+      "id": "2026-10-20-minimax-free",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "MiniMax Code 免费线已回归",
+      "body": "MiniMax Code Free 恢复可用，签到与配额在 CreditDaddy 内闭环；MiniMax Code 订阅线支持每日自动签到（设置 → 实验功能）。"
+    },
+    {
+      "id": "2026-10-20-combo-router",
+      "date": "2026-10-20",
+      "level": "info",
+      "title": "组合新增 router 策略",
+      "body": "组合可以指定一个 System One 决策模型，由它先判断该由哪个成员回答；决策失败或超时会自动退回原有顺序，不影响可用性。"
+    },
+    {
+      "id": "2026-10-20-proxy-strict",
+      "date": "2026-10-20",
+      "level": "warning",
+      "title": "代理行为变更：不可直连渠道默认严格模式",
+      "body": "Google Cloud Code、Gemini CLI 等无法直连的渠道，代理失败时会立即报错并切到下一个账号/组合成员，不再回退直连死等。若你的连接显式设置过 strictProxy，以你的设置为准。"
+    }
+  ]
+}
