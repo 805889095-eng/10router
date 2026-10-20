@@ -2,6 +2,21 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.5.2 (2026-10-20)
+
+### ✨ 新增
+
+- **Trae 国内站（trae.cn）登录支持（Issue #69）**:此前 Trae 只有国际站（trae.ai）一条 OAuth 线，国内手机号 / 抖音账号的用户无法接入。本次打通国内站全链路：逆向确认国内站与国际站共用同一套 cloudide 接口形态（`GetLoginGuidance` / `ExchangeToken` / `GetUserInfo` 在 `api.trae.com.cn`、`api.marscode.cn`、`api.trae.cn` 全部实测可用，登录域 `www.trae.cn`），但**账号与 refresh token 不互通**——拿错端换必回 20101。因此整条链路按「站点」分叉：
+  1. **登录弹窗站点选择**：Trae 浏览器登录新增「国际站 / 国内站」卡片选择，选择随 `meta.region` 传入 `/authorize`，服务端打对应端网关取 LoginHost；
+  2. **回调站点自证**：回调携带的 `loginHost` 优先于前端选择（含 `trae.com.cn` 子串陷阱判定），拿到的 refresh token 一定在正确的那一端换 Access Token，换错端时给「站点不匹配」人话提示而非裸 401；
+  3. **粘贴 token 自动探测**：粘贴裸 Cloud-IDE-JWT（无回调）时，`postExchange` 用 GetUserInfo 反向探测 token 归属端并纠正站点；
+  4. **站点随连接落库**：`providerSpecificData.site`（`intl`/`cn`）驱动三处分叉——token 刷新按站点选网关（老连接按 loginHost / scope 兜底推断）、SOLO 执行器按站点选网关与 Referer（`x-user-region`/语言/作用域 `marscode-cn` 同步跟随）、连接行展示站点徽章；
+  5. 单测覆盖站点判定、两端白名单不重叠、换 token 打对应端、裸 JWT 探测纠正与人话报错（`tests/unit/trae-cn-region.test.js`）。
+
+### 🐛 修复
+
+- **代理失败直连兜底限时与 strictProxy 默认值修正（PR #76）**:代理失败的直连兜底改为限时生效，不可直连渠道默认 strictProxy，避免代理故障时流量静默改道直连暴露真实出口 IP。
+
 ## v1.5.1 (2026-10-18)
 
 ### ✨ 新增
