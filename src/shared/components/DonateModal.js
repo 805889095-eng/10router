@@ -158,7 +158,12 @@ function DonateChannelCard({ channel }) {
   return (
     <div className="flex flex-col items-center p-4 rounded-xl border border-black/10 dark:border-white/10 bg-surface/50 hover:border-pink-500/40 transition-colors">
       {content}
-      {url && (
+      {/* The QR IS the entry point for scan-to-pay cards — a second "Open"
+          button under it double-offers and makes card bottoms ragged. Only
+          link-only channels (Sponsors, AiFaDian) get the button, so all four
+          cards end on exactly one action. QR-failed keeps the in-card notice
+          as the single fallback surface. */}
+      {url && !qr && (
         <a
           href={url}
           target="_blank"

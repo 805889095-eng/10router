@@ -163,7 +163,7 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
       return <p className="py-6 text-center text-sm text-text-muted">{translate("No announcements right now")}</p>;
     }
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
         {stale && (
           <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
             {translate("Showing the last cached copy — the live feed is unreachable right now.")}
@@ -173,7 +173,7 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
           <article
             key={it.id}
             className={cn(
-              "rounded-xl border p-3",
+              "rounded-lg border p-2.5",
               it.level === "critical"
                 ? "border-red-500/30 bg-red-500/5"
                 : it.level === "warning"
@@ -182,18 +182,18 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
             )}
           >
             <div className="mb-1 flex items-start justify-between gap-2">
-              <h3 className="text-sm font-semibold text-text-main">{it.title}</h3>
-              {it.date && <time className="shrink-0 text-[11px] text-text-muted">{it.date}</time>}
+              <h3 className="text-[13px] font-semibold leading-5 text-text-main">{it.title}</h3>
+              {it.date && <time className="shrink-0 text-[10px] text-text-muted">{it.date}</time>}
             </div>
             {it.body && (
-              <p className="whitespace-pre-line text-sm leading-relaxed text-text-muted">{it.body}</p>
+              <p className="whitespace-pre-line text-xs leading-relaxed text-text-muted">{it.body}</p>
             )}
             {it.link && (
               <a
                 href={it.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
               >
                 {translate("Learn more")}
                 <span className="material-symbols-outlined text-[14px]">open_in_new</span>

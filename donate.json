@@ -5,7 +5,7 @@
     {
       "id": "github",
       "label": "GitHub Sponsors",
-      "description": "Support via GitHub Sponsors",
+      "description": "Support via Sponsors",
       "icon": "favorite",
       "color": "#db61a2",
       "url": "https://github.com/sponsors/techysy"
@@ -28,7 +28,7 @@
     },
     {
       "id": "ifdian",
-      "label": "爱发电 AiFaDian",
+      "label": "AiFaDian",
       "description": "Monthly plans or one-time tips",
       "icon": "electric_bolt",
       "color": "#7c3aed",
