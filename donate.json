@@ -3,20 +3,12 @@
   "message": "If you find 10Router useful, consider supporting its development!",
   "channels": [
     {
-      "id": "ifdian",
-      "label": "爱发电 AiFaDian",
-      "description": "Monthly plans or one-time tips",
-      "icon": "electric_bolt",
-      "color": "#7c3aed",
-      "url": "https://ifdian.net/a/10router"
-    },
-    {
-      "id": "wechat",
-      "label": "WeChat Pay",
-      "description": "Scan with WeChat to tip",
-      "icon": "qr_code",
-      "color": "#07c160",
-      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/wechat.svg"
+      "id": "github",
+      "label": "GitHub Sponsors",
+      "description": "Support via GitHub Sponsors",
+      "icon": "favorite",
+      "color": "#db61a2",
+      "url": "https://github.com/sponsors/techysy"
     },
     {
       "id": "alipay",
@@ -27,12 +19,20 @@
       "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/alipay.svg"
     },
     {
-      "id": "github",
-      "label": "GitHub Sponsors",
-      "description": "Support via GitHub Sponsors",
-      "icon": "favorite",
-      "color": "#db61a2",
-      "url": "https://github.com/sponsors/techysy"
+      "id": "wechat",
+      "label": "WeChat Pay",
+      "description": "Scan with WeChat to tip",
+      "icon": "qr_code",
+      "color": "#07c160",
+      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/wechat.svg"
+    },
+    {
+      "id": "ifdian",
+      "label": "爱发电 AiFaDian",
+      "description": "Monthly plans or one-time tips",
+      "icon": "electric_bolt",
+      "color": "#7c3aed",
+      "url": "https://ifdian.net/a/10router"
     }
   ]
 }

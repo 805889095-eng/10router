@@ -922,5 +922,17 @@
   "No announcements right now": "暫無公告",
   "Showing the last cached copy — the live feed is unreachable right now.": "即時公告暫時取不到，以下是上次快取的副本。",
   "Learn more": "了解更多",
-  "QR code unavailable right now": "二維碼暫不可用"
+  "QR code unavailable right now": "二維碼暫不可用",
+  "Enable this model": "啟用此模型",
+  "Failed to load changelog: ": "載入更新日誌失敗：",
+  "Import from /models": "從 /models 匯入",
+  "expired": "已過期",
+  "{count} packs, remaining {remaining} of {total}": "{count} 個包，剩餘 {remaining} / {total}",
+  "Star": "Star",
+  "Monthly plans or one-time tips": "月度訂閱或一次性打賞",
+  "Scan with WeChat to tip": "微信掃碼打賞",
+  "Scan with Alipay to tip": "支付寶掃碼打賞",
+  "Support via GitHub Sponsors": "透過 GitHub Sponsors 支持",
+  "Feishu Group": "飛書群",
+  "Discord": "Discord"
 }

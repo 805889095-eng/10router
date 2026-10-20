@@ -54,7 +54,7 @@ export default function DonateModal({ isOpen, onClose }) {
         <div className="flex items-center justify-between p-3 border-b border-black/5 dark:border-white/5">
           <h2 className="text-lg font-semibold text-text-main flex items-center gap-2">
             <span className="material-symbols-outlined text-pink-500">volunteer_activism</span>
-            {data?.title || "Support 10Router"}
+            {translate(data?.title || "Support 10Router")}
           </h2>
           <div className="flex items-center gap-2">
             <a
@@ -62,7 +62,7 @@ export default function DonateModal({ isOpen, onClose }) {
               target="_blank"
               rel="noopener noreferrer"
               title="Star 10Router on GitHub (signs you in first if needed)"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-[#24292e] dark:bg-white dark:text-[#24292e] hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 transition-colors"
             >
               <span className="material-symbols-outlined text-[16px]">star</span>
               <span>Star</span>
@@ -90,7 +90,7 @@ export default function DonateModal({ isOpen, onClose }) {
           {!loading && !error && data && (
             <>
               {data.message && (
-                <p className="text-text-muted text-sm mb-6 text-center">{data.message}</p>
+                <p className="text-text-muted text-sm mb-6 text-center">{translate(data.message)}</p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {data.channels?.map((ch) => (
@@ -120,9 +120,9 @@ function DonateChannelCard({ channel }) {
       >
         <span className="material-symbols-outlined text-[26px]">{icon}</span>
       </div>
-      <div className="font-semibold text-text-main mb-1">{label}</div>
+      <div className="font-semibold text-text-main mb-1">{translate(label)}</div>
       {description && (
-        <div className="text-xs text-text-muted mb-3 text-center">{description}</div>
+        <div className="text-xs text-text-muted mb-3 text-center">{translate(description)}</div>
       )}
       {qr && !qrFailed && (
         <img
@@ -166,7 +166,7 @@ function DonateChannelCard({ channel }) {
           className="mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
           style={{ backgroundColor: color }}
         >
-          Open
+          {translate("Open")}
           <span className="material-symbols-outlined text-[16px]">open_in_new</span>
         </a>
       )}
