@@ -921,5 +921,6 @@
   "Could not load announcements": "無法載入公告",
   "No announcements right now": "暫無公告",
   "Showing the last cached copy — the live feed is unreachable right now.": "即時公告暫時取不到，以下是上次快取的副本。",
-  "Learn more": "了解更多"
+  "Learn more": "了解更多",
+  "QR code unavailable right now": "二維碼暫不可用"
 }

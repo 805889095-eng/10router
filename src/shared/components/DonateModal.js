@@ -135,14 +135,22 @@ function DonateChannelCard({ channel }) {
         />
       )}
       {qr && qrFailed && (
-        <a
-          href={qr}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full max-w-[180px] aspect-square items-center justify-center rounded-lg border border-dashed border-black/15 dark:border-white/15 px-2 text-center text-xs text-text-muted hover:text-text-main"
-        >
-          {translate("QR code unavailable — open image")}
-        </a>
+        // Only http(s) is clickable — a WeChat Pay QR carries wxp://…, which a
+        // browser cannot open, so that one stays a plain, honest notice.
+        /^https?:\/\//.test(qr) ? (
+          <a
+            href={qr}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full max-w-[180px] aspect-square items-center justify-center rounded-lg border border-dashed border-black/15 dark:border-white/15 px-2 text-center text-xs text-text-muted hover:text-text-main"
+          >
+            {translate("QR code unavailable — open image")}
+          </a>
+        ) : (
+          <div className="flex w-full max-w-[180px] aspect-square items-center justify-center rounded-lg border border-dashed border-black/15 dark:border-white/15 px-2 text-center text-xs text-text-muted">
+            {translate("QR code unavailable right now")}
+          </div>
+        )
       )}
     </>
   );

@@ -13,18 +13,18 @@
     {
       "id": "wechat",
       "label": "WeChat Pay",
-      "description": "Scan QR code to tip",
+      "description": "Scan with WeChat to tip",
       "icon": "qr_code",
       "color": "#07c160",
-      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/wechat-pay.png"
+      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/wechat.svg"
     },
     {
       "id": "alipay",
       "label": "Alipay",
-      "description": "Scan QR code to tip",
+      "description": "Scan with Alipay to tip",
       "icon": "qr_code",
       "color": "#1677ff",
-      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/alipay.png"
+      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/alipay.svg"
     },
     {
       "id": "github",
