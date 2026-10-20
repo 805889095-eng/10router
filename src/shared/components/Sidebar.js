@@ -43,6 +43,7 @@ const communityLinks = [
   { label: "Feishu Group", icon: "groups", href: "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=629nc6fd-1ce9-4822-8242-239f87f471c3&qr_code=true" },
   { label: "Discord", icon: "forum", href: "https://discord.gg/zDWT6YKav" },
   { label: "GitHub", icon: "code", href: "https://github.com/techysy/10router" },
+  { label: "Telegram", icon: "send", href: "https://t.me/techysy" },
 ];
 
 const systemItems = [
