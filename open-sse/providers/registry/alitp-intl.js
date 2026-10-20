@@ -13,7 +13,7 @@ export default {
     icon: "cloud",
     color: "#FF6A00",
     textIcon: "ATP",
-    website: "https://modelstudio.console.alibabacloud.com/",
+    website: "https://docs.modelstudio.console.alibabacloud.com/zh/model-studio/what-is-model-studio",
     notice: {
       apiKeyUrl: "https://modelstudio.console.alibabacloud.com/?apiKey=1",
     },
