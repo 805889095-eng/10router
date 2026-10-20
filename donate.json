@@ -11,6 +11,15 @@
       "url": "https://github.com/sponsors/techysy"
     },
     {
+      "id": "ifdian",
+      "label": "AiFaDian",
+      "description": "Scan to power me / open for monthly plans",
+      "icon": "electric_bolt",
+      "color": "#7c3aed",
+      "url": "https://afdian.com/a/yu_shiyang",
+      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/ifdian.svg"
+    },
+    {
       "id": "alipay",
       "label": "Alipay",
       "description": "Scan with Alipay to tip",
@@ -25,15 +34,6 @@
       "icon": "qr_code",
       "color": "#07c160",
       "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/wechat.svg"
-    },
-    {
-      "id": "ifdian",
-      "label": "AiFaDian",
-      "description": "Scan to power me / open for monthly plans",
-      "icon": "electric_bolt",
-      "color": "#7c3aed",
-      "url": "https://afdian.com/a/yu_shiyang",
-      "qr": "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/donate/ifdian.svg"
     }
   ]
 }
