@@ -504,6 +504,7 @@ export const PROVIDER_CAPABILITIES = {
     "gpt-6-astra":               { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 },
     // codex OAuth 后端把 gpt-6 家族截到 272k（不同于 OpenAI API 的 1.05M 窗口，
     // 后者由 `*gpt-6*` pattern 承担），所以 Sol/Luna 必须显式列出（上游 92c7bdd5）。
+    "gpt-6.1-sol":               { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 },
     "gpt-6-sol":                 { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 },
     "gpt-6-luna":                { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 },
     "gpt-6-astra[1m]":           CODEX_EXTENDED_CAPS,
