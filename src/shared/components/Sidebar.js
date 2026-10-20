@@ -235,7 +235,7 @@ export default function Sidebar({ onClose }) {
               >
                 {item.icon}
               </span>
-              <span className="text-[13px] font-medium">{item.label}</span>
+              <span className="text-sm font-medium">{item.label}</span>
             </Link>
           ))}
 
@@ -256,7 +256,7 @@ export default function Sidebar({ onClose }) {
               )}
             >
               <span className="material-symbols-outlined text-[18px]">perm_media</span>
-              <span className="text-[13px] font-medium flex-1 text-left">Media Providers</span>
+              <span className="text-sm font-medium flex-1 text-left">Media Providers</span>
               {MEDIA_PROVIDER_KINDS.some((k) => VISIBLE_MEDIA_KINDS.includes(k.id) && k.isNew) && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-[3px] bg-green-500/15 text-green-400">NEW</span>
               )}
@@ -322,7 +322,7 @@ export default function Sidebar({ onClose }) {
                 >
                   {item.icon}
                 </span>
-                <span className="text-[13px] font-medium">{item.label}</span>
+                <span className="text-sm font-medium">{item.label}</span>
               </Link>
             ))}
 
@@ -349,7 +349,7 @@ export default function Sidebar({ onClose }) {
                   >
                     {item.icon}
                   </span>
-                  <span className="text-[13px] font-medium">{item.label}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               ) : null;
             })}
@@ -373,7 +373,7 @@ export default function Sidebar({ onClose }) {
               >
                 science
               </span>
-              <span className="text-[13px] font-medium">Experimental</span>
+              <span className="text-sm font-medium">Experimental</span>
             </Link>
 
             {/* Settings */}
@@ -395,7 +395,7 @@ export default function Sidebar({ onClose }) {
               >
                 settings
               </span>
-              <span className="text-[13px] font-medium">Settings</span>
+              <span className="text-sm font-medium">Settings</span>
             </Link>
             {/* Community — external links, anchor tags (new tab) */}
             <div className="pt-3 mt-2 space-y-0.5">
@@ -414,7 +414,7 @@ export default function Sidebar({ onClose }) {
                   <span className="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">
                     {item.icon}
                   </span>
-                  <span className="text-[13px] font-medium">{translate(item.label)}</span>
+                  <span className="text-sm font-medium">{translate(item.label)}</span>
                 </a>
               ))}
             </div>
