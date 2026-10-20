@@ -10,6 +10,15 @@
   "updatedAt": "2026-10-20T23:30:00+08:00",
   "items": [
     {
+      "id": "2026-10-20-proxy-strict",
+      "date": "2026-10-20",
+      "level": "warning",
+      "title": "代理行为变更：不可直连渠道默认严格模式",
+      "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
+      "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
+      "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
+    },
+    {
       "id": "2026-10-20-qoder-qfmodel-free",
       "date": "2026-10-20",
       "level": "promo",
@@ -62,15 +71,6 @@
       "body": "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。",
       "titleEn": "Trae CN (trae.cn) OAuth login",
       "bodyEn": "Site selection with callback self-verification and bare-token probing; CN and international accounts are not interchangeable — mismatches get a clear message."
-    },
-    {
-      "id": "2026-10-20-proxy-strict",
-      "date": "2026-10-20",
-      "level": "warning",
-      "title": "代理行为变更：不可直连渠道默认严格模式",
-      "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
-      "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
-      "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
     },
     {
       "id": "2026-10-20-endpoint-picker",
