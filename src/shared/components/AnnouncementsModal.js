@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Modal from "@/shared/components/Modal";
 import Button from "@/shared/components/Button";
 import { GITHUB_CONFIG } from "@/shared/constants/config";
-import { translate } from "@/i18n/runtime";
+import { translate, getCurrentLocale } from "@/i18n/runtime";
 import { cn } from "@/shared/utils/cn";
 
 // Live announcement feed (repo-root announcements.json). Like donate.json it is
@@ -56,7 +56,9 @@ function normalizeFeed(raw) {
     .map((it) => ({
       id: it.id,
       title: it.title,
+      titleEn: typeof it.titleEn === "string" ? it.titleEn : "",
       body: typeof it.body === "string" ? it.body : "",
+      bodyEn: typeof it.bodyEn === "string" ? it.bodyEn : "",
       date: typeof it.date === "string" ? it.date : "",
       level: ["promo", "info", "warning", "critical"].includes(it.level) ? it.level : "info",
       link: typeof it.link === "string" && /^https?:\/\//.test(it.link) ? it.link : "",
@@ -184,11 +186,15 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
             )}
           >
             <div className="mb-1 flex items-start justify-between gap-2">
-              <h3 className="text-[13px] font-semibold leading-5 text-text-main">{translate(it.title)}</h3>
+              <h3 className="text-[13px] font-semibold leading-5 text-text-main">
+                {getCurrentLocale() === "en" && it.titleEn ? it.titleEn : it.title}
+              </h3>
               {it.date && <time className="shrink-0 text-[10px] text-text-muted">{it.date}</time>}
             </div>
             {it.body && (
-              <p className="whitespace-pre-line text-xs leading-relaxed text-text-muted">{translate(it.body)}</p>
+              <p className="whitespace-pre-line text-xs leading-relaxed text-text-muted">
+                {getCurrentLocale() === "en" && it.bodyEn ? it.bodyEn : it.body}
+              </p>
             )}
             {it.link && (
               <a

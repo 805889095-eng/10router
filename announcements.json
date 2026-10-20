@@ -6,63 +6,81 @@
       "date": "2026-10-20",
       "level": "promo",
       "title": "Qoder qfmodel 双线限免至 10-25",
-      "body": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。"
+      "body": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。",
+      "titleEn": "Qoder qfmodel free on both lanes until 10-25",
+      "bodyEn": "qfmodel is renamed DeepSeek-V4.1-Flash 1017; free (0x rate) on both qoder and qoder-cn until 10-25."
     },
     {
       "id": "2026-10-20-cb-v41-flash",
       "date": "2026-10-20",
       "level": "promo",
       "title": "CodeBuddy CN V4.1-Flash 1017 限免中",
-      "body": "codebuddy-cn 的 V4.1-Flash 1017 限免窗口内倍率 0x，结束后恢复发布倍率。"
+      "body": "codebuddy-cn 的 V4.1-Flash 1017 限免窗口内倍率 0x，结束后恢复发布倍率。",
+      "titleEn": "CodeBuddy CN V4.1-Flash 1017 free now",
+      "bodyEn": "codebuddy-cn's V4.1-Flash 1017 runs at 0x during the promo window and returns to the published rate afterwards."
     },
     {
       "id": "2026-10-20-minimax-free-back",
       "date": "2026-10-20",
       "level": "promo",
       "title": "MiniMax Code Free 回归",
-      "body": "minimax-free 免登录网关线回归（CreditDaddy 闭环）；订阅线支持每日自动签到，模型面已对齐 M3.1 Flash 正式 id。"
+      "body": "minimax-free 免登录网关线回归（CreditDaddy 闭环）；订阅线支持每日自动签到，模型面已对齐 M3.1 Flash 正式 id。",
+      "titleEn": "MiniMax Code Free is back",
+      "bodyEn": "The minimax-free no-auth gateway lane is back (CreditDaddy closed loop); subscription lines gain daily auto check-in, and the model list is aligned to the official M3.1 Flash ids."
     },
     {
       "id": "2026-10-20-inception",
       "date": "2026-10-20",
       "level": "info",
       "title": "新增 Inception Labs（Mercury 扩散模型）",
-      "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens（额度经 CreditDaddy 通用卡推送）。"
+      "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens（额度经 CreditDaddy 通用卡推送）。",
+      "titleEn": "New provider: Inception Labs (Mercury diffusion models)",
+      "bodyEn": "OpenAI compatible. mercury-3: 1M ctx / tool calling / ~1000 tok/s, 50% off launch at $0.10/$0.35; new keys include 100M free tokens (quota via the CreditDaddy generic card)."
     },
     {
       "id": "2026-10-20-combo-router",
       "date": "2026-10-20",
       "level": "info",
       "title": "组合新增 router 策略",
-      "body": "System One 决策模型前置路由，失败/超时自动退回原顺序；决策模型在组合卡上单独选择。"
+      "body": "System One 决策模型前置路由，失败/超时自动退回原顺序；决策模型在组合卡上单独选择。",
+      "titleEn": "Combo router strategy",
+      "bodyEn": "A System One decision model pre-routes each request; failures or timeouts silently fall back to the original order. Pick the decision model on the combo card."
     },
     {
       "id": "2026-10-20-trae-cn",
       "date": "2026-10-20",
       "level": "info",
       "title": "Trae 国内站 (trae.cn) OAuth 登录",
-      "body": "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。"
+      "body": "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。",
+      "titleEn": "Trae CN (trae.cn) OAuth login",
+      "bodyEn": "Site selection with callback self-verification and bare-token probing; CN and international accounts are not interchangeable — mismatches get a clear message."
     },
     {
       "id": "2026-10-20-proxy-strict",
       "date": "2026-10-20",
       "level": "warning",
       "title": "代理行为变更：不可直连渠道默认严格模式",
-      "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。"
+      "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
+      "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
+      "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
     },
     {
       "id": "2026-10-20-endpoint-picker",
       "date": "2026-10-20",
       "level": "info",
       "title": "端点模型白名单改勾选式",
-      "body": "端点「允许调用的模型与组合」由手敲 id 改为勾选式选择器。"
+      "body": "端点「允许调用的模型与组合」由手敲 id 改为勾选式选择器。",
+      "titleEn": "Endpoint model allowlist is now checkbox-based",
+      "bodyEn": "The endpoint's allowed models/combos are picked via checkboxes instead of typing ids."
     },
     {
       "id": "2026-10-20-community",
       "date": "2026-10-20",
       "level": "info",
       "title": "社区与捐赠",
-      "body": "侧边栏新增 Community 分区：飞书群 / Discord / Telegram / GitHub。捐赠渠道：GitHub Sponsors / 爱发电 / 支付宝 / 微信。"
+      "body": "侧边栏新增 Community 分区：飞书群 / Discord / Telegram / GitHub。捐赠渠道：GitHub Sponsors / 爱发电 / 支付宝 / 微信。",
+      "titleEn": "Community & donations",
+      "bodyEn": "New sidebar Community section: Feishu / Discord / Telegram / GitHub. Donations: GitHub Sponsors / AiFaDian / Alipay / WeChat."
     }
   ]
 }

@@ -947,22 +947,5 @@
   "Power me ⚡️": "為我發電 ⚡️",
   "Check endpoint": "檢查端點",
   "Endpoint unreachable — the provider may be under maintenance, try again later": "端點不可達——供應商可能正在維護，請稍後重試",
-  "Qoder qfmodel 双线限免至 10-25": "Qoder qfmodel 雙線限免至 10-25",
-  "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 國際國內雙線限免（倍率 0x）至 10-25。",
-  "CodeBuddy CN V4.1-Flash 1017 限免中": "CodeBuddy CN V4.1-Flash 1017 限免中",
-  "codebuddy-cn 的 V4.1-Flash 1017 限免窗口内倍率 0x，结束后恢复发布倍率。": "codebuddy-cn 的 V4.1-Flash 1017 限免視窗內倍率 0x，結束後恢復發布倍率。",
-  "MiniMax Code Free 回归": "MiniMax Code Free 回歸",
-  "minimax-free 免登录网关线回归（CreditDaddy 闭环）；订阅线支持每日自动签到，模型面已对齐 M3.1 Flash 正式 id。": "minimax-free 免登入閘道線回歸（CreditDaddy 閉環）；訂閱線支援每日自動簽到，模型面已對齊 M3.1 Flash 正式 id。",
-  "新增 Inception Labs（Mercury 扩散模型）": "新增 Inception Labs（Mercury 擴散模型）",
-  "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens（额度经 CreditDaddy 通用卡推送）。": "OpenAI 相容。mercury-3：1M ctx / 工具呼叫 / ~1000 tok/s，launch 半價 $0.10/$0.35，新 key 送 1 億 tokens（額度經 CreditDaddy 通用卡推送）。",
-  "组合新增 router 策略": "組合新增 router 策略",
-  "System One 决策模型前置路由，失败/超时自动退回原顺序；决策模型在组合卡上单独选择。": "System One 決策模型前置路由，失敗/逾時自動退回原順序；決策模型在組合卡上單獨選擇。",
-  "Trae 国内站 (trae.cn) OAuth 登录": "Trae 國內站 (trae.cn) OAuth 登入",
-  "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。": "支援站點選擇，國內/國際 token 不互通（拿錯端 20101）；SOLO 閘道並發跨站串用已修。",
-  "代理行为变更：不可直连渠道默认严格模式": "代理行為變更：不可直連渠道預設嚴格模式",
-  "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。": "Google Cloud Code、Gemini CLI 等渠道代理失敗立即報錯並順位接力，不再回退直連死等（此前實測 788s）。連接級顯式 strictProxy 優先。",
-  "端点模型白名单改勾选式": "端點模型白名單改勾選式",
-  "端点「允许调用的模型与组合」由手敲 id 改为勾选式选择器。": "端點「允許呼叫的模型與組合」由手敲 id 改為勾選式選擇器。",
-  "社区与捐赠": "社群與捐贈",
-  "侧边栏新增 Community 分区：飞书群 / Discord / Telegram / GitHub。捐赠渠道：GitHub Sponsors / 爱发电 / 支付宝 / 微信。": "側邊欄新增 Community 分區：飛書群 / Discord / Telegram / GitHub。捐贈渠道：GitHub Sponsors / 愛發電 / 支付寶 / 微信。"
+  "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 國際國內雙線限免（倍率 0x）至 10-25。"
 }
