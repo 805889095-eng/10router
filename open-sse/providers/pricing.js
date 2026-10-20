@@ -273,6 +273,13 @@ export const PROVIDER_PRICING = {
     "deepseek-ai/DeepSeek-V4-Flash": { input: 0.21, output: 0.63, cached: 0.02, reasoning: 0.63 },
     "moonshotai/Kimi-K2.6": { input: 0.91, output: 3.78, cached: 0.15, reasoning: 3.78 },
   },
+  // Inception Labs — first-party launch pricing (docs.inceptionlabs.ai/get-started,
+  // 2026-10-20): mercury-3 50% off → $0.10/$0.35, cached $0.01. reasoning billed
+  // at the output rate. mercury-2.5 keeps its legacy $0.20/$0.75 rates.
+  inception: {
+    "mercury-3":    { input: 0.10, output: 0.35, cached: 0.01, reasoning: 0.35 },
+    "mercury-2.5":  { input: 0.20, output: 0.75, cached: 0.02, reasoning: 0.75 },
+  },
   // TokenRouter — exact rates from https://api.tokenrouter.com/api/pricing ($1/1M tokens).
   // Ratio→USD: input = model_ratio×2, output = model_ratio×completion_ratio×2.
   // These override the canonical MODEL_PRICING/PATTERN_PRICING, whose rates often

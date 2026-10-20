@@ -1393,5 +1393,11 @@
     "baseUrl": "https://api.codiv.ai/v1/chat/completions",
     "validateUrl": "https://api.codiv.ai/v1/models",
     "format": "openai"
+  },
+  "inception": {
+    "baseUrl": "https://api.inceptionlabs.ai/v1/chat/completions",
+    "validateUrl": "https://api.inceptionlabs.ai/v1/models",
+    "thinkingFormat": "openai",
+    "format": "openai"
   }
 }
