@@ -13,7 +13,7 @@ export default {
     icon: "cloud",
     color: "#FF6A00",
     textIcon: "ATP",
-    website: "https://www.alibabacloud.com/campaign/ai-landing-page-token",
+    website: "https://modelstudio.console.alibabacloud.com/",
     notice: {
       apiKeyUrl: "https://modelstudio.console.alibabacloud.com/?apiKey=1",
     },

@@ -72,7 +72,6 @@ import SenseNova from "@lobehub/icons/es/SenseNova";
 import LongCat from "@lobehub/icons/es/LongCat";
 import VertexAI from "@lobehub/icons/es/VertexAI";
 import Vercel from "@lobehub/icons/es/Vercel";
-import AlibabaCloud from "@lobehub/icons/es/AlibabaCloud";
 
 export const LOBE_PROVIDER_ICONS = {
   openai: OpenAI,
@@ -138,14 +137,6 @@ export const LOBE_PROVIDER_ICONS = {
   sensenova: SenseNova,
   longcat: LongCat,
   vertex: VertexAI,
-  // 阿里云百炼家族：Token Plan / Coding / Studio 三个 key 类型共用官方云标识。
-  // Token Plan 是 credit 订阅 key（token-plan.<region>.maas.aliyuncs.com），
-  // 与 Coding Plan / Model Studio 是不同的 key，但对用户而言都是「阿里云」。
-  "alitp-intl": AlibabaCloud,
-  alims: AlibabaCloud,
-  "alims-intl": AlibabaCloud,
-  alicode: AlibabaCloud,
-  "alicode-intl": AlibabaCloud,
   "vercel-ai-gateway": Vercel,
 };
 

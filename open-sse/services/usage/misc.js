@@ -569,7 +569,7 @@ export async function getQoderUsage(accessToken, proxyOptions = null, providerId
 export function getAlibabaTokenPlanUsage(provider = "alitp-intl") {
   const isCn = provider === "alitp-cn";
   const consoleUrl = isCn
-    ? "https://bailian.console.aliyun.com/"
+    ? "https://bailian.console.aliyun.com/cn-beijing/subscription/overview"
     : "https://modelstudio.console.alibabacloud.com/";
   const region = isCn ? "国内版（cn-beijing）" : "国际版（ap-southeast-1）";
   return {

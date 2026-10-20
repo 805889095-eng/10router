@@ -21,7 +21,7 @@ export default {
     icon: "cloud",
     color: "#FF6A00",
     textIcon: "ATP",
-    website: "https://help.aliyun.com/zh/model-studio/",
+    website: "https://bailian.console.aliyun.com/cn-beijing/subscription/overview",
     notice: {
       apiKeyUrl: "https://bailian.console.aliyun.com/?apiKey=1",
     },

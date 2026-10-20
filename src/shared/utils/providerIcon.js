@@ -24,11 +24,20 @@ const ICON_ALIASES = {
   "sf": "stepfun",
   "step-plan-cn": "stepfun",
   "step-plan": "stepfun",
+  // 阿里云百炼家族：Token Plan / Coding / Studio × 国际/国内，共用官方 SVG
+  "alitp-intl": "alitp",
+  "alitp-cn": "alitp",
+  alims: "alitp",
+  "alims-intl": "alitp",
+  alicode: "alitp",
+  "alicode-intl": "alitp",
 };
 
 // Providers whose asset ships as SVG (everything else is .png).
 const ICON_EXTENSIONS = {
   bai: ".svg",
+  // 官方百炼 wordmark 只有 SVG（docs.bailian.console.aliyun.com/logo/）
+  alitp: ".svg",
 };
 
 // Runtime only — first 404 remembers id for the whole session
