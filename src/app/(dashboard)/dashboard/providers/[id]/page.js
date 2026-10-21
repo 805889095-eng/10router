@@ -19,6 +19,7 @@ import { fetchSuggestedModels } from "@/shared/utils/providerModelsFetcher";
 import { getProviderCustomModelRows } from "@/shared/utils/providerCustomModels";
 import { extractAccountsVerificationUrl } from "@/shared/utils/validationUrl";
 import { translateQuotaError } from "@/shared/utils/quotaError";
+import { cn } from "@/shared/utils/cn";
 import ModelRow from "./ModelRow";
 import PassthroughModelsSection from "./PassthroughModelsSection";
 import CompatibleModelsSection from "./CompatibleModelsSection";

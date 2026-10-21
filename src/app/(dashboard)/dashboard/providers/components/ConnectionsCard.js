@@ -5,6 +5,7 @@ import { translate } from "@/i18n/runtime";
 import { getStatusVariant as getConnectionStatusVariant } from "@/shared/utils/connectionStatus";
 import { classifyConnectionCooldown, sameConnectionCooldown } from "@/shared/utils/connectionCooldown";
 import { translateQuotaError } from "@/shared/utils/quotaError";
+import { cn } from "@/shared/utils/cn";
 import PropTypes from "prop-types";
 import { Card, Badge, Button, Modal, Select, Toggle, EditConnectionModal, ConfirmModal } from "@/shared/components";
 
