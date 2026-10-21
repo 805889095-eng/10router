@@ -14,6 +14,9 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 - **Header announcement system**: free-model promos and breaking changes pushed live (GitHub raw → Gitee mirror → local cache fallback).
 - **API key permission picker**: allowed models/combos are now checkbox-based.
 - **MiniMax Code "checked in today" badge**: CreditDaddy-pushed check-in state with streak days.
+- **Earliest-Expiry-First routing hardened against overdraft**: drained gift/refill packs no longer hijack the expiry ranking, so accounts stop converging on the same reset point; Round-Robin auto-disables while Earliest Expiry First is active, with new user docs for the polling/quota-pack logic.
+- **Configurable quota refresh interval**: default 5 minutes, selectable 1m/5m/15m/30m/1h instead of a forced 60s poll; Auto-Ping upgraded to three modes (off / ping-on-reset / fixed local-clock schedule), one entry shared by the quota and provider pages.
+- **CodeBuddy "checked in / active" badge judged locally** (from the newest quota pack's cycle start, no external push needed); **Qoder CD Sync / Native dual-entry badges**.
 
 ### 🐛 Fixed
 
@@ -23,6 +26,10 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 - **Node health punished fast models**: the latency axis now uses TTFT, so long-output fast models are no longer dragged down by total duration.
 - **CodeBuddy intl "daily active session" retired** (upstream cancelled the campaign); **CodeBuddy CN message guard raised to 5000**.
 - **Alibaba Token Plan CN added**, all four Alibaba cards labeled Intl/CN; **Qoder promo rows** show a readable deadline; **API key validation hints** are translated.
+- **Quota-pack cycling bug drained one account to overdraft (T0)**: periodic gift packs could hijack the earliest-expiry ranking and wedge the relay ring onto a single carrier; fixed with a gift-pack exclusion rule, full incident report published.
+- **River AI connection test falsely reported "not supported" (issue #80)**: now covered by the generic OpenAI-compatible check.
+- **Provider detail page could fail to load entirely**: a missing class-utility import behind the Round-Robin greying crashed the page on render; covered by browser-level verification now.
+- **Tencent WorkBuddy 400 risk control**: DeepSeek Harness identifiers are scrubbed from outbound requests automatically.
 
 ### 🎨 UI
 

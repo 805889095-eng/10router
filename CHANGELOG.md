@@ -20,6 +20,9 @@
 - **头部公告系统**：运营改仓库根 `announcements.json` 推送即生效（GitHub raw → Gitee 镜像 → 本地缓存三级兜底）；未读数红点；level 三级配色；免费模型活动 / 关键变更实时触达。
 - **API Key 细粒度权限勾选器**：端点「允许调用的模型与组合」由手敲 id 改勾选式选择。
 - **minimax-code 卡面「今日已签」徽章（Issue #77）**：external-quota 白名单放行 checkinToday/streakDays，推送即展示连签天数（只读，动作留在 CreditDaddy）。
+- **到期优先调度（Earliest Expiry First）全链路**：后台 SWR 配额刷新（15 分钟陈旧阈值）驱动连接级 `earliestPackageExpiry`；relay 载波环按最早到期排序、红区 5% 前瞻切换（`relaySelection.js`）；Round-Robin 开关在到期优先开启时置灰禁用（到期优先接管轮询）；组合与全局默认策略的优先级写入用户文档（`routing-strategy-and-combos-guide`）。
+- **额度页刷新间隔可配置**：60s 强制轮询改 1m/5m/15m/30m/1h 五档下拉（默认 5m，localStorage 持久化），倒计时显示跟随所选间隔；Auto-Ping 升级为三模式（关闭 / 重置即 ping / 锚定本地钟点表 schedule），配额页与供应商页同一弹窗。
+- **CodeBuddy 双线「已签到/活跃」本地判定（Issue #77 扩展）**：解析最新配额包的 CycleStartTime 落在当日即点亮徽章，不依赖外部推送；Qoder 卡面新增 CD Sync / Native 双入口徽章。
 
 ### 🐛 修复
 
@@ -28,6 +31,11 @@
 - **MiniMax 签到状态查询 404（Issue #75）**：签到共用签名函数按 body 选动词，status 端点被误发 POST（只认 GET）——每次签到都卡在第一步 404。改 GET + realUserID 入签名，动词用测试钉死。
 - **节点健康度误伤极速模型**：延迟轴原用总时长，agent 长输出被生成本身主导——Mercury 级 ~1000 tok/s 模型跑满一分钟延迟轴只有 20 分（速度轴却已满分），长输出快模型被结构性卡在 ~83 分。延迟轴改用 TTFT（首字延迟），无样本回退总延迟。
 - **组合 router 决策候选列表首行换行缺失（Issue #73）**：首个候选粘在标题行上。
+- **到期优先调度透支（T0）**：周期性赠送包（如 CodeBuddy CN Monthly refill）耗尽后仍参与「最早到期」竞选并把 minRemaining 压到 0%，多账号因此齐指月末同一重置点、relay 环全体判红死锁单号——余师洋账号被单号烧穿透支。`expiryExtractor` 新增 `giftPack` 规则（资产包耗尽即出局，周期窗口保留「重置在即」语义）；codebuddy 补给包全部改标 `giftPack`；relay 环「无一健康」兜底不再永久钉死 ring[0]。复盘报告 `docs/zh-CN/incident-report-2026-10-21-codebuddy-relay-overdraft.md`。
+- **CodeBuddy 签到徽章本地判定回归**：解析配额包 CycleStartTime 当日即点亮，refill 包标记修正后反重力周期包展示同步恢复。
+- **River AI 连接测试误报「Provider test not supported」（Issue #80）**：river 是 OpenAI 兼容协议但测试面没有它的分支；并入通用 GET /models 校验。
+- **DeepSeek Harness 敏感标识触发腾讯 WorkBuddy 400 风控**：出站自动清洗 `Dsh` 标识。
+- **供应商详情页整页白屏（client 崩溃）**：到期优先置灰 Round-Robin 的两处 `cn()` 缺 import 导致 render 即 `ReferenceError`；autoPing 弹窗接线残留旧 prop 形状。SSR 冒烟测不到 client 渲染崩溃，已纳入浏览器探针验证。
 - **minimax-free 图标内外不一致（Issue #75）**：列表卡走了 Lobe 红色 Minimax 标、详情页却是蓝色 Code 图；去映射统一走 PNG。
 - **MiniMax Code 详情页有连接时签到按钮消失（Issue #75）**：按钮只挂在双鉴权分支，OAuth-only 的 minimax-code 有连接后落到单鉴权分支；hasClaimCheckin 收敛三处判断并补进该分支。
 - **CodeBuddy 国际站「每日活跃会话」下线**：上游已撤销该活动，探针只剩每天白付一次请求；开关、调度、实现、测试全删。
