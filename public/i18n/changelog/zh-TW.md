@@ -4,8 +4,6 @@
 
 ## v1.6.0 (2026-10-21)
 
-> v1.5.2 未單獨發版，內容併入本版本。
-
 ### ✨ 新增
 
 - **上游 9router v0.5.95 → v0.5.104 擇優移植**：Gemini 4 Argon 三線收錄；antigravity 支援 Claude Sonnet/Opus 5.5（家族共享配額路由）；antigravity 目錄重新整理（預設 3.8-flash-medium、IDE 指紋 2.22.0）；Codex GPT-6.1 Sol 與 Responses Lite 傳輸；gpt-5.5 系下線；現役 Claude 全系補 PDF 輸入。

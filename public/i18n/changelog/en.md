@@ -4,8 +4,6 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 
 ## v1.6.0 (2026-10-21)
 
-> v1.5.2 was never released separately; its content is merged into this version.
-
 ### ✨ New
 
 - **Upstream 9router v0.5.95 → v0.5.104 selective port**: Gemini 4 Argon across gemini/vertex/antigravity; antigravity Claude Sonnet/Opus 5.5 with family-shared quota routing; antigravity catalog refresh (default 3.8-flash-medium, IDE fingerprint 2.22.0); Codex GPT-6.1 Sol with the Responses Lite transport; gpt-5.5 family retired; PDF input capability for all current Claude models.

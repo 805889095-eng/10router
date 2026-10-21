@@ -82,6 +82,15 @@
       "bodyEn": "The endpoint's allowed models/combos are picked via checkboxes instead of typing ids."
     },
     {
+      "id": "2026-10-21-external-quota-single-card",
+      "date": "2026-10-21",
+      "level": "feature",
+      "title": "外配额卡升级：单账号单卡 + 签到徽章",
+      "body": "MiniMax Code Free 等推送卡改为每账号一张独立卡（余额不再跨账号加总），签到徽章紧贴余额数字；弹窗移动端居中体验对齐更新日志。",
+      "titleEn": "Pushed quota cards: one card per account, badge beside the balance",
+      "bodyEn": "Pushed cards (MiniMax Code Free and friends) are now one independent card per account — balances are no longer summed across accounts — with the check-in badge right beside the number; modals are now centered on mobile, matching the changelog dialog."
+    },
+    {
       "id": "2026-10-20-community",
       "date": "2026-10-20",
       "level": "info",
