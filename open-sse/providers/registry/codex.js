@@ -74,8 +74,9 @@ export default {
     { id: "gpt-5.6-luna", name: "GPT 5.6 Luna" },
     { id: "gpt-5.6-luna[1m]", name: "GPT 5.6 Luna (extended context)", upstreamModelId: "gpt-5.6-luna" },
     { id: "gpt-5.6-luna-review", name: "GPT 5.6 Luna Review", upstreamModelId: "gpt-5.6-luna", quotaFamily: "review" },
-    { id: "gpt-5.5", name: "GPT 5.5" },
-    { id: "gpt-5.5-review", name: "GPT 5.5 Review", upstreamModelId: "gpt-5.5", quotaFamily: "review" },
+    // [merge e4b5d13b] gpt-5.5 / gpt-5.5-review removed: absent from
+    // backend-api/codex/models for ChatGPT accounts and return HTTP 400
+    // (#4202, #4848, 上游 7878f53b).
     // gpt-5.4 / gpt-5.4-mini / gpt-5.3-codex-spark 已移除：不在 backend-api/codex/models 里，
     // 后端一律 400 "model is not supported"（上游 v0.5.95, 8f9ff44f）。
     // gpt-daybreak-blue-latest / gpt-reserve 已由 backend-api/codex/models 确认在线。
@@ -86,12 +87,12 @@ export default {
     { id: "gpt-image-2.5-sunburst", name: "GPT Image 2.5 Sunburst", capabilities: ["text2img","edit","multiImage"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
     { id: "gpt-image-2", name: "GPT Image 2", capabilities: ["text2img","edit","multiImage"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
     { id: "gpt-image-1.5", name: "GPT Image 1.5", capabilities: ["text2img","edit","multiImage"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
+    // [merge e4b5d13b] gpt-5.5-image / gpt-5.3-image removed alongside gpt-5.5
+    // (dead on the backend — HTTP 400).
     { id: "gpt-5.6-sol-image", name: "GPT 5.6 Sol Image", capabilities: ["text2img","edit"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
     { id: "gpt-5.6-terra-image", name: "GPT 5.6 Terra Image", capabilities: ["text2img","edit"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
     { id: "gpt-5.6-luna-image", name: "GPT 5.6 Luna Image", capabilities: ["text2img","edit"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
-    { id: "gpt-5.5-image", name: "GPT 5.5 Image", capabilities: ["text2img","edit"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
     // gpt-5.4-image 随 gpt-5.4 一并移除（后端同样已下线）。
-    { id: "gpt-5.3-image", name: "GPT 5.3 Image", capabilities: ["text2img","edit"], params: ["size","quality","background","image_detail","output_format"], kind: "image" },
   ],
   serviceKinds: ["llm","image"],
   oauth: {

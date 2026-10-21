@@ -79,6 +79,12 @@ export const FETCH_CONNECT_TIMEOUT_MS = envMs("FETCH_CONNECT_TIMEOUT_MS", 60 * 1
 export const PROXY_RETRY_ATTEMPTS = envMs("PROXY_RETRY_ATTEMPTS", 2);
 export const PROXY_RETRY_BASE_DELAY_MS = envMs("PROXY_RETRY_BASE_DELAY_MS", 400);
 
+// [merge 092c86d7] 代理失败后回退直连的兜底超时。
+// 被墙端点(Google cloudcode 等)直连会静默丢包 TCP 握手,不设上限就是数百秒死等
+// (issue #76 实测 788s),还堵死上层多账号/Combo 顺位接力。默认与
+// FETCH_CONNECT_TIMEOUT_MS 同量级,env 可调。
+export const DIRECT_FALLBACK_TIMEOUT_MS = envMs("DIRECT_FALLBACK_TIMEOUT_MS", 60 * 1000);
+
 // chat→responses 直连路由里,response.completed 为等真实 usage 尾部 chunk 而
 // 延迟(见 translator/response/openai-responses.js)。上游 stall(无尾部 chunk、
 // 无 [DONE]、连接不断开)时这个等待不能无界:watchdog 超时兜底补发终态事件。

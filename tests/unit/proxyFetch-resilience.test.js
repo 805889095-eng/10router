@@ -69,4 +69,45 @@ describe("ProxyFetch resilience", () => {
 
     expect(warningsText()).toMatch(/falling back to direct/);
   }, 30000);
+
+  // [merge 092c86d7] 直连兜底必须有界，否则被墙端点会死等数百秒(issue #76: 788s)
+  it("bounds the direct fallback so a blocked host cannot hang forever", async () => {
+    // 把兜底超时压到 300ms，用一个永不响应的地址模拟被墙端点
+    vi.resetModules();
+    process.env.DIRECT_FALLBACK_TIMEOUT_MS = "300";
+
+    const started = Date.now();
+    const { proxyAwareFetch: pf } = await import("../../open-sse/utils/proxyFetch.js");
+
+    await pf(
+      "http://10.255.255.1/x", // 不可路由地址：连不通报错，或超时被 abort
+      {},
+      { connectionProxyEnabled: true, connectionProxyUrl: DEAD_PROXY },
+    ).catch(() => {});
+
+    const elapsed = Date.now() - started;
+    // 3 次代理尝试(0+400+800ms 退避) + 300ms 直连兜底，宽松上限 30s
+    // 关键断言：必须远小于「无界死等」的量级
+    expect(elapsed).toBeLessThan(30000);
+    delete process.env.DIRECT_FALLBACK_TIMEOUT_MS;
+  }, 60000);
+
+  it("does not double-time when the caller already passed a signal", async () => {
+    vi.resetModules();
+    const { proxyAwareFetch: pf } = await import("../../open-sse/utils/proxyFetch.js");
+
+    const ctrl = new AbortController();
+    // 调用方自己 200ms 就 abort —— 兜底不应再叠一层 60s 计时
+    const timer = setTimeout(() => ctrl.abort(new Error("caller abort")), 200);
+    const started = Date.now();
+
+    await pf(
+      "http://10.255.255.1/x",
+      { signal: ctrl.signal },
+      { connectionProxyEnabled: true, connectionProxyUrl: DEAD_PROXY },
+    ).catch(() => {});
+    clearTimeout(timer);
+
+    expect(Date.now() - started).toBeLessThan(30000);
+  }, 60000);
 });

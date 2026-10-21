@@ -5,6 +5,7 @@ import p2 from "./alicode-intl.js";
 import p3 from "./alicode.js";
 import p4 from "./alims-intl.js";
 import p5 from "./alitp-intl.js";
+import p5b from "./alitp-cn.js";
 import p6 from "./amd.js";
 import p7 from "./anthropic.js";
 import p8 from "./antigravity.js";
@@ -154,6 +155,7 @@ import p152 from "./zed.js";
 import p153 from "./modelscope.js";
 import p154 from "./codiv.js";
 import p155 from "./thx.js";
+import p156 from "./inception.js";
 
 export default [
   p0,
@@ -162,6 +164,7 @@ export default [
   p3,
   p4,
   p5,
+  p5b,
   p6,
   p7,
   p8,
@@ -311,4 +314,5 @@ export default [
   p153,
   p154,
   p155,
+  p156,
 ];

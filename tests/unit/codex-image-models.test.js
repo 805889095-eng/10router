@@ -63,7 +63,9 @@ describe("Codex GPT Image 2.5 family", () => {
   });
 
   it("leaves the pre-existing codex image models on the legacy declaration", () => {
-    for (const id of ["gpt-5.6-sol-image", "gpt-5.5-image", "gpt-5.3-image"]) {
+    // [merge e4b5d13b] gpt-5.5-image / gpt-5.3-image 已下线（后端 400），
+    // 只留仍在售的 gpt-5.6-* 系。
+    for (const id of ["gpt-5.6-sol-image"]) {
       expect(find("codex", id)?.capabilities, id).toEqual(["text2img", "edit"]);
     }
   });

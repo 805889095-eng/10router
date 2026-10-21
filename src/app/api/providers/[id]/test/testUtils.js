@@ -1091,6 +1091,7 @@ case "llm7": {
       case "featherless":
       case "bluesminds":
       case "alitp-intl":
+      case "alitp-cn":
       case "tokenbom":
       case "codiv": {
         // Generic OpenAI-compatible freeTier/apikey providers with a GET

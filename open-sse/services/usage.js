@@ -24,6 +24,7 @@ import {
   getOllamaUsage,
   getVercelAiGatewayUsage,
   getQoderUsage,
+  getAlibabaTokenPlanUsage,
 } from "./usage/misc.js";
 import { getGlmUsage } from "./usage/glm.js";
 import { getCommandCodeUsage } from "./usage/commandcode.js";
@@ -83,6 +84,11 @@ const USAGE_HANDLERS = {
   // Machine-session fallback stays enabled: a Desktop row with no stored passToken
   // reads the running Desktop's own cookie store, exactly like the executor does.
   "mimo-desktop": (c) => getXiaomiMimoUsage(c.accessToken, c.providerSpecificData, c.proxyOptions),
+  // [merge 00b26200] Alibaba Token Plan（credit 订阅 key）：没有任何公开额度接口，
+  // handler 只返回一条指向百炼控制台的说明，避免漏成 "Usage API not implemented"
+  // （见 misc.js）。
+  "alitp-intl": () => getAlibabaTokenPlanUsage("alitp-intl"),
+  "alitp-cn": () => getAlibabaTokenPlanUsage("alitp-cn"),
   // Token Plan keys (tp-) live on a cluster with no quota endpoint at all — the
   // handler exists so the row can explain that instead of falling through to
   // "Usage API not implemented for xiaomi-tokenplan".

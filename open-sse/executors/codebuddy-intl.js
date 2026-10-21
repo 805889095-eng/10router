@@ -103,13 +103,29 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
 
     // CodeBuddy rejects plain OpenAI shape (11101 invalid request): needs a
     // leading system prompt + user content as typed blocks, not a bare string.
+    // [merge 2c0afd7d] Tencent WAF 对 "DeepSeek Harness" 报 400/11128，注入零宽空格规避。
+    const sanitizeDshText = (s) =>
+      typeof s === "string" ? s.replace(/DeepSeek([ \-_]*)Harness/gi, "DeepSeek\u200B$1Harness") : s;
+    const sanitizeMessageContent = (content) => {
+      if (typeof content === "string") return sanitizeDshText(content);
+      if (Array.isArray(content)) {
+        return content.map((part) => {
+          if (part && typeof part.text === "string") {
+            return { ...part, text: sanitizeDshText(part.text) };
+          }
+          return part;
+        });
+      }
+      return content;
+    };
+
     transformed.messages = [{ role: "system", content: "You are CodeBuddy Code." }];
     for (const message of source) {
       if (!message || typeof message !== "object" || ["system", "developer"].includes(message.role)) continue;
       if (message.role === "user" && typeof message.content === "string") {
-        transformed.messages.push({ ...message, content: [{ type: "text", text: message.content }] });
+        transformed.messages.push({ ...message, content: [{ type: "text", text: sanitizeDshText(message.content) }] });
       } else {
-        transformed.messages.push({ ...message });
+        transformed.messages.push({ ...message, content: sanitizeMessageContent(message.content) });
       }
     }
 

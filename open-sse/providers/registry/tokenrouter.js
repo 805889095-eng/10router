@@ -35,6 +35,11 @@ export default {
   // fetched via modelsFetcher; other ids still accepted via passthroughModels.
   models: [
     { id: "MiniMax-Hailuo-2.3", name: "Minimax Hailuo 2.3", kind: "video" },
+    // [merge 41bcd617] M3.1 Flash 正式 id（2026-10，上游限免活动中）。TokenRouter 的
+    // /v1/models 需要鉴权（匿名请求 401），种子表按官方命名登记；真实是否在售由
+    // modelsFetcher 的在线目录决定，抓到就覆盖、没抓到这条也能直接用
+    // （passthroughModels 放行任意 id）。
+    { id: "MiniMax-M3.1-Flash", name: "Minimax M3.1 Flash" },
     { id: "MiniMax-M3", name: "Minimax M3" },
     { id: "anthropic/claude-fable-5", name: "Claude Fable 5" },
     { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5" },
@@ -77,6 +82,9 @@ export default {
     { id: "kling-v3", name: "Kling V3", kind: "video" },
     { id: "kling-v3-omni", name: "Kling V3 Omni", kind: "video" },
     { id: "microsoft/mai-image-2.5", name: "Mai Image 2.5" },
+    // [merge 41bcd617] 命名空间形态（上游 reseller 目录惯例）：与上面的裸 id 是同一个
+    // 模型的两种拼写，能力表另有 `*minimax-m3.1*` canonical 行兜住 1M/512000/video。
+    { id: "minimax/minimax-m3.1-flash", name: "Minimax M3.1 Flash" },
     { id: "minimax/minimax-m2-her", name: "Minimax M2 Her" },
     { id: "minimax/minimax-m2.1", name: "Minimax M2.1" },
     { id: "minimax/minimax-m2.1-highspeed", name: "Minimax M2.1 Highspeed" },

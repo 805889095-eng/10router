@@ -96,8 +96,9 @@ export const QUOTA_AUTOPING_CONFIG = {
       resetAtDriftMs: 30000,
       minPingIntervalMs: 600000,
       skipWhenBlockingQuotaExhausted: true,
-      // Free and Plus Codex accounts both expose gpt-5.5; avoid fallback probes that waste requests.
-      pingModel: "gpt-5.5",
+      // [merge e4b5d13b] gpt-5.6-terra is the lightweight model for auto-pinging
+      // the Codex 5h reset window (gpt-5.5 is dead on the backend).
+      pingModel: "gpt-5.6-terra",
       pingText: "hi",
       pingInstructions: "Reply with OK.",
       pingReasoningEffort: "none",

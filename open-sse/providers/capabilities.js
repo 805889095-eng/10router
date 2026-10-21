@@ -306,6 +306,13 @@ export const MODEL_CAPABILITIES = {
   //     开关的旧认知）；上下文 512K/1M 两档是 MiniMax 侧的用量分档（1M 用量
   //     较高），能力表按上限声明。
   "MiniMax-M3.1-Flash-Preview": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
+  // [merge 05d6e461] 正式 id（2026-10）：不写这行会落到 `*minimax-m3*` 家族兜底，
+  // videoInput 丢失（视频块被剥）、maxOutput 压到家族值。
+  "MiniMax-M3.1-Flash":         { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
+  // [merge 41bcd617] 小写 / 命名空间拼写（tokenrouter 的 `minimax/minimax-m3.1-flash` 一类）。
+  // canonical 查表区分大小写，不写这两行也会落到家族兜底。
+  "minimax-m3.1-flash":         { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
+  "minimax-m3.1-flash-preview": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 },
   "MiniMax-M3":                 { vision: true, videoInput: true, reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 131072 },
   // Fledge Alpha Free（opencode zen 目录；models.dev opencode 条目 2026-10-02）：
   // text+image 进、1M/131072、reasoning/tool_call 均 true——与 space-bunny-free
@@ -376,7 +383,11 @@ const QODER_NAME_ALIASES = {
   "GLM-5.3": "gmodel",
   "GLM-5.3-Flash": "gfmodel",
   "DeepSeek-V4-Pro": "dmodel",
-  "DeepSeek-V4-Flash": "dfmodel",
+  // [merge 4ef4a456] Qoder 2026-10 起把 dfmodel 显示为 DeepSeek-V4.1-Flash-1017
+  // （客户端模型卡确认）。旧名 DeepSeek-V4-Flash 不再出现在模型表里，别名一并
+  // 移除——留着会被 audit-capabilities 判成 dead provider row（别名键必须能在
+  // registry 找到对应条目）。
+  "DeepSeek-V4.1-Flash 1017": "dfmodel",
   "MiniMax-M3": "mmodel",
 };
 const QODER_CN_NAME_ALIASES = {
@@ -525,7 +536,8 @@ export const PROVIDER_CAPABILITIES = {
     "gpt-5.6-terra":               { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 128000 },
     "gpt-6-astra":                 { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 128000 },
     "gpt-6-luna":                  { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1050000, maxOutput: 128000 },
-    "gpt-6.1-sol":                 { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 128000 },
+    // [merge e4b5d13b] gpt-6.1-sol 转正，按 codex 272k 后端截断表（Responses Lite）。
+    "gpt-6.1-sol":                 { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 },
     "grok-4.7":                    { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 500000, maxOutput: 128000 },
     "kimi-k3":                     { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 65536 },
     "free/claude-opus-4.6":        { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 128000 },
@@ -663,7 +675,7 @@ export const PROVIDER_CAPABILITIES = {
     "performance":    { vision: true, reasoning: true, thinkingFormat: "claude-adaptive", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // Claude Sonnet 5
     "efficient":      { vision: true, reasoning: true, thinkingFormat: "claude-adaptive", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // 虚拟档：家族随上游路由漂移，给保守超集
     "dmodel":         { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4-Pro
-    "dfmodel":        { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4-Flash
+    "dfmodel":        { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4.1-Flash-1017（dfmodel）
     "gmodel":         { vision: true, reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 },      // GLM-5.3
     "gfmodel":        { vision: true, reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // GLM-5.3-Flash
     "kmodel_latest":  { vision: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },      // Kimi-K3
@@ -678,7 +690,7 @@ export const PROVIDER_CAPABILITIES = {
     // 虚拟档：家族随上游路由漂移，给保守超集（与 INTL 侧的 auto/efficient 同形状）。
     "auto":           { vision: true, reasoning: true, thinkingFormat: "claude-adaptive", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // 虚拟档：家族随上游路由漂移，给保守超集
     "dmodel":         { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4-Pro
-    "dfmodel":        { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4-Flash
+    "dfmodel":        { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4.1-Flash-1017（dfmodel）
     "gmodel":         { vision: true, reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 },      // GLM-5.3
     "gfmodel":        { vision: true, reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // GLM-5.3-Flash
     "gm51model":      { reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 48000 },       // GLM-5.2

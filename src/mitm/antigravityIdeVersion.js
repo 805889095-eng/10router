@@ -4,7 +4,8 @@
 // User-Agent header (antigravity/<old>) and body.metadata.ideVersion are forced
 // to a known-good IDE version. Hardcoded MVP — toggle/version configurable later.
 
-const ANTIGRAVITY_IDE_VERSION = "2.11.0";
+// [merge 78388d85] 官方 Desktop 2.22.0（macOS arm64）指纹
+const ANTIGRAVITY_IDE_VERSION = "2.22.0";
 const ANTIGRAVITY_IDE_VERSION_OVERRIDE_ENABLED = true;
 
 function shouldRewriteMetadata(metadata) {

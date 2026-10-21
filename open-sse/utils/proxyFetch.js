@@ -1,9 +1,27 @@
 import { Readable } from "stream";
-import { MEMORY_CONFIG, PROXY_RETRY_ATTEMPTS, PROXY_RETRY_BASE_DELAY_MS } from "../config/runtimeConfig.js";
+import { MEMORY_CONFIG, PROXY_RETRY_ATTEMPTS, PROXY_RETRY_BASE_DELAY_MS, DIRECT_FALLBACK_TIMEOUT_MS } from "../config/runtimeConfig.js";
 import { dbg } from "./debugLog.js";
 
 const originalFetch = globalThis.fetch;
 const proxyDispatchers = new Map();
+
+// [merge 092c86d7] Direct-connection fallback after a proxy failure: bounded,
+// never unbounded. A blocked endpoint silently drops TCP handshakes — an
+// unbounded direct retry hangs for hundreds of seconds (issue #76: 788s
+// observed) and blocks the caller's account-relay / combo fallback from ever
+// kicking in. Honours the caller's signal when it already bounded the request,
+// so we never double-time.
+function directFetchWithTimeout(url, options) {
+  const timeoutMs = DIRECT_FALLBACK_TIMEOUT_MS;
+  if (options?.signal) return originalFetch(url, options); // caller already bounded it
+  const ctrl = new AbortController();
+  const timer = setTimeout(
+    () => ctrl.abort(new Error(`fetch connect timeout (${timeoutMs}ms)`)),
+    timeoutMs,
+  );
+  return originalFetch(url, { ...options, signal: ctrl.signal })
+    .finally(() => clearTimeout(timer));
+}
 
 // ─── TLS fingerprinting via got-scraping (browser-like JA3) ───────────────
 // Disabled: not in use. Kept commented for future re-enable.
@@ -377,7 +395,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
     }
     // The proxy already failed (and was reported) above — go direct rather than
     // retrying it and firing onProxyFallback a second time.
-    if (proxyUrl) return originalFetch(url, options);
+    // [merge 092c86d7] Bounded: an unbounded direct attempt on a blocked host
+    // hangs for hundreds of seconds (issue #76: 788s observed).
+    if (proxyUrl) return directFetchWithTimeout(targetUrl, options);
   }
 
   if (proxyUrl) {
@@ -413,7 +433,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       try { proxyOptions.onProxyFallback(proxyError); } catch {}
     }
     console.warn(`[ProxyFetch] Proxy failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s), falling back to direct: ${proxyError.message}`);
-    return originalFetch(url, options);
+    // [merge 092c86d7] Bounded direct fallback — never hang unbounded on a
+    // blocked host (issue #76: 788s observed, blocking account/combo relay).
+    return directFetchWithTimeout(targetUrl, options);
   }
 
   // 严格模式即"绝不走直连 IP"。走到这里说明调用方有代理意图但一个代理

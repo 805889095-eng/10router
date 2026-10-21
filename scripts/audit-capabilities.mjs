@@ -140,6 +140,11 @@ export const ALLOWLIST = {
   // kilo/openrouter say 262144/235929 text-only without reasoning.
   "kilo-gateway/kwaipilot/kat-coder-pro-v2.5:free": "conflict",
   "cline/kwaipilot/kat-coder-pro": "conflict", // v1 vs v2/v2.5, same split
+
+  // [merge f493b89a] Inception Labs dLLM: models.dev 未收录（官方 docs 是唯一规格源）。
+  // 注册表行已按 docs 写全（ctx/out/reasoning），地板判定来自其余默认字段。
+  "inception/mercury-3": "no-models-dev-entry",
+  "inception/mercury-2.5": "no-models-dev-entry",
 };
 
 // Media-kind models (kind: "image" | "video" | "tts" | …) are excluded from

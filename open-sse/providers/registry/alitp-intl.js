@@ -9,7 +9,7 @@ export default {
   priority: 11,
   alias: "alitp-intl",
   display: {
-    name: "Alibaba Token Plan",
+    name: "Alibaba Token Plan (Intl)",
     icon: "cloud",
     color: "#FF6A00",
     textIcon: "ATP",
