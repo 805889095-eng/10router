@@ -8,7 +8,7 @@
 
 - **上游 9router v0.5.95 → v0.5.104 擇優移植**：Gemini 4 Argon 三線收錄；antigravity 支援 Claude Sonnet/Opus 5.5（家族共享配額路由）；antigravity 目錄重新整理（預設 3.8-flash-medium、IDE 指紋 2.22.0）；Codex GPT-6.1 Sol 與 Responses Lite 傳輸；gpt-5.5 系下線；現役 Claude 全系補 PDF 輸入。
 - **Inception Labs 供應商**：Mercury 擴散模型（~1000 tok/s），mercury-3 launch 半價 $0.10/$0.35，新 key 送 1 億 tokens；配額經 CreditDaddy 通用卡推送。
-- **組合 router 策略**：System One 決策模型前置路由，失敗/逾時自動退回原順序，不影響可用性。
+- **組合 router 策略**：固定順序/輪詢不看誰更擅長當前任務；Router 分析 prompt 動態挑最擅長的成員回答（僅一次額外呼叫，兼顧能力與速度）；失敗/逾時 8s 內退回原順序。
 - **Trae 國內站（trae.cn）登入**：站點選擇 + 回呼自證 + 裸 token 探測；國內/國際帳號不互通，拿錯端有明確提示。
 - **MiniMax 免費線回歸 + 訂閱線每日自動簽到**；M3.1 Flash 正式 id 全線對齊。
 - **頭部公告系統**：免費模型活動、關鍵變更即時推送（GitHub raw → Gitee 鏡像 → 本地快取三級兜底）。

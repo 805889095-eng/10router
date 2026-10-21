@@ -7,7 +7,7 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-10-20T23:30:00+08:00",
+  "updatedAt": "2026-10-21T00:30:00+08:00",
   "items": [
     {
       "id": "2026-10-20-proxy-strict",
@@ -59,9 +59,9 @@
       "date": "2026-10-20",
       "level": "feature",
       "title": "组合新增 router 策略",
-      "body": "System One 决策模型前置路由，失败/超时自动退回原顺序；决策模型在组合卡上单独选择。",
+      "body": "固定顺序/轮询不看谁更擅长当前任务；Router 由决策模型分析用户 prompt，动态挑最擅长的成员回答——仅一次额外调用，兼顾能力与速度；失败/超时 8s 内自动退回原顺序。",
       "titleEn": "Combo router strategy",
-      "bodyEn": "A System One decision model pre-routes each request; failures or timeouts silently fall back to the original order. Pick the decision model on the combo card."
+      "bodyEn": "Order/round-robin ignores model strengths. Router analyzes your prompt and picks the best-suited member to answer — one extra call; failures/timeouts fall back to the original order within 8s."
     },
     {
       "id": "2026-10-21-gemini4-argon-gpt61",

@@ -8,7 +8,7 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/techys
 
 - **Upstream 9router v0.5.95 → v0.5.104 selective port**: Gemini 4 Argon across gemini/vertex/antigravity; antigravity Claude Sonnet/Opus 5.5 with family-shared quota routing; antigravity catalog refresh (default 3.8-flash-medium, IDE fingerprint 2.22.0); Codex GPT-6.1 Sol with the Responses Lite transport; gpt-5.5 family retired; PDF input capability for all current Claude models.
 - **Inception Labs provider**: Mercury diffusion models (~1000 tok/s); mercury-3 at 50% off launch pricing ($0.10/$0.35); new keys include 100M free tokens; quotas arrive via the CreditDaddy generic card.
-- **Combo router strategy**: a System One decision model pre-routes each request; decision failures silently fall back to the original order.
+- **Combo router strategy**: fixed order/round-robin ignores model strengths; Router analyzes the prompt and routes to the best-suited member (one extra call); failures/timeouts fall back to the original order within 8s.
 - **Trae CN (trae.cn) login**: site selection, callback self-verification, bare-token probing; CN/international accounts are not interchangeable and mismatches get a clear message.
 - **MiniMax free lane returns + daily auto check-in on subscription lines**; M3.1 Flash official ids aligned across all lanes.
 - **Header announcement system**: free-model promos and breaking changes pushed live (GitHub raw → Gitee mirror → local cache fallback).
