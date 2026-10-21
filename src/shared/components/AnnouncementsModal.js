@@ -225,11 +225,16 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
   }, [loading, items, error, stale]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={translate("Announcements")} size="full">
-      <div className="max-h-[65vh] overflow-y-auto pr-1">{body}</div>
-      <div className="mt-4 flex justify-end">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={translate("Announcements")}
+      size="full"
+      footer={
         <Button size="sm" variant="secondary" onClick={onClose}>{translate("Close")}</Button>
-      </div>
+      }
+    >
+      <div className="pr-1">{body}</div>
     </Modal>
   );
 }
