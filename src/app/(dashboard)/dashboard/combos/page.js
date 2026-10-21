@@ -206,12 +206,13 @@ export default function CombosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm text-text-muted mt-1">
-            Group models under one name, then pick a strategy per combo:
+            {translate("Group models under one name, then pick a strategy per combo:")}
           </p>
           <ul className="text-sm text-text-muted mt-2 flex flex-col gap-1">
-            <li><span className="font-medium text-text-main">Fallback</span> — tries models in order (next on failure)</li>
-            <li><span className="font-medium text-text-main">Round Robin</span> — rotates models across requests to spread load</li>
-            <li><span className="font-medium text-text-main">Fusion</span> — queries all models in parallel, then a judge synthesizes one answer. Best quality, but costs the most: every request bills all panel models + the judge (N+1 calls)</li>
+            <li><span className="font-medium text-text-main">{translate("Fallback")}</span> {translate("— tries models in order (next on failure)")}</li>
+            <li><span className="font-medium text-text-main">{translate("Round Robin")}</span> {translate("— rotates models across requests to spread load")}</li>
+            <li><span className="font-medium text-text-main">{translate("Fusion")}</span> {translate("— queries all models in parallel, then a judge synthesizes one answer. Best quality, but costs the most: every request bills all panel models + the judge (N+1 calls)")}</li>
+            <li><span className="font-medium text-text-main">{translate("Router")}</span> {translate("— decision model analyzes user prompt and selects the best-suited member model to answer (fast, capability-aware routing)")}</li>
           </ul>
         </div>
         <Button icon="add" onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto whitespace-nowrap">

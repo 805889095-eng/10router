@@ -64,13 +64,13 @@
       "bodyEn": "A System One decision model pre-routes each request; failures or timeouts silently fall back to the original order. Pick the decision model on the combo card."
     },
     {
-      "id": "2026-10-20-trae-cn",
-      "date": "2026-10-20",
+      "id": "2026-10-21-gemini4-argon-gpt61",
+      "date": "2026-10-21",
       "level": "feature",
-      "title": "Trae 国内站 (trae.cn) OAuth 登录",
-      "body": "支持站点选择，国内/国际 token 不互通（拿错端 20101）；SOLO 网关并发跨站串用已修。",
-      "titleEn": "Trae CN (trae.cn) OAuth login",
-      "bodyEn": "Site selection with callback self-verification and bare-token probing; CN and international accounts are not interchangeable — mismatches get a clear message."
+      "title": "Gemini 4 Argon 与 GPT-6.1 Sol 正式收录",
+      "body": "Gemini 4 Argon 全线接入（gemini / vertex / antigravity 官方三线），支持常开推理与 1M 上下文；Codex 接入 GPT-6.1 Sol，采用全新极速 Responses Lite 协议传输。",
+      "titleEn": "Gemini 4 Argon & GPT-6.1 Sol official support",
+      "bodyEn": "Full Gemini 4 Argon support across gemini, vertex, and antigravity with always-on reasoning and 1M context; Codex adds GPT-6.1 Sol over the new Responses Lite transport protocol."
     },
     {
       "id": "2026-10-20-endpoint-picker",

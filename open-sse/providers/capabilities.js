@@ -786,6 +786,7 @@ PROVIDER_CAPABILITIES["atria-asi"] = PROVIDER_CAPABILITIES.atria;
 // 同一模型换个拼写就回落到 DEFAULT 200k（vision/reasoning 被剥、窗口砍到 1/5）。
 PROVIDER_CAPABILITIES.qd = PROVIDER_CAPABILITIES.qoder;
 PROVIDER_CAPABILITIES.qdc = PROVIDER_CAPABILITIES["qoder-cn"];
+PROVIDER_CAPABILITIES.kgw = PROVIDER_CAPABILITIES["kilo-gateway"];
 
 /**
  * Pattern fallback — glob (* = wildcard), matched case-insensitively and
@@ -1055,6 +1056,11 @@ export function aggregateComboCapabilities(comboModels, comboLookup = null, reso
     contextWindow: Math.min(...allCaps.map((c) => c.contextWindow)),
     maxOutput:     Math.max(...allCaps.map((c) => c.maxOutput)),
   };
+}
+
+// Gemini 4 (Argon) drops sampling params and requires functionResponse-last merged user turns.
+export function isGemini4Model(model) {
+  return /(?:^|\/)gemini-4(?:$|[-.])/i.test(String(model || ""));
 }
 
 /**

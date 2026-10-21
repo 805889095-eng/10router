@@ -3,7 +3,16 @@ import { shortDuration } from "@/shared/utils/quotaRows";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 export const QUOTA_CACHE_KEY = "quotaCacheData";
-export const REFRESH_INTERVAL_MS = 60000;
+export const DEFAULT_REFRESH_INTERVAL_MS = 300000; // 5m 默认更护号
+export const REFRESH_INTERVAL_MS = DEFAULT_REFRESH_INTERVAL_MS;
+export const AUTO_REFRESH_INTERVAL_KEY = "quotaAutoRefreshInterval";
+export const REFRESH_INTERVAL_OPTIONS = [
+  { value: 60000, label: "1 min", seconds: 60 },
+  { value: 300000, label: "5 min", seconds: 300 },
+  { value: 900000, label: "15 min", seconds: 900 },
+  { value: 1800000, label: "30 min", seconds: 1800 },
+  { value: 3600000, label: "1 hr", seconds: 3600 },
+];
 // Claude usage/quota endpoint rate-limits; poll it less often than other providers
 export const CLAUDE_REFRESH_INTERVAL_MS = 600000;
 export const DEPLETED_QUOTA_THRESHOLD = 5;
@@ -703,6 +712,25 @@ export function parseQuotaData(provider, data) {
         }
         break;
 
+      case "cursor":
+        // Plan spend is USD (cents from GetCurrentPeriodUsage). Forward
+        // remainingPercentage only — do not pass absolute remaining (UI treats it as %).
+        if (data.quotas) {
+          Object.entries(data.quotas).forEach(([name, quota]) => {
+            normalizedQuotas.push({
+              name,
+              used: quota.used || 0,
+              total: quota.total || 0,
+              remainingPercentage: quota.remainingPercentage ?? null,
+              unit: quota.unit || (quota.format === "currency" ? "$" : ""),
+              resetAt: quota.resetAt || null,
+              format: quota.format || "number",
+              detailOnly: quota.detailOnly === true,
+            });
+          });
+        }
+        break;
+
       case "claude":
         if (data.message) {
           // Handle error message case
@@ -777,6 +805,7 @@ export function parseQuotaData(provider, data) {
               recurring: quota.recurring !== false,
               displayRemaining: true,
               ...(name === "Monthly" ? { giftPack: true } : {}),
+              ...(data.checkinToday === true ? { checkinToday: true } : {}),
             });
           });
         }
