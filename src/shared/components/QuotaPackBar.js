@@ -9,6 +9,7 @@ import {
   cycleRowLines,
   CRITICAL_PCT,
   isAggregateQuotaRow,
+  isDrainedGiftPack,
   isRecurringQuotaRow,
   isResettingRow,
   groupRowsByFamily,
@@ -377,8 +378,16 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
   // as a giftPack / credit pool (e.g. CodeBuddy Intl with no bonus packs).
   // Alone without those flags, a monthly row is a subscription window (opencode-go),
   // not an additive spendable balance.
+  // A DRAINED monthly grant (giftPack at 0) stops counting into the pool —
+  // same rule the router's expiryExtractor applies for earliest-expiry (T0
+  // sibling): it is a burned asset, and summing its total into the denominator
+  // read "30 / 130" on CodeBuddy Intl cards whose 100 credits were gone. The
+  // row itself still renders in the per-pack details (逐包明细).
   const monthlyPacks = cycle.monthly.filter(
-    (r) => !inLadder.has(r) && (families.length > 0 || r.giftPack === true || r.displayRemaining === true)
+    (r) =>
+      !inLadder.has(r) &&
+      !isDrainedGiftPack(r) &&
+      (families.length > 0 || r.giftPack === true || r.displayRemaining === true)
   );
   // Stored-value singletons with IDENTICAL values are the same pool rendered
   // twice upstream (stepfun-cn: 余额(CNY) + 代金券(CNY) both 14.95/14.95) —

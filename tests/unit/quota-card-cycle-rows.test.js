@@ -22,6 +22,7 @@ import {
   buildNestedCycle,
   classifyCycleRows,
   cycleRowLines,
+  isDrainedGiftPack,
   isRecurringQuotaRow,
   isExpiredPack,
   isResettingRow,
@@ -522,5 +523,59 @@ describe("joinsPackPool — a recurring stored-value balance must not blank the 
   it("classifyCycleRows still excludes them — a balance is not a window", () => {
     const { hasAnyCycle } = classifyCycleRows(mmFreeRows);
     expect(hasAnyCycle).toBe(false);
+  });
+});
+
+describe("isDrainedGiftPack — the pool-denominator rule (CodeBuddy Intl 30/130)", () => {
+  // 2026-10-22 user report: CodeBuddy Intl cards with a drained Monthly grant
+  // read "30 / 130" — the pool summed the burned grant's total (100) into the
+  // denominator while its remaining was 0. Same rule as the router's
+  // expiryExtractor giftPack exclusion (T0 sibling).
+
+  const drainedMonthly = {
+    name: "Monthly",
+    used: 100,
+    total: 100,
+    resetAt: "2026-10-31T15:59:59.000Z",
+    recurring: true,
+    giftPack: true,
+    displayRemaining: true,
+  };
+  const liveMonthly = {
+    name: "Monthly",
+    used: 45.7,
+    total: 100,
+    resetAt: "2026-10-31T15:59:59.000Z",
+    recurring: true,
+    giftPack: true,
+    displayRemaining: true,
+  };
+
+  it("flags a giftPack whose balance is fully spent", () => {
+    expect(isDrainedGiftPack(drainedMonthly)).toBe(true);
+  });
+
+  it("keeps a giftPack that still has balance", () => {
+    expect(isDrainedGiftPack(liveMonthly)).toBe(false);
+  });
+
+  it("never flags non-giftPack rows, even at zero", () => {
+    expect(isDrainedGiftPack({ name: "Bonus Pack 1", used: 30, total: 30, recurring: false })).toBe(false);
+    expect(isDrainedGiftPack({ name: "余额 (CNY)", used: 0, total: 0, isCreditBalance: true })).toBe(false);
+    expect(isDrainedGiftPack(null)).toBe(false);
+  });
+
+  it("pool simulation: drained grant drops out, live grant counts", () => {
+    // QuotaPackBar's monthlyPacks filter shape: !inLadder && !isDrainedGiftPack && (families || giftPack || displayRemaining)
+    const pick = (rows) => rows.filter((r) => !isDrainedGiftPack(r));
+    const bonus = { name: "Bonus Pack 1", used: 0, total: 30, recurring: false };
+    // Google#2: Bonus 30 + drained Monthly 100 → pool total 30 (was 130)
+    const g2 = pick([bonus, drainedMonthly]);
+    expect(g2.reduce((s, p) => s + p.total, 0)).toBe(30);
+    expect(g2.reduce((s, p) => s + (p.total - p.used), 0)).toBe(30);
+    // Google#1: Bonus×5 (150) + live Monthly (54.3 remaining of 100) → intact
+    const g1 = pick([bonus, bonus, bonus, bonus, bonus, liveMonthly]);
+    expect(g1.reduce((s, p) => s + p.total, 0)).toBe(250);
+    expect(g1.reduce((s, p) => s + (p.total - p.used), 0)).toBeCloseTo(204.3, 5);
   });
 });
