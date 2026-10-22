@@ -63,7 +63,6 @@ export default {
     { id: "MiniMax-M3", name: "MiniMax M3", targetFormat: "claude" },
     // [merge 5b3fdaee] M3.1-Flash 已开放按量计费（models.dev minimax 条目：
     // $0.15/$0.6，见 issue #72）。
-    { id: "MiniMax-M3.1-Flash", name: "MiniMax M3.1 Flash", targetFormat: "claude" },
     { id: "MiniMax-M2.7", name: "MiniMax M2.7" },
     { id: "MiniMax-M2.5", name: "MiniMax M2.5" },
     { id: "MiniMax-M2.1", name: "MiniMax M2.1" },
