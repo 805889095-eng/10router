@@ -4,8 +4,9 @@
 // which erased the agent's full identity/tool memory every new session.
 import { describe, it, expect } from "vitest";
 import { CodeBuddyExecutor } from "../../open-sse/executors/codebuddy-cn.js";
+import { CodeBuddyIntlExecutor } from "../../open-sse/executors/codebuddy-intl.js";
 
-describe("CodeBuddyExecutor system-prompt handling (agent amnesia fix)", () => {
+describe("CodeBuddyExecutor system-prompt handling (agent amnesia fix - CN)", () => {
   const exec = new CodeBuddyExecutor();
 
   it("passes through a whitelisted Hermes system prompt untouched (long or not)", () => {
@@ -53,5 +54,59 @@ describe("CodeBuddyExecutor system-prompt handling (agent amnesia fix)", () => {
     const outUser = exec.transformRequest("deepseek-v3", { messages: [{ role: "user", content: dshUser }] }, false, {});
     expect(outUser.messages[0].content).toContain("DeepSeek​-Harness");
     expect(outUser.messages[0].content).not.toMatch(/DeepSeek-Harness/);
+  });
+});
+
+describe("CodeBuddyIntlExecutor system-prompt handling (agent amnesia fix - INTL)", () => {
+  const exec = new CodeBuddyIntlExecutor();
+
+  it("passes through a whitelisted Hermes system prompt untouched (long or not)", () => {
+    const longHermes = "You are Hermes, an AI agent. " + "x".repeat(3000) + " Role: coding assistant.";
+    const out = exec.transformRequest("glm-5.2", { messages: [{ role: "system", content: longHermes }] }, false, {});
+    expect(out.messages[0].role).toBe("system");
+    expect(out.messages[0].content).toBe(longHermes);
+  });
+
+  it("passes through a whitelisted 10Router system prompt untouched", () => {
+    const sys = "You are a helpful 10Router gateway assistant. Your role is X.";
+    const out = exec.transformRequest("glm-5.2", { messages: [{ role: "system", content: sys }] }, false, {});
+    expect(out.messages[0].role).toBe("system");
+    expect(out.messages[0].content).toBe(sys);
+  });
+
+  it("does NOT wipe a long prompt that merely lacks agent identity markers", () => {
+    const longPrompt = "You are a useful helper. " + "y".repeat(3000);
+    const out = exec.transformRequest("glm-5.2", { messages: [{ role: "system", content: longPrompt }] }, false, {});
+    expect(out.messages[0].role).toBe("system");
+    expect(out.messages[0].content).toBe(longPrompt);
+  });
+
+  it("still replaces a genuine foreign agent system prompt that matches AGENT_PATTERN", () => {
+    const foreignAgent = "You are Cursor, an AI coding agent with orchestration capabilities.";
+    const out = exec.transformRequest("glm-5.2", { messages: [{ role: "system", content: foreignAgent }] }, false, {});
+    expect(out.messages[0].role).toBe("system");
+    expect(out.messages[0].content).not.toBe(foreignAgent);
+    expect(out.messages[0].content).toMatch(/helpful AI assistant/);
+  });
+
+  it("falls back to default You are CodeBuddy Code when NO system prompt is provided", () => {
+    const userOnly = [{ role: "user", content: "hello" }];
+    const out = exec.transformRequest("glm-5.2", { messages: userOnly }, false, {});
+    expect(out.messages[0].role).toBe("system");
+    expect(out.messages[0].content).toBe("You are CodeBuddy Code.");
+    expect(out.messages[1].role).toBe("user");
+    expect(out.messages[1].content).toEqual([{ type: "text", text: "hello" }]);
+  });
+
+  it("sanitizes DeepSeek Harness in system and user messages by inserting zero-width space", () => {
+    const dshSys = "You are an AI agent powered by DeepSeek Harness. Special system instructions.";
+    const outSys = exec.transformRequest("deepseek-v3", { messages: [{ role: "system", content: dshSys }] }, false, {});
+    expect(outSys.messages[0].content).toContain("DeepSeek​ Harness");
+    expect(outSys.messages[0].content).not.toMatch(/DeepSeek Harness/);
+
+    const dshUser = "I am running DeepSeek-Harness on NAS.";
+    const outUser = exec.transformRequest("deepseek-v3", { messages: [{ role: "user", content: dshUser }] }, false, {});
+    expect(outUser.messages[1].content[0].text).toContain("DeepSeek​-Harness");
+    expect(outUser.messages[1].content[0].text).not.toMatch(/DeepSeek-Harness/);
   });
 });

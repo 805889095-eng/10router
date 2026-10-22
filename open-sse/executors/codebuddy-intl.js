@@ -3,6 +3,19 @@ import { DefaultExecutor } from "./default.js";
 import { parseCodeBuddyFrequencyLimit } from "./codebuddy-cn.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 
+const NEUTRAL_PROMPT = "You are a helpful AI assistant that helps with software engineering tasks.";
+const AGENT_PATTERN =
+  /you are claude code|claude.?code.+official.+cli|anthropic.+official.+cli|anxthxropic.+official.+cli|you are (?:cursor|windsurf|cline|aider|continue|copilot|cody)|you are an? (?:ai )?(?:coding |code )?agent|cc_entrypoint\s*=\s*(?:cli|vscode|jetbrains|gui)|claude.?code.+issues|give feedback.+claude.?code|you are .{0,30}(?:powerful )?ai agent|orchestration capabilities|OhMyOpenCode|<agent-identity>|<Role>|<Behavior_Instructions>/i;
+const WHITELIST_PATTERN =
+  /hermes|10router|9router|\bclaude code by anthropic\b|\bsystem instructions\b|你的身份|你的角色设定/i;
+
+const flatten = (content) =>
+  typeof content === "string"
+    ? content
+    : Array.isArray(content)
+      ? content.map((b) => (b && typeof b.text === "string" ? b.text : "")).join("\n")
+      : "";
+
 /**
  * CodeBuddyIntlExecutor — talks to https://www.codebuddy.ai/v2/chat/completions
  *
@@ -28,7 +41,7 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
         headers: credentials?.rawHeaders,
         body: transformedBody,
         connectionId: credentials?.connectionId,
-        scope: "codebuddy-intl"
+        scope: "codebuddy-intl",
       });
       // Conversation ID: 32-char hex derived from session identity
       const convId = crypto.createHash("md5").update(sessionId || "codebuddy-intl-default").digest("hex");
@@ -117,9 +130,41 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
       return content;
     };
 
-    transformed.messages = [{ role: "system", content: "You are CodeBuddy Code." }];
+    // Agent amnesia fix (mirrors codebuddy-cn):
+    // Collect downstream system/developer messages instead of discarding them.
+    // If none are present, provide the required default leading system prompt.
+    const systemParts = [];
+    const nonSystemMessages = [];
+
     for (const message of source) {
-      if (!message || typeof message !== "object" || ["system", "developer"].includes(message.role)) continue;
+      if (!message || typeof message !== "object") continue;
+      if (["system", "developer"].includes(message.role)) {
+        const text = flatten(message.content);
+        if (text) {
+          if (WHITELIST_PATTERN.test(text)) {
+            // Whitelisted agent (Hermes, 10Router, etc.): pass through untouched!
+            systemParts.push(typeof message.content === "string" ? sanitizeDshText(message.content) : sanitizeMessageContent(message.content));
+          } else if (AGENT_PATTERN.test(text)) {
+            // Foreign agent keyword: replace with neutral prompt to pass content filter
+            systemParts.push(NEUTRAL_PROMPT);
+          } else {
+            // General system prompt: preserve
+            systemParts.push(typeof message.content === "string" ? sanitizeDshText(message.content) : sanitizeMessageContent(message.content));
+          }
+        }
+      } else {
+        nonSystemMessages.push(message);
+      }
+    }
+
+    // Ensure leading system prompt exists for 11101 compliance
+    const leadingSystemPrompt = systemParts.length > 0
+      ? (typeof systemParts[0] === "string" ? systemParts.join("\n\n") : systemParts[0])
+      : "You are CodeBuddy Code.";
+
+    transformed.messages = [{ role: "system", content: leadingSystemPrompt }];
+
+    for (const message of nonSystemMessages) {
       if (message.role === "user" && typeof message.content === "string") {
         transformed.messages.push({ ...message, content: [{ type: "text", text: sanitizeDshText(message.content) }] });
       } else {

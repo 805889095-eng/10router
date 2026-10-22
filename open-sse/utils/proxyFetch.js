@@ -20,7 +20,6 @@ function directFetchWithTimeout(url, options) {
   return originalFetch(url, { ...options, signal: ctrl.signal })
     .finally(() => clearTimeout(timer));
 }
-}
 
 // ─── TLS fingerprinting via got-scraping (browser-like JA3) ───────────────
 // Disabled: not in use. Kept commented for future re-enable.
