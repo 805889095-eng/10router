@@ -11,7 +11,7 @@ import {
   checkApiKeyModelAccess,
 } from "../services/auth.js";
 import { getSettings, getChannelBlock, setChannelBlock, clearChannelBlock } from "@/lib/localDb";
-import { buildChannelBlock, channelBlockRemainingMs, formatRetryAfter, withChannelScopeHint, withRateLimitHint, withInsufficientBalanceHint } from "open-sse/services/accountFallback.js";
+import { buildChannelBlock, channelBlockRemainingMs, formatRetryAfter, withChannelScopeHint, withRateLimitHint, withInsufficientBalanceHint, isInsufficientBalanceText } from "open-sse/services/accountFallback.js";
 import { getModelInfo, getComboModels } from "../services/model.js";
 import { handleChatCore } from "open-sse/handlers/chatCore.js";
 import { DEFAULT_HEADROOM_URL } from "@/lib/headroom/detect";
@@ -20,6 +20,7 @@ import { appendPxpipeEvent } from "@/lib/pxpipe/events.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { upstreamResponseHeaders } from "open-sse/utils/upstreamHeaders.js";
 import { handleComboChat, handleFusionChat, detectRequiredCapabilities } from "open-sse/services/combo.js";
+import { runRouterDecision } from "./comboRouter.js";
 import { maybeCompactChatBody } from "../services/autoCompact.js";
 import { augmentModelsWithCapacityAdapter, withCapacityAdapterStripping, getActiveAdapterStrategy } from "open-sse/services/capacityAdapter.js";
 import { handleBypassRequest } from "open-sse/utils/bypassHandler.js";
@@ -155,6 +156,46 @@ export async function handleChat(request, clientRawRequest = null) {
     const comboStickyLimit = settings.comboStickyRoundRobinLimit;
     const retryOnEmpty = comboStrategies[modelStr]?.retryOnEmpty ?? settings.comboRetryOnEmpty ?? false;
     const retryOnEmptyLimit = comboStrategies[modelStr]?.retryOnEmptyLimit ?? settings.comboRetryOnEmptyLimit;
+
+    // Router strategy (issue #73): a System One decision model picks WHICH
+    // member answers, then that member runs the normal combo pipeline. A
+    // failed / off-catalog / timed-out decision degrades to the untouched
+    // fallback order — the advisory call never takes availability down.
+    if (comboStrategy === "router") {
+      const routerModel = comboStrategies[modelStr]?.routerModel;
+      const picked = await runRouterDecision({
+        routerModel,
+        body,
+        candidates: augmentedModels,
+        apiKey,
+        endpoint: request?.url ? new URL(request.url).pathname : "/v1/chat/completions",
+      });
+      if (picked) {
+        log.info("CHAT", `Combo "${modelStr}" router → ${picked}`);
+        // Chosen member first, everything else keeps the original order so a
+        // member failure still falls through the rest of the combo.
+        const ordered = [picked, ...augmentedModels.filter((m) => m !== picked)];
+        return handleComboChat({
+          body,
+          models: ordered,
+          handleSingleModel: withCapacityAdapterStripping(
+            (b, m) => handleSingleModelChat(b, m, clientRawRequest, request, apiKey),
+            adapterAdded
+          ),
+          log,
+          comboName: modelStr,
+          // Rotation is meaningless for a decision-pinned pick; the fallback
+          // loop + auto-switch stay active below it.
+          comboStrategy: "fallback",
+          comboStickyLimit,
+          retryOnEmpty,
+          retryOnEmptyLimit,
+        });
+      }
+      log.info("CHAT", `Combo "${modelStr}" router degraded → fallback order`);
+      // fall through to the normal handleComboChat below
+    }
+
     log.info("CHAT", `Combo "${modelStr}" with ${augmentedModels.length} models (strategy: ${comboStrategy}, sticky: ${comboStickyLimit})`);
     return handleComboChat({
       body,
@@ -325,7 +366,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
         const baseMsg = `[${provider}/${model}] ${errorMsg}`;
-        const hintedMsg = status === 402 || /insufficient[_\s-]*balance|余额不足|欠费/i.test(errorMsg)
+        const hintedMsg = status === 402 || isInsufficientBalanceText(errorMsg)
           ? withInsufficientBalanceHint(baseMsg, provider)
           : withRateLimitHint(baseMsg, provider);
         return unavailableResponse(
@@ -342,7 +383,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
       }
       log.warn("CHAT", "No more accounts available", { provider });
       const baseLastError = lastError || "All accounts unavailable";
-      const hintedLastError = lastStatus === 402 || /insufficient[_\s-]*balance|余额不足|欠费/i.test(baseLastError)
+      const hintedLastError = lastStatus === 402 || isInsufficientBalanceText(baseLastError)
         ? withInsufficientBalanceHint(baseLastError, provider)
         : withRateLimitHint(baseLastError, provider);
       return errorResponse(

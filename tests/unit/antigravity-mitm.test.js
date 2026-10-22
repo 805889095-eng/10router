@@ -7,14 +7,13 @@ const require = createRequire(import.meta.url);
 const { MODEL_NO_MAP } = require("../../src/mitm/config.js");
 
 // All assertions below are grounded in a live MITM dump capture of Antigravity's
-// streamGenerateContent requests (see AI_JOURNAL): the agent loop now sends
-// `gemini-3.8-flash-medium` as Default ([merge 60df0c0a] — 3.5 系已下线),
-// tab-autocomplete sends `tab_jump_flash_lite_preview` / `tab_flash_lite_preview`.
+// streamGenerateContent requests (see AI_JOURNAL): the agent loop sends
+// `gemini-3.5-flash-low`, tab-autocomplete sends `tab_jump_flash_lite_preview` /
+// `tab_flash_lite_preview`.
 describe("Antigravity MITM model handling", () => {
   const ag = MITM_TOOLS.antigravity;
 
   it("flags the out-of-box agent/Default model mandatory", () => {
-    // [merge 60df0c0a] mandatory 标从 3.5-flash-low 迁到 3.8-flash-medium
     expect(ag.defaultModels.find((m) => m.id === "gemini-3.8-flash-medium")?.mandatory).toBe(true);
   });
 
@@ -34,7 +33,6 @@ describe("Antigravity MITM model handling", () => {
   );
 
   it("does not exclude real agent models from re-routing", () => {
-    // [merge 60df0c0a] 3.5/3-flash-agent 已下线，换 3.8 各档
     for (const id of ["gemini-3.8-flash-medium", "gemini-3.8-flash-high", "claude-sonnet-4-6"]) {
       expect((MODEL_NO_MAP.antigravity || []).some((re) => re.test(id))).toBe(false);
     }

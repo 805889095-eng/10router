@@ -13,6 +13,16 @@ describe("CodeBuddy CN oversized payload pre-check", () => {
     expect(isOversizedForCbcn(oversized)).toBe(true);
   });
 
+  it("lets long conversations through up to maxMessages (5000 条不再被拦)", () => {
+    // 消息数 2048 → 5000（2026-10-21）：每轮「assistant 工具调用 + tool 结果」各记
+    // 两条，挂 MCP 的真实会话很容易撞到 2048；这一维与 11128 无因果，不该先于体积触发。
+    expect(CBCN_PAYLOAD_LIMITS.maxMessages).toBe(5000);
+    const fill = (n) => ({ messages: Array.from({ length: n }, () => ({ role: "user", content: "hi" })) });
+    expect(isOversizedForCbcn(fill(2048))).toBe(false);
+    expect(isOversizedForCbcn(fill(5000))).toBe(false);
+    expect(isOversizedForCbcn(fill(5001))).toBe(true);
+  });
+
   it("does NOT reject tool-heavy-but-small bodies (2026-10-03 回归)", () => {
     // 工具数从未与体积分离验证过(09-17 的 11128 样本是 4.5MB/1676 条/54 工具整体
     // 失败);真实 Claude Code/codex 会话挂 MCP 工具集轻松过 60 个工具、体积适中,

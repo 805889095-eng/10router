@@ -96,7 +96,7 @@ export const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/v1/messages";
 export const OPENAI_COMPAT_BASE = "https://api.openai.com/v1";
 export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 
-// [merge 78388d85] Official Antigravity IDE Desktop 2.22.0 fingerprint captured from macOS arm64.
+// Official Antigravity IDE Desktop 2.22.0 fingerprint captured from macOS arm64.
 // Keep this static even when 10Router runs on Linux: the provider profile is
 // intentionally matching the IDE client, not the server host.
 export const ANTIGRAVITY_IDE_VERSION = "2.22.0";

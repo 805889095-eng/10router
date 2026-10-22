@@ -5,14 +5,12 @@ import { dbg } from "./debugLog.js";
 const originalFetch = globalThis.fetch;
 const proxyDispatchers = new Map();
 
-// [merge 092c86d7] Direct-connection fallback after a proxy failure: bounded,
-// never unbounded. A blocked endpoint silently drops TCP handshakes — an
-// unbounded direct retry hangs for hundreds of seconds (issue #76: 788s
-// observed) and blocks the caller's account-relay / combo fallback from ever
-// kicking in. Honours the caller's signal when it already bounded the request,
-// so we never double-time.
+// Direct-connection fallback after a proxy failure: bounded, never unbounded.
+// A blocked endpoint silently drops TCP handshakes — an unbounded direct retry
+// hangs for hundreds of seconds (issue #76: 788s observed) and blocks the
+// caller's account-relay / combo fallback from ever kicking in.
 function directFetchWithTimeout(url, options) {
-  const timeoutMs = DIRECT_FALLBACK_TIMEOUT_MS;
+  const timeoutMs = MEMORY_CONFIG.directFallbackTimeoutMs ?? DIRECT_FALLBACK_TIMEOUT_MS;
   if (options?.signal) return originalFetch(url, options); // caller already bounded it
   const ctrl = new AbortController();
   const timer = setTimeout(
@@ -21,6 +19,7 @@ function directFetchWithTimeout(url, options) {
   );
   return originalFetch(url, { ...options, signal: ctrl.signal })
     .finally(() => clearTimeout(timer));
+}
 }
 
 // ─── TLS fingerprinting via got-scraping (browser-like JA3) ───────────────
@@ -289,6 +288,40 @@ async function createBypassRequest(parsedUrl, realIP, options) {
 
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
+    let settled = false;
+    const settle = (fn, arg) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(connectTimer);
+      cleanupAbort();
+      fn(arg);
+    };
+
+    // The bypass path exists because the caller's fetch already timed out once
+    // — hanging here again is exactly the 700s+ deadlock of issue #76. Every
+    // exit must be bounded: the socket connect, the TLS+response wait, and the
+    // caller's own signal all race the same timer.
+    const connectTimer = setTimeout(() => {
+      socket.destroy();
+      settle(reject, new Error(`[ProxyFetch] MITM bypass connect timeout after ${MEMORY_CONFIG.directFallbackTimeoutMs}ms`));
+    }, MEMORY_CONFIG.directFallbackTimeoutMs);
+
+    // Honor the caller's AbortSignal — executors pass a merged signal with a
+    // connect timeout; without this the raw request never learns about aborts
+    // and the awaiting promise hangs past the executor's own deadline.
+    const onAbort = () => {
+      socket.destroy();
+      settle(reject, new Error("[ProxyFetch] MITM bypass request aborted"));
+    };
+    // Declared before the already-aborted check below: that path calls settle(),
+    // which calls cleanupAbort().
+    const cleanupAbort = () => {
+      if (options.signal) options.signal.removeEventListener("abort", onAbort);
+    };
+    if (options.signal) {
+      if (options.signal.aborted) { onAbort(); return; }
+      options.signal.addEventListener("abort", onAbort, { once: true });
+    }
 
     socket.connect(HTTPS_PORT, realIP, () => {
       const reqOptions = {
@@ -322,17 +355,19 @@ async function createBypassRequest(parsedUrl, realIP, options) {
           },
           json: async () => JSON.parse(await response.text()),
         };
-        resolve(response);
+        // Response headers received — the connect phase is done; from here the
+        // body streams under the caller's signal via the res stream.
+        settle(resolve, response);
       });
 
-      req.on("error", reject);
+      req.on("error", (err) => settle(reject, err));
       if (options.body) {
         req.write(typeof options.body === "string" ? options.body : JSON.stringify(options.body));
       }
       req.end();
     });
 
-    socket.on("error", reject);
+    socket.on("error", (err) => settle(reject, err));
   });
 }
 
@@ -395,17 +430,12 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
     }
     // The proxy already failed (and was reported) above — go direct rather than
     // retrying it and firing onProxyFallback a second time.
-    // [merge 092c86d7] Bounded: an unbounded direct attempt on a blocked host
-    // hangs for hundreds of seconds (issue #76: 788s observed).
+
     if (proxyUrl) return directFetchWithTimeout(targetUrl, options);
   }
 
   if (proxyUrl) {
-    // Retry the proxy before giving up on it. A "fetch connect timeout" is
-    // usually a blip — the next second often succeeds — whereas the direct
-    // fallback below cannot work at all for a host the local network cannot
-    // reach. Burning a 60s direct attempt first made every blip look like an
-    // outage.
+    // Retry the proxy before giving up on it (NAS 优化: 2 次重试 + 400/800ms 退避)
     const proxyAttempt = await retryAsync(
       async () => {
         const dispatcher = await getDispatcher(proxyUrl);
@@ -422,10 +452,6 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
     if (proxyAttempt.ok) return proxyAttempt.value;
 
     const proxyError = proxyAttempt.error;
-    // strictProxy: never replay through a direct connection. directFallback:
-    // false is the softer form — the caller knows the origin is unreachable
-    // without a proxy, so a doomed direct attempt only wastes a connect timeout
-    // and hides the real cause.
     if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
       throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
     }

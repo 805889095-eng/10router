@@ -39,7 +39,7 @@ export default {
     refreshLeadMs: 10 * 60 * 1000,
   },
   models: [
-    // [merge 05d6e461] 正式 id 优先，-Preview 过渡保留（issue #70）。
+    // 同 minimax-code：正式 id 优先，-Preview 过渡保留（issue #70）。
     { id: "MiniMax-M3.1-Flash", name: "MiniMax M3.1 Flash" },
     { id: "MiniMax-M3.1-Flash-Preview", name: "MiniMax M3.1 Flash (Preview)" },
     { id: "MiniMax-M3", name: "MiniMax M3" },

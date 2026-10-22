@@ -328,7 +328,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   if (headroomLine) {
     log?.info?.("HEADROOM", `${headroomLine}${headroomSizeLine ? ` | ${headroomSizeLine}` : ""}`);
     if (isHeadroomPhantomSavings(headroomStats, headroomDiagnostics)) {
-      log?.warn?.("HEADROOM", `reported token delta, but outbound JSON shrank <5%; provider may bill near-original payload | ${formatHeadroomSizeLog(headroomDiagnostics)}`);
+      log?.warn?.("HEADROOM", `reported token delta, but messages and outbound JSON shrank <5% | ${formatHeadroomSizeLog(headroomDiagnostics)}`);
     }
   } else if (tokenSaverEnabled && headroomEnabled) log?.warn?.("HEADROOM", `skipped: ${headroomDiagnostics.reason || "compression unavailable"}${headroomDiagnostics.endpoint ? ` (${headroomDiagnostics.endpoint})` : ""}`);
 
@@ -383,23 +383,18 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   });
 
   let proxyFallbackWarning = null;
-  // Providers whose upstream is unreachable without a proxy. Falling back to a
-  // direct connection for these cannot succeed — it only burns a full connect
-  // timeout and reports a generic "gateway timeout" instead of the real cause
-  // (proxy down). Google-fronted providers are the canonical case: with the
-  // proxy up they answer in ~1s, with it down the direct attempt times out and
-  // the retry never had a chance.
+  // Issue #76: 不可直连渠道(Google cloudcode/antigravity 等)默认 strictProxy——代理失败时
+  // 立即抛错交给上层多账号/Combo 顺位接力,而不是回退直连被静默丢包死等数百秒。
+  // 连接上显式设置过 strictProxy(true/false 都算)时以用户为准。
   const PROXY_ONLY_PROVIDERS = new Set(["antigravity"]);
-  const providerNeedsProxy = PROXY_ONLY_PROVIDERS.has(provider);
+  const providerNeedsProxy = PROXY_ONLY_PROVIDERS.has(provider) || (PROVIDERS[provider]?.strictProxy === true);
+  const connectionStrictProxy = credentials?.providerSpecificData?.strictProxy;
   const proxyOptions = {
     connectionProxyEnabled: credentials?.providerSpecificData?.connectionProxyEnabled === true,
     connectionProxyUrl: credentials?.providerSpecificData?.connectionProxyUrl || "",
     connectionNoProxy: credentials?.providerSpecificData?.connectionNoProxy || "",
     vercelRelayUrl: credentials?.providerSpecificData?.vercelRelayUrl || "",
-    strictProxy: credentials?.providerSpecificData?.strictProxy === true,
-    // An explicit per-connection override wins; otherwise proxy-only providers
-    // default to no direct fallback. Only meaningful when a proxy is actually
-    // configured — a connection with no proxy keeps working as before.
+    strictProxy: connectionStrictProxy ?? providerNeedsProxy,
     directFallback: credentials?.providerSpecificData?.directFallback === true
       ? true
       : credentials?.providerSpecificData?.directFallback === false

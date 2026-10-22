@@ -282,8 +282,10 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, targetFormat = null,
       // "auto" is not a value Anthropic accepts in output_config.effort — map it to high.
       // xhigh 按模型分档（Opus/Sonnet 4.6 拒绝该值）——模型未声明支持时钳回 high。
       const level = toLevel(eff);
+      // Claude effort has no "minimal" (always-on models clamp "none" to it).
       body.output_config = { effort: level === "auto" ? "high"
-        : level === "xhigh" && !supportedLevels?.includes("xhigh") ? "high" : level };
+        : level === "xhigh" && !supportedLevels?.includes("xhigh") ? "high"
+        : level === "minimal" ? "low" : level };
       break;
     }
     case "claude-budget": {
@@ -295,7 +297,10 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, targetFormat = null,
       break;
     }
     case "gemini-level": {
-      const level = none ? "minimal" : toGeminiThinkingLevel(eff);
+      let level = none ? "minimal" : toGeminiThinkingLevel(eff);
+      // Models without a "minimal" tier (Gemini 4) reject it with 400 — clamp to the lowest supported level.
+      const lowest = supportedLevels?.find((l) => l !== "none");
+      if (supportedLevels?.length && lowest && !supportedLevels.includes(level)) level = lowest;
       setGeminiThinking(body, { thinkingLevel: level, includeThoughts: level !== "minimal" });
       ensureGeminiOutputFloor(body, geminiLevelOutputFloor(level), caps);
       break;
@@ -337,7 +342,7 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, targetFormat = null,
     case "minimax": {
       // M3 adaptive; M2.x cannot disable (handled via canDisable clamp).
       body.thinking = { type: none && canDisable ? "disabled" : "adaptive" };
-      // M3.1-Flash-Preview 支持可调思考深度（官方客户端档位 default/low/medium/
+      // M3.1 系列（M3.1-Flash 与 -Preview）支持可调思考深度（官方客户端档位 default/low/medium/
       // high/xhigh/max）: effort 附加在 adaptive 形态里透传——CreditDaddy 网关实测
       // 200 接受（不认识该字段的旧上游会静默忽略,无害）。default 省略字段走上游
       // 默认;minimal 是 none 被 canDisable 钳制出来的档,MiniMax 无此档,同样省略。

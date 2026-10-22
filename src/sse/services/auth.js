@@ -6,6 +6,7 @@ import { resolveProviderId, FREE_PROVIDERS } from "@/shared/constants/providers.
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { extractEarliestPackageExpiry } from "open-sse/services/usage/expiryExtractor.js";
 import { selectRelayCarrier } from "open-sse/services/relaySelection.js";
+import { getAntigravityQuotaCache, getAntigravityModelQuota } from "./antigravityQuota.js";
 import { NEEDS_REAUTH_MESSAGE } from "./tokenRefresh.js";
 import { hashApiKey } from "@/lib/db/crypto/apiKeyIdentity.js";
 import { errorResponse } from "open-sse/utils/error.js";
@@ -127,9 +128,9 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     const providerId = resolveProviderId(provider);
 
     // Inject a virtual connection for no-auth free providers (with optional proxy pool from settings)
-    // CreditDaddy 网关线（zcode-free / trae-free）在本机回环免密，局域网由 IP 白名单保护、
+    // CreditDaddy 网关线（zcode-free / minimax-free / trae-free）在本机回环免密，局域网由 IP 白名单保护、
     // 不校验 key —— 无需建带 key 的连接。仍手动建了连接时优先走真实连接，无连接才落 noAuth 虚拟行
-    const isCreditDaddyLine = providerId === "zcode-free" || providerId === "trae-free";
+    const isCreditDaddyLine = providerId === "zcode-free" || providerId === "minimax-free" || providerId === "trae-free";
     const hasCdRealConnection = isCreditDaddyLine
       ? (await getProviderConnections({ provider: providerId, isActive: true })).length > 0
       : false;
@@ -146,7 +147,9 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
           // minimax = /gateway/minimax/v1/messages；
           // trae = /gateway/trae/v1/messages
           let gwPath = (settings.zcodeGatewayPath || '').trim() || '/gateway/zcode/v1/messages';
-          if (providerId === 'trae-free') {
+          if (providerId === 'minimax-free') {
+            gwPath = (settings.minimaxGatewayPath || '').trim() || '/gateway/minimax/v1/messages';
+          } else if (providerId === 'trae-free') {
             gwPath = (settings.traeGatewayPath || '').trim() || '/gateway/trae/v1/messages';
           }
           const u = new URL(`http://127.0.0.1:47860${gwPath.startsWith('/') ? '' : '/'}${gwPath}`);
@@ -191,9 +194,20 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     }
 
     // Filter out model-locked and excluded connections
+    const isAntigravity = providerId === "antigravity";
+    const agQuotaCache = isAntigravity && model ? getAntigravityQuotaCache() : null;
     const availableConnections = connections.filter(c => {
       if (excludeSet.has(c.id)) return false;
       if (isModelLockActive(c, model)) return false;
+      // Antigravity: skip if live quota exhausted for this model (family-aware lookup)
+      if (isAntigravity && agQuotaCache) {
+        const connQuotas = agQuotaCache.get(c.id);
+        const quota = getAntigravityModelQuota(connQuotas, model) || connQuotas?.[model];
+        if (quota && quota.remainingPercentage <= 0 && quota.resetAt && new Date(quota.resetAt).getTime() > Date.now()) {
+          log.info("AG_QUOTA", `${c.id?.slice(0, 8) || "unknown"} | CACHE_BLOCK ${model} — skip upstream until ${quota.resetAt}`);
+          return false;
+        }
+      }
       // Dead refresh token cooling down (needs-reauth). Timed, not permanent:
       // once the cooldown lapses the account is probed again, and a re-auth
       // clears the mark immediately — see accountFallback.isNeedsReauthCooling.
@@ -224,9 +238,21 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
       // "No active credentials" 404, which lies about what is wrong (there ARE
       // credentials; they need re-authorization, and there is a retry time).
       const reauthConns = connections.filter(c => isNeedsReauthCooling(c));
+      // Antigravity lazy quota-cache resets participate in retry timing too —
+      // a pool of all cache-blocked accounts must report its reset, not null.
+      const agExpiries = [];
+      if (isAntigravity && model && agQuotaCache) {
+        connections.forEach((c) => {
+          const connQuotas = agQuotaCache.get(c.id);
+          const quota = getAntigravityModelQuota(connQuotas, model) || connQuotas?.[model];
+          const resetAt = quota?.resetAt;
+          if (resetAt && new Date(resetAt).getTime() > Date.now()) agExpiries.push(resetAt);
+        });
+      }
       const expiries = [
         ...lockedConns.map(c => getEarliestModelLockUntil(c)),
         ...reauthConns.map(c => c.needsReauthUntil),
+        ...agExpiries,
       ].filter(Boolean);
       const earliest = expiries.sort()[0] || null;
       if (earliest) {
@@ -359,6 +385,15 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
 
     const resolvedProxy = await resolveConnectionProxyConfig(connection.providerSpecificData || {});
 
+    // strictProxy 保持三态:连接上显式设置过(true/false)时透传原值;未设置时
+    // undefined,让 chatCore 应用 provider 注册表里的渠道默认(Issue #76,
+    // 不可直连渠道默认 strict)。这里不能沿用 resolvedProxy 的布尔强转——
+    // 那会把"未设置"和"显式 false"混在一起,渠道默认永远无法生效。
+    const rawConnectionStrict = connection.providerSpecificData?.strictProxy;
+    const connectionStrictProxy = resolvedProxy.strictProxy === true
+      ? true
+      : (rawConnectionStrict === true || rawConnectionStrict === false ? rawConnectionStrict : undefined);
+
     return {
       authType: connection.authType,
       apiKey: connection.apiKey,
@@ -378,7 +413,7 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
         connectionNoProxy: resolvedProxy.connectionNoProxy,
         connectionProxyPoolId: resolvedProxy.proxyPoolId || null,
         vercelRelayUrl: resolvedProxy.vercelRelayUrl || "",
-        strictProxy: resolvedProxy.strictProxy === true,
+        strictProxy: connectionStrictProxy,
       },
       connectionId: connection.id,
       // Include current status for optimization check

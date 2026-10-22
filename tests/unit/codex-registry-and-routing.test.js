@@ -30,6 +30,10 @@ const GHOST_IDS = [
   "gpt-5.3-codex-spark",
   "gpt-5.3-codex-spark-review",
   "gpt-5.4-image",
+  // gpt-5.5 系随 ChatGPT 登录下线（2026-10-14, 上游 7878f53b）——后端一律 400
+  "gpt-5.5",
+  "gpt-5.5-review",
+  "gpt-5.5-image",
 ];
 
 const codexIds = () => getModelsByProviderId("codex").map((m) => m.id);
@@ -51,8 +55,9 @@ describe("codex registry — still-live models kept (regression guard)", () => {
     "gpt-6-astra",
     "gpt-5.6-terra",
     "gpt-5.6-terra-review",
-    // [merge e4b5d13b] gpt-5.5 / -review / -image / gpt-5.3-image 已下线（后端 400），
-    // 从「仍在售」清单移除。
+    "gpt-5.6-sol",
+    "gpt-6-sol",
+    "gpt-6.1-sol",
   ])("%s still present", (id) => {
     expect(codexIds()).toContain(id);
   });
@@ -80,9 +85,7 @@ describe("isCodexBareSlug", () => {
   // 上游语义：gpt-5.x / gpt-6.x 全段归 codex（含 gpt-5.1/gpt-5.1-codex 这类 OpenAI API
   // 也有的 id——裸名本来就只从 Codex CLI 的现实使用中来；带 provider 前缀的请求不受影响）
   it.each([
-    // [merge e4b5d13b] gpt-5.5 已下线，这里验的是 slug 归类语义（gpt-5.x 全段归 codex），
-    // 换成仍在售的同段 id。
-    "gpt-5.6-terra",
+    "gpt-5.5",
     "gpt-5.1",
     "gpt-5.1-codex-max",
     "gpt-5.6-terra",
@@ -115,7 +118,7 @@ describe("getModelInfoCore — bare codex slugs route to codex, not openai", () 
   it.each([
     ["gpt-5.6-terra", "codex"],
     ["gpt-5.6-sol", "codex"],
-    // [merge e4b5d13b] gpt-5.5 已下线，同段用 gpt-5.6-terra 覆盖。
+    ["gpt-5.5", "codex"],
     ["gpt-5.1", "codex"],
     ["gpt-6-astra", "codex"],
     ["gpt-daybreak-blue-latest", "codex"],
@@ -142,8 +145,7 @@ vi.mock("@/lib/localDb", () => ({
 const { getModelInfo } = await import("../../src/sse/services/model.js");
 
 describe("getModelInfo — chat path adopts codex bare slugs before the #34 400", () => {
-  // [merge e4b5d13b] gpt-5.5 已下线，改用仍在售的 gpt-5.6-sol 覆盖同一语义。
-  it.each(["gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra", "gpt-daybreak-blue-latest", "gpt-reserve"])(
+  it.each(["gpt-5.5", "gpt-5.6-terra", "gpt-6-astra", "gpt-daybreak-blue-latest", "gpt-reserve"])(
     "%s resolves to codex even with inferFallback off",
     async (slug) => {
       const info = await getModelInfo(slug, { inferFallback: false });

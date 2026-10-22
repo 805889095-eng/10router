@@ -89,8 +89,6 @@ const DEFAULT_SETTINGS = {
   pxpipeTimeoutMs: 15000,
   // Experimental: auto daily check-in for CodeBuddy CN accounts.
   codeBuddyCheckin: false,
-  // Experimental: intl daily active-session probe (campaign credits).
-  codeBuddyIntlSession: false,
   // Experimental: auto compensation & gift claim for CodeBuddy CN accounts.
   codeBuddyCompensation: false,
   // Daily-done memo for both passes: { [connectionId]: "YYYY-MM-DD" } (local).
@@ -103,6 +101,12 @@ const DEFAULT_SETTINGS = {
   qoderCheckin: false,
   // Daily-done memo for Qoder: { [connectionId]: "YYYY-MM-DD" }
   qoderDailyDone: {},
+  // Auto daily check-in for MiniMax Code subscriptions (minimax-code /
+  // minimax-code-global; free-pack credits, issue #75). minimax-free is
+  // intentionally NOT covered — that line's check-in lives inside CreditDaddy.
+  minimaxCheckin: false,
+  // Daily-done memo for MiniMax: { [connectionId]: "YYYY-MM-DD" }
+  minimaxDailyDone: {},
   // Provider-wide channel blocks: { [provider]: { until, lastAt, strikes } }.
   // Set when an upstream answers with a channel-scope error (e.g. CodeBuddy
   // 11128 "unapproved channel"): the failure belongs to the channel, so every

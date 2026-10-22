@@ -1239,6 +1239,28 @@ exports[`GOLDEN buildHeaders (default executor providers) > minimax-code-global 
 }
 `;
 
+exports[`GOLDEN buildHeaders (default executor providers) > minimax-free → headers (apiKey / oauth) 1`] = `
+{
+  "apiKey": {
+    "Accept": "text/event-stream",
+    "Content-Type": "application/json",
+    "anthropic-version": "2023-06-01",
+    "x-api-key": undefined,
+  },
+  "nonStream": {
+    "Content-Type": "application/json",
+    "anthropic-version": "2023-06-01",
+    "x-api-key": undefined,
+  },
+  "oauth": {
+    "Accept": "text/event-stream",
+    "Content-Type": "application/json",
+    "anthropic-version": "2023-06-01",
+    "x-api-key": undefined,
+  },
+}
+`;
+
 exports[`GOLDEN buildHeaders (default executor providers) > mistral → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -2384,6 +2406,13 @@ exports[`GOLDEN buildUrl (default executor providers) > minimax-code-global → 
 {
   "nonStream": "https://agent.minimax.io/mavis/api/v1/llm/v1/messages",
   "stream": "https://agent.minimax.io/mavis/api/v1/llm/v1/messages",
+}
+`;
+
+exports[`GOLDEN buildUrl (default executor providers) > minimax-free → url (stream + non-stream) 1`] = `
+{
+  "nonStream": "http://127.0.0.1:47860/gateway/minimax/v1/messages",
+  "stream": "http://127.0.0.1:47860/gateway/minimax/v1/messages",
 }
 `;
 

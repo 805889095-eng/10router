@@ -9,10 +9,12 @@ import {
   cycleRowLines,
   CRITICAL_PCT,
   isAggregateQuotaRow,
+  isDrainedGiftPack,
   isRecurringQuotaRow,
   isResettingRow,
   groupRowsByFamily,
   isStoredValueRow,
+  joinsPackPool,
   meterTone,
   splitFamilyWindow,
   nameWithoutUnit,
@@ -130,6 +132,9 @@ function QuotaRow({ row, label = null, inset = false }) {
   if (stored) {
     const unit = quotaUnitOf(row.name);
     const hasBalance = remaining > 0;
+    // Read-only daily check-in state pushed with the row (#77) — sits right
+    // after the balance number, mirroring the connection-card badge position.
+    const checkin = row.checkinToday === true;
     return (
       <div className="min-w-0 space-y-1">
         <div className="flex min-w-0 items-baseline justify-between gap-2 tabular-nums">
@@ -137,6 +142,17 @@ function QuotaRow({ row, label = null, inset = false }) {
             <CreditIcon className="size-[11px] shrink-0 self-center text-text-muted" />
             <b className={cn("text-[12px] font-bold", hasBalance ? "text-text" : TONE_TEXT.critical)}>{fmt(remaining)}</b>
             {unit ? <span className="text-[10px] text-text-muted">（{unit}）</span> : null}
+            {checkin && (
+              <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded bg-green-500/10 px-1 py-px text-[10px] font-medium text-green-600 dark:text-green-400" style={{ transform: "translateY(-1px)" }}>
+                <span className="material-symbols-outlined text-[11px]">check_circle</span>
+                {translate("Checked in today")}
+                {Number.isInteger(row.streakDays) && row.streakDays > 1 && (
+                  <span className="text-text-muted">
+                    {" · "}{translate("{count}-day streak").replace("{count}", String(row.streakDays))}
+                  </span>
+                )}
+              </span>
+            )}
           </span>
           <span className="shrink-0 text-[11px] text-text-muted">
             {translateQuotaName(nameWithoutUnit(row.name) || row.name)}
@@ -335,9 +351,12 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
   // family; singletons are stored-value pools (余额/代金券) → their own rows.
   // Qoder-style 合集行「资源包」已在上游包含全部赠送包：存在时排除赠送包
   // 家族行，防止资源包 Credits 与赠送包被重复计数（用户实测重复）。
+  // joinsPackPool, not a bare !isRecurringQuotaRow: a pushed stored-value
+  // balance can arrive marked recurring (minimax-free's daily refill) and is
+  // still a settled pool — excluding it here blanked the whole card.
   const hasCollectionRow = withNums.some((p) => String(p.name || "") === "资源包");
   const nonRecurring = withNums
-    .filter((p) => !isRecurringQuotaRow(p))
+    .filter((p) => joinsPackPool(p))
     .filter((p) => !(hasCollectionRow && String(p.name || "").startsWith("赠送包")));
   const groups = new Map();
   for (const p of nonRecurring) {
@@ -359,8 +378,16 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
   // as a giftPack / credit pool (e.g. CodeBuddy Intl with no bonus packs).
   // Alone without those flags, a monthly row is a subscription window (opencode-go),
   // not an additive spendable balance.
+  // A DRAINED monthly grant (giftPack at 0) stops counting into the pool —
+  // same rule the router's expiryExtractor applies for earliest-expiry (T0
+  // sibling): it is a burned asset, and summing its total into the denominator
+  // read "30 / 130" on CodeBuddy Intl cards whose 100 credits were gone. The
+  // row itself still renders in the per-pack details (逐包明细).
   const monthlyPacks = cycle.monthly.filter(
-    (r) => !inLadder.has(r) && (families.length > 0 || r.giftPack === true || r.displayRemaining === true)
+    (r) =>
+      !inLadder.has(r) &&
+      !isDrainedGiftPack(r) &&
+      (families.length > 0 || r.giftPack === true || r.displayRemaining === true)
   );
   // Stored-value singletons with IDENTICAL values are the same pool rendered
   // twice upstream (stepfun-cn: 余额(CNY) + 代金券(CNY) both 14.95/14.95) —
@@ -415,6 +442,13 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
   // breakdown — the same segments + "N 个资源包" line a CodeBuddy card gets.
   const byBreakdown = isPoolFullyRepresented && breakdown.length > 0;
   const barPacks = byBreakdown ? breakdown : pool;
+  // A pool whose rows carry an expiry is never the "one settled pool" shape —
+  // it is packs that will run out, and the meta line's pack-count + nearest
+  // expiry is real information. Without this guard, the drained-giftPack
+  // exclusion collapsed CodeBuddy pools to a single family/row and the card
+  // degraded to a bare name line ("赠送包 1") with no countdown at all
+  // (2026-10-22 user report: 没有了 xxx 于多久过期).
+  const poolHasExpiry = pool.some((p) => p.resetAt);
 
   const renderPoolBar = (poolPacks, poolTotal) => {
     const livePacks = poolPacks
@@ -501,6 +535,17 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
             {poolUnit ? (
               <span className="text-[10px] leading-none text-text-muted">（{poolUnit}）</span>
             ) : null}
+            {pool[0]?.checkinToday && (
+              <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded bg-green-500/10 px-1 py-px text-[10px] font-medium text-green-600 dark:text-green-400" style={{ transform: "translateY(-1px)" }}>
+                <span className="material-symbols-outlined text-[11px]">check_circle</span>
+                {translate("Checked in today")}
+                {Number.isInteger(pool[0].streakDays) && pool[0].streakDays > 1 && (
+                  <span className="text-text-muted">
+                    {" · "}{translate("{count}-day streak").replace("{count}", String(pool[0].streakDays))}
+                  </span>
+                )}
+              </span>
+            )}
           </span>
           {/* A settled balance has no denominator worth printing — `14.95 / 14.95`
               just reprinted the big number beside it. Everything else keeps it:
@@ -543,8 +588,11 @@ export default function QuotaPackBar({ packs = [], className, nestedCycle = fals
         // (MiMo's 现金/赠送 legs fold into 逐包明细): "N 个资源包" copy is wrong
         // for a stored-value card — the name IS what the number is
         // ("现金余额：… · 赠送余额：…"). Pack-count copy stays for real pack
-        // families (Qoder's Resource Package).
-        const isSinglePool = isPoolFullyRepresented && (!byBreakdown || poolIsSettledBalance);
+        // families (Qoder's Resource Package), and for ANY pool whose rows
+        // carry an expiry — the countdown is information, never noise
+        // (poolHasExpiry guard; see its comment above).
+        const isSinglePool =
+          isPoolFullyRepresented && !poolHasExpiry && (!byBreakdown || poolIsSettledBalance);
         if (isSinglePool) {
           return (
             <div className="text-[11px] text-text-muted">

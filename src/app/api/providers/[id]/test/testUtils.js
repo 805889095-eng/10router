@@ -153,7 +153,7 @@ const OAUTH_TEST_CONFIG = {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "MiniMax-M3.1-Flash-Preview",
+      model: "MiniMax-M3.1-Flash",
       max_tokens: 1,
       messages: [{ role: "user", content: "ping" }],
     }),
@@ -171,7 +171,7 @@ const OAUTH_TEST_CONFIG = {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "MiniMax-M3.1-Flash-Preview",
+      model: "MiniMax-M3.1-Flash",
       max_tokens: 1,
       messages: [{ role: "user", content: "ping" }],
     }),
@@ -1093,7 +1093,8 @@ case "llm7": {
       case "alitp-intl":
       case "alitp-cn":
       case "tokenbom":
-      case "codiv": {
+      case "codiv":
+      case "river": {
         // Generic OpenAI-compatible freeTier/apikey providers with a GET
         // /models endpoint and default Bearer auth — validate via that.
         const validateUrl =

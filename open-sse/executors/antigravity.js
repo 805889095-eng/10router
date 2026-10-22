@@ -268,9 +268,7 @@ export class AntigravityExecutor extends BaseExecutor {
       };
     });
     // Merge/strip, then make sure the turn order is one Antigravity accepts.
-    // NOTE: our normalizeGeminiContents takes { guardTurns } — unlike 9router's
-    // (contents, model) variant. Keep ours; do not pass model here.
-    const contents = normalizeGeminiContents(rawContents, { guardTurns: true });
+    const contents = rawContents && normalizeGeminiContents(rawContents, { guardTurns: true, model });
 
     // Sanitize tool schemas and function names before sending to Antigravity.
     let tools = body.request?.tools;

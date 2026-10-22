@@ -550,9 +550,8 @@ export async function getQoderUsage(accessToken, proxyOptions = null, providerId
     return { message: `Qoder connected. Unable to fetch usage: ${error.message}` };
   }
 }
-
 /**
- * [merge 00b26200] Alibaba Token Plan 配额说明（国际 / 国内双线）。
+ * Alibaba Token Plan 配额说明（国际 / 国内双线）。
  *
  * 这两类 credit 订阅 key（token-plan.<region>.maas.aliyuncs.com）**没有任何公开
  * 的额度接口**：2026-10-20 用一个真实国内 key 探测了 /api/v1/quota、
@@ -570,7 +569,7 @@ export async function getQoderUsage(accessToken, proxyOptions = null, providerId
 export function getAlibabaTokenPlanUsage(provider = "alitp-intl") {
   const isCn = provider === "alitp-cn";
   const consoleUrl = isCn
-    ? "https://bailian.console.aliyun.com/"
+    ? "https://bailian.console.aliyun.com/cn-beijing/subscription/overview"
     : "https://modelstudio.console.alibabacloud.com/";
   const region = isCn ? "国内版（cn-beijing）" : "国际版（ap-southeast-1）";
   return {

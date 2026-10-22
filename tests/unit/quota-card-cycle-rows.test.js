@@ -22,6 +22,7 @@ import {
   buildNestedCycle,
   classifyCycleRows,
   cycleRowLines,
+  isDrainedGiftPack,
   isRecurringQuotaRow,
   isExpiredPack,
   isResettingRow,
@@ -29,6 +30,7 @@ import {
   shortDate,
   shortDuration,
   isStoredValueRow,
+  joinsPackPool,
   detailRows,
   groupRowsByFamily,
   healthHue,
@@ -489,5 +491,127 @@ describe("healthHue — one friendly gradient for every meter", () => {
     expect(healthHue(-5)).toBe(4);
     expect(healthHue(250)).toBe(158);
     expect(healthHue(undefined)).toBe(4);
+  });
+});
+
+describe("joinsPackPool — a recurring stored-value balance must not blank the card", () => {
+  // CreditDaddy's minimax-free push carries recurring:true on its balance rows
+  // (daily 16:00 refill). Excluding recurring rows from the additive pool while
+  // the cycle bucket excludes stored-value rows left such a row in NEITHER —
+  // the card rendered nothing but its header (2026-10-21 白卡).
+  const mmFreeRows = [
+    { name: "备", used: 0, total: 2600.64, resetAt: "2026-10-21T16:00:00.000Z", recurring: true, displayRemaining: true, isCreditBalance: true, checkinToday: true, streakDays: 5 },
+    { name: "主", used: 0, total: 2599.87, resetAt: "2026-10-21T16:00:00.000Z", recurring: true, displayRemaining: true, isCreditBalance: true, checkinToday: true, streakDays: 2 },
+  ];
+
+  it("recurring stored-value rows join the pool", () => {
+    for (const r of mmFreeRows) {
+      expect(isStoredValueRow(r)).toBe(true);
+      expect(joinsPackPool(r)).toBe(true);
+    }
+  });
+
+  it("plain recurring windows still stay out of the pool", () => {
+    expect(joinsPackPool(row("session (5h)"))).toBe(false);
+    expect(joinsPackPool(row("weekly (7d)"))).toBe(false);
+  });
+
+  it("one-shot packs keep joining the pool", () => {
+    expect(joinsPackPool({ name: "Bonus Pack 1", recurring: false })).toBe(true);
+  });
+
+  it("classifyCycleRows still excludes them — a balance is not a window", () => {
+    const { hasAnyCycle } = classifyCycleRows(mmFreeRows);
+    expect(hasAnyCycle).toBe(false);
+  });
+});
+
+describe("isDrainedGiftPack — the pool-denominator rule (CodeBuddy Intl 30/130)", () => {
+  // 2026-10-22 user report: CodeBuddy Intl cards with a drained Monthly grant
+  // read "30 / 130" — the pool summed the burned grant's total (100) into the
+  // denominator while its remaining was 0. Same rule as the router's
+  // expiryExtractor giftPack exclusion (T0 sibling).
+
+  const drainedMonthly = {
+    name: "Monthly",
+    used: 100,
+    total: 100,
+    resetAt: "2026-10-31T15:59:59.000Z",
+    recurring: true,
+    giftPack: true,
+    displayRemaining: true,
+  };
+  const liveMonthly = {
+    name: "Monthly",
+    used: 45.7,
+    total: 100,
+    resetAt: "2026-10-31T15:59:59.000Z",
+    recurring: true,
+    giftPack: true,
+    displayRemaining: true,
+  };
+
+  it("flags a giftPack whose balance is fully spent", () => {
+    expect(isDrainedGiftPack(drainedMonthly)).toBe(true);
+  });
+
+  it("keeps a giftPack that still has balance", () => {
+    expect(isDrainedGiftPack(liveMonthly)).toBe(false);
+  });
+
+  it("never flags non-giftPack rows, even at zero", () => {
+    expect(isDrainedGiftPack({ name: "Bonus Pack 1", used: 30, total: 30, recurring: false })).toBe(false);
+    expect(isDrainedGiftPack({ name: "余额 (CNY)", used: 0, total: 0, isCreditBalance: true })).toBe(false);
+    expect(isDrainedGiftPack(null)).toBe(false);
+  });
+
+  it("pool simulation: drained grant drops out, live grant counts", () => {
+    // QuotaPackBar's monthlyPacks filter shape: !inLadder && !isDrainedGiftPack && (families || giftPack || displayRemaining)
+    const pick = (rows) => rows.filter((r) => !isDrainedGiftPack(r));
+    const bonus = { name: "Bonus Pack 1", used: 0, total: 30, recurring: false };
+    // Google#2: Bonus 30 + drained Monthly 100 → pool total 30 (was 130)
+    const g2 = pick([bonus, drainedMonthly]);
+    expect(g2.reduce((s, p) => s + p.total, 0)).toBe(30);
+    expect(g2.reduce((s, p) => s + (p.total - p.used), 0)).toBe(30);
+    // Google#1: Bonus×5 (150) + live Monthly (54.3 remaining of 100) → intact
+    const g1 = pick([bonus, bonus, bonus, bonus, bonus, liveMonthly]);
+    expect(g1.reduce((s, p) => s + p.total, 0)).toBe(250);
+    expect(g1.reduce((s, p) => s + (p.total - p.used), 0)).toBeCloseTo(204.3, 5);
+  });
+});
+
+describe("poolHasExpiry guard — drained-giftpack exclusion must not eat the meta line", () => {
+  // 2026-10-22 follow-up: excluding the drained Monthly collapsed CodeBuddy
+  // pools to a single family/row → isSinglePool degraded the meta line to a
+  // bare name ("赠送包 1"), losing the pack count AND the nearest-expiry
+  // countdown. Any pool row with a resetAt must keep the count+expiry copy.
+  //
+  // Mirrors the QuotaPackBar decision shape (pure re-derivation; the component
+  // is JSX and cannot be imported in this node suite):
+  const isSinglePool = (pool, { isPoolFullyRepresented, byBreakdown, poolIsSettledBalance }) =>
+    isPoolFullyRepresented && !pool.some((p) => p.resetAt) && (!byBreakdown || poolIsSettledBalance);
+
+  it("CodeBuddy CN: single bonus family WITH expiries → not single-pool", () => {
+    const pool = Array.from({ length: 12 }, (_, i) => ({
+      name: `Bonus Pack ${i + 1}`, used: 0, total: 100,
+      resetAt: `2026-11-${String(10 + i).padStart(2, "0")}T00:00:00Z`,
+    }));
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: false, poolIsSettledBalance: false })).toBe(false);
+  });
+
+  it("CodeBuddy Intl single bonus pack with expiry → not single-pool (meta keeps countdown)", () => {
+    const pool = [{ name: "Bonus Pack 1", used: 0, total: 30, resetAt: "2026-11-21T02:46:43.000Z" }];
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: false, poolIsSettledBalance: false })).toBe(false);
+  });
+
+  it("settled balances without expiry stay single-pool (stepfun 余额)", () => {
+    const pool = [{ name: "余额 (CNY)", used: 0, total: 14.95, isCreditBalance: true }];
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: false, poolIsSettledBalance: true })).toBe(true);
+  });
+
+  it("Qoder itemised pool: byBreakdown with expiries → not single-pool (unchanged)", () => {
+    const pool = [{ name: "Resource Package", used: 100, total: 900 }];
+    const breakdown = [{ name: "Bonus Pack 1", total: 500, resetAt: "2026-11-01T00:00:00Z", detailOnly: true }];
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: breakdown.length > 0, poolIsSettledBalance: false })).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ const proxyAwareFetch = vi.fn(async (url) => ({
   ok: true,
   status: 200,
   json: async () => url.includes(":loadCodeAssist")
-    ? { cloudaicompanionProject: "project-1", currentTier: { name: "Pro" } }
+    ? { cloudaicompanionProject: "project-1", currentTier: { name: "Pro" }, paidTier: { id: "g1-pro-tier", name: "Google AI Pro" } }
     : {
         models: {
           "gemini-3.6-flash-high": {
@@ -19,9 +19,8 @@ const proxyAwareFetch = vi.fn(async (url) => ({
             displayName: "Gemini 3.6 Flash (Low)",
             quotaInfo: { remainingFraction: 0.2, resetTime: "2026-07-25T12:00:00Z" },
           },
-          // [merge 60df0c0a] 用量巡检名单 3.5-flash-low → gemini-3.1-pro-high
-          "gemini-3.1-pro-high": {
-            displayName: "Gemini 3.1 Pro (High)",
+          "gemini-3.5-flash-low": {
+            displayName: "Gemini 3.5 Flash (Medium)",
             quotaInfo: { remainingFraction: 0.9, resetTime: "2026-07-25T12:00:00Z" },
           },
           "internal-model": {
@@ -74,7 +73,6 @@ describe("Antigravity quota tracker: Gemini 3.6 Flash usage bars", () => {
       "gemini-3.6-flash-high",
       "gemini-3.6-flash-medium",
       "gemini-3.6-flash-low",
-      "gemini-3.1-pro-high",
     ]);
   });
 });

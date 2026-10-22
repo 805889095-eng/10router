@@ -17,10 +17,14 @@ export default {
     deprecationNotice: "RISK_NOTICE",
   },
   category: "oauth",
-  serviceKinds: ["llm", "image", "webSearch"],
+  serviceKinds: ["llm", "image"],
   transport: {
     baseUrls: [ANTIGRAVITY_IDE_BASE_URL],
     format: "antigravity",
+    // Issue #76: Google cloudcode 端点从被墙网络直连会被静默丢包,代理失败后
+    // 回退直连就是数百秒死等。默认 strictProxy 让失败快速抛错进入账号顺位接力;
+    // 连接上显式设置过 strictProxy 的用户不受影响。
+    strictProxy: true,
     headers: {
       "User-Agent": ANTIGRAVITY_IDE_USER_AGENT,
     },
@@ -64,8 +68,12 @@ export default {
     clientSecret: "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",
   },
   models: [
-    // Gemini 4 — present in 9router master, absent from 10router v1.5.1
+    // 4 Argon: tiered entity family like 3.8 — bare id 404s, thinking level
+    // rides the entity name; effort floor is LOW (no "minimal" tier, see
+    // thinkingLevels.js).
     { id: "gemini-4-argon-high", name: "Gemini 4 Argon (High)", upstreamModelId: "gemini-4-argon-high(high)" },
+    { id: "gemini-4-argon-medium", name: "Gemini 4 Argon (Medium)", upstreamModelId: "gemini-4-argon-medium(medium)" },
+    { id: "gemini-4-argon-low", name: "Gemini 4 Argon (Low)", upstreamModelId: "gemini-4-argon-low(low)" },
     // 3.8 uses its own tiered entity family — upstream serves
     // `gemini-3.8-flash-<tier>(<level>)` (the bare id 404s "Requested entity
     // was not found"). The un-tiered alias routes to the medium tier.
@@ -84,13 +92,10 @@ export default {
     { id: "gemini-3.6-flash-high", name: "Gemini 3.6 Flash (High)", upstreamModelId: "gemini-3.6-flash-tiered(high)" },
     { id: "gemini-3.6-flash-medium", name: "Gemini 3.6 Flash (Medium)", upstreamModelId: "gemini-3.6-flash-tiered(medium)" },
     { id: "gemini-3.6-flash-low", name: "Gemini 3.6 Flash (Low)", upstreamModelId: "gemini-3.6-flash-tiered(low)" },
-    // [merge 60df0c0a] 3.5 系已下线（gemini-3.5-flash-high / gemini-3-flash-agent /
-    // gemini-3.5-flash-low / gemini-3.5-flash-extra-low 四行移除）。
-    // 3.1-pro-low 接 tiered 实体。
     { id: "gemini-3.1-pro-high", name: "Gemini 3.1 Pro (High)", upstreamModelId: "gemini-pro-agent" },
-    { id: "gemini-pro-agent", name: "Gemini 3.1 Pro (High) / Legacy", upstreamModelId: "gemini-pro-agent" },
+    { id: "gemini-pro-agent", name: "Gemini 3.1 Pro (High)", upstreamModelId: "gemini-pro-agent" },
     { id: "gemini-3.1-pro-low", name: "Gemini 3.1 Pro (Low)", upstreamModelId: "gemini-3.1-pro-low(low)" },
-    // Claude 5.5 via Antigravity — from 9router master
+    // Claude 5.5: tiered entity family like Gemini — bare id routes to the high tier.
     { id: "claude-sonnet-5-5-high", name: "Claude Sonnet 5.5 (High)", upstreamModelId: "claude-sonnet-5-5-high(high)" },
     { id: "claude-sonnet-5-5-medium", name: "Claude Sonnet 5.5 (Medium)", upstreamModelId: "claude-sonnet-5-5-medium(medium)" },
     { id: "claude-sonnet-5-5-low", name: "Claude Sonnet 5.5 (Low)", upstreamModelId: "claude-sonnet-5-5-low(low)" },
@@ -109,11 +114,6 @@ export default {
     { id: "gemini-2.5-flash-image", name: "Gemini 2.5 Flash (Image)", kind: "image", imageGen: true, capabilities: ["textToImage"] },
     { id: "imagen-3.0-generate-002", name: "Imagen 3", kind: "image", imageGen: true, capabilities: ["textToImage"] },
   ],
-  searchViaChat: {
-    defaultModel: "gemini-2.5-flash",
-    endpoint: `${ANTIGRAVITY_IDE_BASE_URL}/v1internal:generateContent`,
-    freeTier: "Free — Google Search grounding through an Antigravity OAuth account.",
-  },
   oauth: {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",

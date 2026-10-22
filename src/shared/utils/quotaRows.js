@@ -42,6 +42,20 @@ export function isStoredValueRow(row) {
 }
 
 /**
+ * Whether a row joins QuotaPackBar's additive-pool bucket (one-shot packs +
+ * stored-value singletons). A stored-value balance is a settled pool, never a
+ * cycle window — even when the pusher marks it recurring (CreditDaddy's
+ * minimax-free balances carry recurring:true for their daily 16:00 refill).
+ * Without the stored-value escape hatch here the row fell into NEITHER bucket:
+ * the cycle bucket excludes stored-value rows (classifyCycleRows) while this
+ * bucket excluded recurring ones — the card rendered nothing but its header
+ * (2026-10-21 minimax-free 白卡).
+ */
+export function joinsPackPool(row) {
+  return !isRecurringQuotaRow(row) || isStoredValueRow(row);
+}
+
+/**
  * `"Balance (CNY)"` → `"CNY"`; `"Weekly"` → `""`.
  * The stored-value unit is lifted out of the row name so it can be re-attached
  * to the number as small print instead of living in the label.
@@ -237,6 +251,19 @@ export function cycleRowLines(rows = []) {
   const planMonthly = monthly.filter((r) => r?.giftPack !== true);
   const nonMonthly = windows.filter((r) => !monthly.includes(r));
   return [...nonMonthly, ...planMonthly];
+}
+
+/**
+ * A monthly GRANT (giftPack) whose balance is fully spent. Same rule as the
+ * router's expiryExtractor giftPack exclusion (T0): a drained grant is a burned
+ * asset, not headroom. Counting it in QuotaPackBar's pool inflated the
+ * denominator — "30 / 130" where the 100 had nothing left (user-reported
+ * CodeBuddy Intl card reading like 100 credits vanished). It stays visible in
+ * the per-pack details (逐包明细); the card's pool just stops counting it.
+ */
+export function isDrainedGiftPack(row) {
+  if (row?.giftPack !== true) return false;
+  return percentOf(row) <= 0;
 }
 
 /**

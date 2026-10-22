@@ -43,8 +43,10 @@ export default {
     { id: "gmodel", name: "GLM-5.3" },
     { id: "gfmodel", name: "GLM-5.3-Flash" },
     { id: "dmodel", name: "DeepSeek-V4-Pro" },
-    // [merge 4ef4a456] Qoder 界面上 dfmodel 就是「DeepSeek-Flash / DeepSeek-V4.1-Flash-1017」。
-    // 个人版限免至 2026-10-25 00:00 (UTC+8)，之后回 0.1x。
+    // Qoder 界面上 dfmodel 就是「DeepSeek-Flash / DeepSeek-V4.1-Flash-1017」
+    // （2026-10-20 客户端模型卡确认），旧名 DeepSeek-V4-Flash 已过时。
+    // 限免：个人版 0.0x 至 2026-10-25 00:00 (UTC+8)，之后回 0.1x。
+    // 用带时区的 ISO 写死边界——裸日期会被当成 UTC 零点，等于多送 8 小时。
     { id: "dfmodel", name: "DeepSeek-V4.1-Flash 1017", promoFreeUntil: "2026-10-25T00:00:00+08:00" },
     { id: "mmodel", name: "MiniMax-M3" },
   ],

@@ -101,9 +101,11 @@ export const ALLOWLIST = {
   // 行——见 capabilities.js 的虚拟档注释——故按「gained a row → 删除条目」规约移除。)
   "cursor/default": "aggregator",
   "bazaarlink/auto:free": "aggregator",
-  "kilo-gateway/kilo-auto/free": "aggregator",
-  "kilo-gateway/kilo-auto/frontier": "aggregator",
-  "kilo-gateway/kilo-auto/balanced": "aggregator",
+
+  // Inception Labs dLLM: models.dev 未收录（官方 docs 是唯一规格源）。
+  // 注册表行已按 docs 写全（ctx/out/reasoning），地板判定来自其余默认字段。
+  "inception/mercury-3": "no-models-dev-entry",
+  "inception/mercury-2.5": "no-models-dev-entry",
 
   // Private codenames with no public spec and no models.dev entry.
   "github/oswe-vscode-prime": "codename",

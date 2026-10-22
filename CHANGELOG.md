@@ -2,26 +2,55 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
-## v1.5.6 (2026-10-19)
+## v1.6.0 (2026-10-21)
 
-> CI 与发布面改进，无运行时行为变更。
+### ✨ 新增
 
-### 🔧 构建 / CI
-
-- **v\* tag 额外导出镜像 tar 包到 Release**：GHCR 镜像拉取需要带 `packages:read` 的凭据，而只有 fine-grained PAT（无该 scope）或完全无凭据的机器会拿到 `unauthorized` —— 香港 VPS 正是这种情况。镜像本身没问题，卡的只是传输方式。现在打 v\* tag 时，除推 GHCR 外还会 `docker save` 出一份 `10router-image-<ver>-amd64.tar.gz`（含 `.sha256`）挂到 GitHub Release，任何机器都能用普通 HTTPS 取回并 `docker load` 导入，无需任何 registry 认证。
-
-## v1.5.5 (2026-10-19)
-
-> 合并上游 v1.5.2 的五项改动，并保留本仓库自有的代理/流式/antigravity 修复。
+- **上游 9router v0.5.95 → v0.5.104 择优移植**：
+  1. **Gemini 4 Argon 三线收录**（gemini / vertex 钉 global 多区 / antigravity tiered 实体族，thinking 无 minimal 档自动钳 low）；
+  2. **antigravity Claude Sonnet/Opus 5.5**：tiered 实体 8 行、MITM 别名全拼写覆盖、claude_gpt/gemini 家族共享配额路由（5h/每周共享桶 + strike 屏蔽）、Quota 429 精确 resetAt 解析；
+  3. **antigravity 目录刷新**：Gemini 3.5 系下线、默认模型切 3.8-flash-medium、IDE 指纹升级 2.22.0；
+  4. **Codex GPT-6.1 Sol + Responses Lite 传输**：工具/指令走 input 前缀项、reasoning 无 summary、hosted web_search 自动降级常规 Responses；工具 strict 旗标保留；图像用量精确上报（normalizeResponsesUsage）；
+  5. **gpt-5.5 系下线**（后端一律 400）：配额自动 ping 改 gpt-5.6-terra、图像主模型改 gpt-5.6-sol、CLI 预设默认 gpt-6.1-sol；
+  6. **现役 Claude 模型补 PDF 输入能力**（opus/sonnet/fable 4.6–5.5 各拼写 25 行 pdf: true）。
+- **Inception Labs 供应商（Mercury 扩散模型）**：OpenAI 兼容第一方 API；mercury-3（1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35）与 mercury-2.5；新 key 送 1 亿 tokens；配额经 CreditDaddy 通用卡推送。
+- **组合 router 策略（Issue #73）**：System One 决策模型前置路由——读请求上下文与成员能力卡，选出一个成员走正常管道；决策失败/超时/无凭据一律静默退回原 fallback 顺序（8s 决策预算，绝不因决策通道拖垮可用性）。
+- **Trae 国内站（trae.cn）登录支持（Issue #69）**：登录弹窗站点选择；回调 loginHost 优先自证站点（含 trae.com.cn 子串陷阱）；粘贴裸 JWT 反向探测归属端；`providerSpecificData.site` 驱动 token 刷新 / SOLO 网关 / userRegion 三处分叉；拿错端换 token 给「站点不匹配」人话提示（20101）。
+- **MiniMax 免费线回归与签到自动化（Issue #75）**：minimax-free 免登录网关线回归（CreditDaddy 闭环）；minimax-code 订阅线每日自动签到（全天轮询 + 当日确认即停）；M3.1 Flash 正式 id 全线对齐（订阅双线 / 免费线 / TokenRouter）。
+- **头部公告系统**：运营改仓库根 `announcements.json` 推送即生效（GitHub raw → Gitee 镜像 → 本地缓存三级兜底）；未读数红点；level 三级配色；免费模型活动 / 关键变更实时触达。
+- **API Key 细粒度权限勾选器**：端点「允许调用的模型与组合」由手敲 id 改勾选式选择。
+- **minimax-code 卡面「今日已签」徽章（Issue #77）**：external-quota 白名单放行 checkinToday/streakDays，推送即展示连签天数（只读，动作留在 CreditDaddy）。
+- **到期优先调度（Earliest Expiry First）全链路**：后台 SWR 配额刷新（15 分钟陈旧阈值）驱动连接级 `earliestPackageExpiry`；relay 载波环按最早到期排序、红区 5% 前瞻切换（`relaySelection.js`）；Round-Robin 开关在到期优先开启时置灰禁用（到期优先接管轮询）；组合与全局默认策略的优先级写入用户文档（`routing-strategy-and-combos-guide`）。
+- **额度页刷新间隔可配置**：60s 强制轮询改 1m/5m/15m/30m/1h 五档下拉（默认 5m，localStorage 持久化），倒计时显示跟随所选间隔；Auto-Ping 升级为三模式（关闭 / 重置即 ping / 锚定本地钟点表 schedule），配额页与供应商页同一弹窗。
+- **CodeBuddy 双线「已签到/活跃」本地判定（Issue #77 扩展）**：解析最新配额包的 CycleStartTime 落在当日即点亮徽章，不依赖外部推送；Qoder 卡面新增 CD Sync / Native 双入口徽章。
 
 ### 🐛 修复
 
-- **CodeBuddy CN 体积守卫：位置取上游之后、阈值取上游 32MB（两侧最优组合）**：上游把守卫留在 `src/sse/handlers/chat.js`（压缩前测原始 body），只是把阈值从 3.2MB 一路提到 32MB；本仓库此前把守卫挪进 `open-sse/handlers/chatCore.js` 的 `compressMessages()` 之后，测的是真正发出去的 body。两者各有取舍——位置对但阈值低会误伤，阈值高但位置错则压缩收益全丢。本版合并为「**守卫在 RTK 压缩之后执行，阈值 32MB**」：五个各 9MB 的 tool_result（合计 45MB）经 RTK 压到近 0 后正常放行，单个 33MB 无法压缩的 blob 仍被本地拦下。
-  - 另修一处合并遗留：用户可见提示文案里硬编码的「约 3.2MB」改为按 `CBCN_PAYLOAD_LIMITS.maxBytes` 实时计算，避免阈值已放宽而文案仍报旧值。
-  - 补充 `RAW_CAP` 相关单测：RTK 对单个 >10MiB 的 blob 会跳过压缩（`rtk/constants.js` `RAW_CAP`），因此「压缩后再测」并非万能——这类请求仍由阈值兜底。这两条用例锁住该边界，防止后人把阈值重新降到 10MB 以下。
-- **CodeBuddy CN 体积守卫阈值 3.2MB → 32MB**（上游）：原 3.2MB 守卫来自 2026-09-17 的 4.5MB 样本，但同批实测里 60KB 被拒、113KB 通过——体积与 11128 无因果，只是相关（真正判据是请求形态）。现放宽至 32MB：这道守卫只用来在「几乎必然被上游拒绝」的极端量级上提前止损（对 next.config 的 128MB body 上限仍留 4 倍余量，且远高于观测到的最长真实会话 4.5MB）。消息数上限保持 1800。
-- **CodeBuddy 注入 X-Conversation 协议头规避 11128 门禁**（上游）：逆向 WorkBuddy 官方客户端协议头构造逻辑，补齐 `X-Conversation-ID`（基于会话派生 32 位 hex，保持上下文连续性）、`X-Conversation-Request-ID` / `X-Conversation-Message-ID` / `X-Request-ID`（32 位独立随机 hex）、`X-Agent-Intent: craft` 与 `X-Agent-Type: main`，在 CodeBuddy CN 与 CodeBuddy Intl 两条线上统一注入，规避上游 WAF 11128 (unapproved channel) 拦截。
-- **深寻 V4.1-Flash 国际版限免标记**（上游）：标记 `deepseek-v4.1-flash` 国际版限免至 2026-10-31（`promoFreeUntil: '2026-11-01'`），到期后平滑自动恢复计费。
+- **MITM bypass 建连超时引用了不存在的配置键（PR #76 收尾）**：建连计时器读 `mitmBypassConnectTimeoutMs`（从未定义），`setTimeout(fn, undefined)` 约 1ms 即触发——cloudcode/copilot/kiro/cursor 等 MITM 主机的 bypass 请求全部被秒杀后回落可被 hosts 劫持的普通 fetch。改用 `directFallbackTimeoutMs` 并新增逐键存在性守卫测试；顺修 signal 已 abort 时 cleanupAbort 撞 TDZ。
+- **Trae SOLO 网关跨站串用（Issue #69 收尾）**：执行器为全局单例，站点网关存实例字段会让并发的国内/国际请求互相覆盖、token 打到错端；改为每请求局部值。
+- **MiniMax 签到状态查询 404（Issue #75）**：签到共用签名函数按 body 选动词，status 端点被误发 POST（只认 GET）——每次签到都卡在第一步 404。改 GET + realUserID 入签名，动词用测试钉死。
+- **节点健康度误伤极速模型**：延迟轴原用总时长，agent 长输出被生成本身主导——Mercury 级 ~1000 tok/s 模型跑满一分钟延迟轴只有 20 分（速度轴却已满分），长输出快模型被结构性卡在 ~83 分。延迟轴改用 TTFT（首字延迟），无样本回退总延迟。
+- **组合 router 决策候选列表首行换行缺失（Issue #73）**：首个候选粘在标题行上。
+- **到期优先调度透支（T0）**：周期性赠送包（如 CodeBuddy CN Monthly refill）耗尽后仍参与「最早到期」竞选并把 minRemaining 压到 0%，多账号因此齐指月末同一重置点、relay 环全体判红死锁单号——余师洋账号被单号烧穿透支。`expiryExtractor` 新增 `giftPack` 规则（资产包耗尽即出局，周期窗口保留「重置在即」语义）；codebuddy 补给包全部改标 `giftPack`；relay 环「无一健康」兜底不再永久钉死 ring[0]。复盘报告 `docs/zh-CN/incident-report-2026-10-21-codebuddy-relay-overdraft.md`。
+- **CodeBuddy 签到徽章本地判定回归**：解析配额包 CycleStartTime 当日即点亮，refill 包标记修正后反重力周期包展示同步恢复。
+- **River AI 连接测试误报「Provider test not supported」（Issue #80）**：river 是 OpenAI 兼容协议但测试面没有它的分支；并入通用 GET /models 校验。
+- **DeepSeek Harness 敏感标识触发腾讯 WorkBuddy 400 风控**：出站自动清洗 `Dsh` 标识。
+- **供应商详情页整页白屏（client 崩溃）**：到期优先置灰 Round-Robin 的两处 `cn()` 缺 import 导致 render 即 `ReferenceError`；autoPing 弹窗接线残留旧 prop 形状。SSR 冒烟测不到 client 渲染崩溃，已纳入浏览器探针验证。
+- **minimax-free 图标内外不一致（Issue #75）**：列表卡走了 Lobe 红色 Minimax 标、详情页却是蓝色 Code 图；去映射统一走 PNG。
+- **MiniMax Code 详情页有连接时签到按钮消失（Issue #75）**：按钮只挂在双鉴权分支，OAuth-only 的 minimax-code 有连接后落到单鉴权分支；hasClaimCheckin 收敛三处判断并补进该分支。
+- **CodeBuddy 国际站「每日活跃会话」下线**：上游已撤销该活动，探针只剩每天白付一次请求；开关、调度、实现、测试全删。
+- **CodeBuddy CN 消息数守卫 2048 → 5000**：挂 MCP 工具集的长会话仍会撞 2048；推到真实会话触不到的高度，体积仍是 32MB 第一判据。
+- **API 密钥校验提示与维护错误走翻译**：「Check endpoint」徽章与「Endpoint unreachable…」维护文案中文界面下混排英文。
+- **Qoder 限免行不再被实时 0x 覆盖**：tooltip 显示可读的限免截止时间。
+- **Alibaba Token Plan 补国内版（Issue #74）**：alitp-cn 上架，四张阿里系卡名标注 (Intl)/(CN)，全卡换官方 AlibabaCloud 矢量图标。
+
+### 🎨 界面
+
+- **侧边栏**：字号恢复 text-sm（14px，上游某次同步误降 13px）；新增 Community 分区（飞书群 / Discord / Telegram / GitHub）；设置归位系统分区。
+- **完整更新日志改为弹窗内打开**：飞牛桌面壳 webview 打不开 target=_blank，此前点了没反应。
+- **捐赠弹窗重做**：爱发电置顶渠道 + 微信/支付宝/爱发电矢量收款码（解码重编码 SVG，扫码验证一致）；GitHub Sponsors 保留；Star 按钮主题橙；文案全部走翻译并致谢赞助者。
+- **节点健康度展开明细**：列可见性按轴判定（TTFT/速度可独立缺样本）。
+
 
 ## v1.5.1 (2026-10-18)
 
@@ -40,6 +69,7 @@
 
 ### 🐛 修复
 
+- **CodeBuddy CN 体积守卫阈值 3.2MB → 32MB**:原 3.2MB 守卫来自 2026-09-17 的 4.5MB 样本，但同批实测里 60KB 被拒、113KB 通过——体积与 11128 无因果，只是相关（真正判据是请求形态）。这条保守守卫因此长期误伤 3.2MB 以上的真实长会话（含 09-17 那个 4.5MB / 1676 条会话样本本身）。现放宽至 32MB：这道守卫只用来在「几乎必然被上游拒绝」的极端量级上提前止损，既然拦不出正确性，就应当放到连真实长会话都碰不到的高度（对 next.config 的 128MB body 上限仍留 4 倍余量，且远高于观测到的最长真实会话 4.5MB）；超过 32MB 才判定为「极端量级」并在本地拦截。**消息数上限同步 1800 → 2048**（此前依次 1200 → 1500 → 1800）：每轮「assistant 工具调用 + tool 结果」各记两条，挂 MCP 的长会话仍会撞到 1800，而这一维同样与 11128 无因果，一并不能让它先于体积成为隐形墙；2048 取 2 的整数次幂，把该维推到真实会话触不到的高度。诊断文案、单测与设计文档同步更新。
 - **Antigravity 配额桶与身份验证体验优化**:
   1. **配额桶双窗口结构适配**:适配 Google 官方 `retrieveUserQuotaSummary` 接口的 4 个周期双窗口桶（Gemini 5h / 每周、Claude与GPT 5h / 每周），并在前端配额卡片中以百分比进度条与倒计时规范渲染；同时确认并移除共享同一配额池的生图冗余模型项；
   2. **验证长链接完整保留**:Google 403 `VALIDATION_REQUIRED` 返回的长重定向验证 URL 包含大量参数，将其移至提示最前端，并将数据库 `lastError` 存储截断上限放宽至 1000 字符，彻底解决验证 URL 被掐头去尾导致用户无法点击完成验证的问题。

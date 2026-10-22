@@ -103,9 +103,7 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
 
     // CodeBuddy rejects plain OpenAI shape (11101 invalid request): needs a
     // leading system prompt + user content as typed blocks, not a bare string.
-    // [merge 2c0afd7d] Tencent WAF 对 "DeepSeek Harness" 报 400/11128，注入零宽空格规避。
-    const sanitizeDshText = (s) =>
-      typeof s === "string" ? s.replace(/DeepSeek([ \-_]*)Harness/gi, "DeepSeek\u200B$1Harness") : s;
+    const sanitizeDshText = (s) => (typeof s === "string" ? s.replace(/DeepSeek([ \-_]*)Harness/gi, "DeepSeek​$1Harness") : s);
     const sanitizeMessageContent = (content) => {
       if (typeof content === "string") return sanitizeDshText(content);
       if (Array.isArray(content)) {

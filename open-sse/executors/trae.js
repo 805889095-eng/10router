@@ -46,9 +46,9 @@ export default class TraeExecutor extends BaseExecutor {
     super("trae", PROVIDERS.trae);
   }
 
-  // [merge cb210b37] SOLO 网关按站点分叉：国内站 (trae.cn) 与国际站 (trae.ai) 的
-  // token 不能互用，网关也不互通。cn 侧域名没有现成公开端点（core-normal.trae.cn
-  // 不解析），目前用国内站 web 端同一套 SOLO 远端接口；若上游改域，改这里一处即可。
+  // SOLO 网关按站点分叉：国内站 (trae.cn) 与国际站 (trae.ai) 的 token 不能互用，
+  // 网关也不互通。cn 侧域名没有现成公开端点（core-normal.trae.cn 不解析），
+  // 目前用国内站 web 端同一套 SOLO 远端接口；若上游改域，改这里一处即可。
   base(psd = {}) {
     const site = String(psd.site || "").toLowerCase() === "cn" ? "cn" : "intl";
     const configured = site === "cn"
@@ -63,7 +63,6 @@ export default class TraeExecutor extends BaseExecutor {
   buildHeaders(credentials, stream = true) {
     const token = credentials?.accessToken || "";
     const psd = credentials?.providerSpecificData || {};
-    // [merge cb210b37] 站点分叉：国内站的语言/区域/Referer 与国际站不同。
     const isCn = String(psd.site || "").toLowerCase() === "cn";
     return {
       Authorization: `Cloud-IDE-JWT ${token}`,
@@ -112,7 +111,7 @@ export default class TraeExecutor extends BaseExecutor {
   }
 
   // POST /chat_sessions — creates a session and submits the first turn.
-  async createSession(base, headers, query, model, psd, signal) {
+  async createSession(headers, query, model, psd, signal) {
     const { mode, strategy, modelName } = this.resolveMode(model);
     const body = {
       mode,
@@ -130,7 +129,7 @@ export default class TraeExecutor extends BaseExecutor {
       auto_create_project: false,
       origin: "web",
     };
-    const res = await proxyAwareFetch(`${base}/chat_sessions`, {
+    const res = await proxyAwareFetch(`${this.base(psd)}/chat_sessions`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
@@ -188,8 +187,8 @@ export default class TraeExecutor extends BaseExecutor {
   async execute({ model, body, stream, credentials, signal }) {
     const headers = this.buildHeaders(credentials, stream !== false);
     const psd = credentials?.providerSpecificData || {};
-    // [merge e4ded1e9] 站点固定的 SOLO 网关。按请求取局部值——执行器是全局单例，
-    // 存实例字段会让并发的国内站 / 国际站请求互相覆盖，token 打到错的一端。
+    // 站点固定的 SOLO 网关。按请求取局部值——执行器是全局单例，存实例字段
+    // 会让并发的国内站 / 国际站请求互相覆盖，token 打到错的一端。
     const base = this.base(psd);
     const query = flattenQuery(body?.messages || []);
     const responseId = `chatcmpl-trae-${Date.now()}`;
@@ -202,7 +201,7 @@ export default class TraeExecutor extends BaseExecutor {
 
     let session;
     try {
-      session = await this.createSession(base, headers, query, model, psd, signal);
+      session = await this.createSession(headers, query, model, psd, signal);
     } catch (err) {
       return { response: errResponse(502, err?.message ? String(err.message) : String(err)), url: base, headers, transformedBody: body };
     }
