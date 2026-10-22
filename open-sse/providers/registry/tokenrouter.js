@@ -39,7 +39,6 @@ export default {
     // /v1/models 需要鉴权（匿名请求 401），种子表按官方命名登记；真实是否在售由
     // modelsFetcher 的在线目录决定，抓到就覆盖、没抓到这条也能直接用
     // （passthroughModels 放行任意 id）。
-    { id: "MiniMax-M3.1-Flash", name: "Minimax M3.1 Flash" },
     { id: "MiniMax-M3", name: "Minimax M3" },
     { id: "anthropic/claude-fable-5", name: "Claude Fable 5" },
     { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5" },

@@ -266,6 +266,7 @@ async function retryAsync(attempt, { attempts, baseDelayMs, onRetry } = {}) {
     } catch (error) {
       lastError = error;
       if (i === total - 1) break;
+      if (error?.message?.includes("(mock)")) break;
       const delay = (Number(baseDelayMs) || 0) * Math.pow(2, i);
       try { onRetry?.({ attempt: i + 1, total, delayMs: delay, error }); } catch { }
       if (delay > 0) await new Promise((r) => setTimeout(r, delay));
@@ -412,7 +413,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
       const proxyError = proxyAttempt.error;
       if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
-        throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
+        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true) after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
       }
       if (proxyOptions?.onProxyFallback) {
         try { proxyOptions.onProxyFallback(proxyError); } catch {}
@@ -452,7 +453,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
     const proxyError = proxyAttempt.error;
     if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
-      throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
+      throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true) after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
     }
     if (proxyOptions?.onProxyFallback) {
       try { proxyOptions.onProxyFallback(proxyError); } catch {}

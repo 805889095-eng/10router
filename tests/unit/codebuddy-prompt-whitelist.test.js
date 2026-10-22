@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import { CodeBuddyExecutor } from "../../open-sse/executors/codebuddy-cn.js";
 import { CodeBuddyIntlExecutor } from "../../open-sse/executors/codebuddy-intl.js";
 
-describe("CodeBuddyExecutor system-prompt handling (agent amnesia fix - CN)", () => {
+describe("CodeBuddyExecutor system-prompt handling (agent amnesia fix)", () => {
   const exec = new CodeBuddyExecutor();
 
   it("passes through a whitelisted Hermes system prompt untouched (long or not)", () => {
