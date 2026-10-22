@@ -579,3 +579,39 @@ describe("isDrainedGiftPack — the pool-denominator rule (CodeBuddy Intl 30/130
     expect(g1.reduce((s, p) => s + (p.total - p.used), 0)).toBeCloseTo(204.3, 5);
   });
 });
+
+describe("poolHasExpiry guard — drained-giftpack exclusion must not eat the meta line", () => {
+  // 2026-10-22 follow-up: excluding the drained Monthly collapsed CodeBuddy
+  // pools to a single family/row → isSinglePool degraded the meta line to a
+  // bare name ("赠送包 1"), losing the pack count AND the nearest-expiry
+  // countdown. Any pool row with a resetAt must keep the count+expiry copy.
+  //
+  // Mirrors the QuotaPackBar decision shape (pure re-derivation; the component
+  // is JSX and cannot be imported in this node suite):
+  const isSinglePool = (pool, { isPoolFullyRepresented, byBreakdown, poolIsSettledBalance }) =>
+    isPoolFullyRepresented && !pool.some((p) => p.resetAt) && (!byBreakdown || poolIsSettledBalance);
+
+  it("CodeBuddy CN: single bonus family WITH expiries → not single-pool", () => {
+    const pool = Array.from({ length: 12 }, (_, i) => ({
+      name: `Bonus Pack ${i + 1}`, used: 0, total: 100,
+      resetAt: `2026-11-${String(10 + i).padStart(2, "0")}T00:00:00Z`,
+    }));
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: false, poolIsSettledBalance: false })).toBe(false);
+  });
+
+  it("CodeBuddy Intl single bonus pack with expiry → not single-pool (meta keeps countdown)", () => {
+    const pool = [{ name: "Bonus Pack 1", used: 0, total: 30, resetAt: "2026-11-21T02:46:43.000Z" }];
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: false, poolIsSettledBalance: false })).toBe(false);
+  });
+
+  it("settled balances without expiry stay single-pool (stepfun 余额)", () => {
+    const pool = [{ name: "余额 (CNY)", used: 0, total: 14.95, isCreditBalance: true }];
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: false, poolIsSettledBalance: true })).toBe(true);
+  });
+
+  it("Qoder itemised pool: byBreakdown with expiries → not single-pool (unchanged)", () => {
+    const pool = [{ name: "Resource Package", used: 100, total: 900 }];
+    const breakdown = [{ name: "Bonus Pack 1", total: 500, resetAt: "2026-11-01T00:00:00Z", detailOnly: true }];
+    expect(isSinglePool(pool, { isPoolFullyRepresented: true, byBreakdown: breakdown.length > 0, poolIsSettledBalance: false })).toBe(false);
+  });
+});
