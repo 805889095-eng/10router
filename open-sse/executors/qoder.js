@@ -54,7 +54,7 @@ function normalizeMessages(messages) {
   const out = [];
   for (const msg of messages) {
     if (!msg || typeof msg !== "object") continue;
-    if (msg.role === "system") {
+    if (msg.role === "system" || msg.role === "developer") {
       const text = extractText(msg.content);
       if (text) systemParts.push(text);
       continue;

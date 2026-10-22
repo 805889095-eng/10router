@@ -340,6 +340,16 @@ describe("normalizeMessages", () => {
     expect(result.messages[0].role).toBe("user");
   });
 
+  it("hoists role:developer out of messages into systemText", () => {
+    const result = normalizeMessages([
+      { role: "developer", content: "developer instructions" },
+      { role: "user", content: "hi" },
+    ]);
+    expect(result.systemText).toBe("developer instructions");
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0].role).toBe("user");
+  });
+
   it("flattens multipart text content into a string", () => {
     const result = normalizeMessages([
       {
