@@ -413,7 +413,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
       const proxyError = proxyAttempt.error;
       if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
-        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true) after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
+        throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s) (strictProxy=true): ${proxyError.message}`);
       }
       if (proxyOptions?.onProxyFallback) {
         try { proxyOptions.onProxyFallback(proxyError); } catch {}
@@ -453,7 +453,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
     const proxyError = proxyAttempt.error;
     if (proxyOptions?.strictProxy === true || proxyOptions?.directFallback === false) {
-      throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true) after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s): ${proxyError.message}`);
+      throw new Error(`[ProxyFetch] Proxy required but failed after ${PROXY_RETRY_ATTEMPTS + 1} attempt(s) (strictProxy=true): ${proxyError.message}`);
     }
     if (proxyOptions?.onProxyFallback) {
       try { proxyOptions.onProxyFallback(proxyError); } catch {}
