@@ -69,7 +69,7 @@
     "format": "antigravity",
     "strictProxy": true,
     "headers": {
-      "User-Agent": "antigravity/hub/2.24.0 darwin/arm64"
+      "User-Agent": "antigravity/ide/2.22.0 darwin/arm64"
     },
     "stallTimeoutMs": 300000,
     "retry": {
