@@ -113,21 +113,21 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     if (translatedTransport) credentials.runtimeTransport = translatedTransport;
   }
   const stripList = getModelStrip(alias, model);
-  const upstreamModel = getModelUpstreamId(alias, model);
 
   // Inject provider-level thinking config override (only if client hasn't set)
   // on/off → extended type (body.thinking), none/low/medium/high → effort type (body.reasoning_effort)
   if (providerThinking?.mode && providerThinking.mode !== "auto") {
     const mode = providerThinking.mode;
-    if (mode === "on" && !body.thinking) {
-      console.log("Injecting provider-level thinking config override: on");
-      body = { ...body, thinking: { type: "enabled", budget_tokens: 10000 } };
-    } else if (mode === "off" && !body.thinking) {
-      body = { ...body, thinking: { type: "disabled" } };
-    } else if (!body.reasoning_effort) {
-      body = { ...body, reasoning_effort: mode };
+    if (mode === "on") {
+      if (body.thinking === undefined) body.thinking = { type: "enabled" };
+    } else if (mode === "off") {
+      if (body.thinking === undefined) body.thinking = { type: "disabled" };
+    } else if (["none", "low", "medium", "high"].includes(mode)) {
+      if (body.reasoning_effort === undefined) body.reasoning_effort = mode;
     }
   }
+
+  const upstreamModel = getModelUpstreamId(alias, model, body);
 
   const clientRequestedStreaming = body.stream === true || sourceFormat === FORMATS.ANTIGRAVITY || sourceFormat === FORMATS.GEMINI || sourceFormat === FORMATS.GEMINI_CLI;
   const providerRequiresStreaming = PROVIDERS[provider]?.forceStream === true;
