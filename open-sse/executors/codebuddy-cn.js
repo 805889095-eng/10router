@@ -1,6 +1,36 @@
-import crypto from "crypto";
+import crypto, { createHash, randomUUID } from "crypto";
 import { DefaultExecutor } from "./default.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
+
+// Deterministic RFC-4122-v5-shaped UUID derived from a session key, mirroring
+// the official client's per-conversation id (uuid5 over the session key).
+function stableUuidFrom(key) {
+  const hash = createHash("sha1").update(key).digest("hex");
+  const timeHigh = ((parseInt(hash.slice(12, 16), 16) & 0x0fff) | 0x5000)
+    .toString(16)
+    .padStart(4, "0");
+  const clockSeq = ((parseInt(hash.slice(16, 20), 16) & 0x3fff) | 0x8000)
+    .toString(16)
+    .padStart(4, "0");
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    timeHigh,
+    clockSeq,
+    hash.slice(20, 32),
+  ].join("-");
+}
+
+function readHeader(headers, name) {
+  if (typeof headers?.get === "function") {
+    const value = headers.get(name);
+    return typeof value === "string" ? value.trim() : "";
+  }
+  if (!headers || typeof headers !== "object") return "";
+  const key = Object.keys(headers).find((k) => k.toLowerCase() === name.toLowerCase());
+  const value = key ? headers[key] : undefined;
+  return typeof value === "string" ? value.trim() : "";
+}
 
 /**
  * CodeBuddyExecutor — talks to https://copilot.tencent.com/v2/chat/completions
@@ -21,33 +51,45 @@ export class CodeBuddyExecutor extends DefaultExecutor {
 
     // X-Conversation headers: CodeBuddy / WorkBuddy WAF requires session/conversation
     // identity headers (X-Conversation-ID, X-Conversation-Request-ID, X-Conversation-Message-ID).
-    // Deriving a stable conversationId from downstream session keeps conversation continuity
-    // while satisfying upstream channel/WAF checks (prevents 11128 unapproved channel errors).
+    // Deriving a stable RFC-4122 UUID from downstream session keeps conversation continuity
+    // while satisfying upstream channel/WAF checks (clears 11128 without triggering 11140).
     try {
-      const sessionId = resolveSessionId({
-        headers: credentials?.rawHeaders,
-        body: transformedBody,
-        connectionId: credentials?.connectionId,
-        scope: "codebuddy-cn"
-      });
-      // Conversation ID: 32-char hex derived from session identity
-      const convId = crypto.createHash("md5").update(sessionId || "codebuddy-cn-default").digest("hex");
-      // Turn / Request ID: unique 32-char hex per request turn
-      const reqHex = crypto.randomBytes(16).toString("hex");
+      const existingConvId =
+        readHeader(credentials?.rawHeaders, "X-Conversation-ID") ||
+        (typeof transformedBody?.session_id === "string" && transformedBody.session_id) ||
+        (typeof transformedBody?.conversation_id === "string" && transformedBody.conversation_id) ||
+        null;
+
+      const isUuid = (s) => typeof s === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
+      let convId;
+      if (existingConvId && isUuid(existingConvId)) {
+        convId = existingConvId;
+      } else {
+        const sessionId = resolveSessionId({
+          headers: credentials?.rawHeaders,
+          body: transformedBody,
+          connectionId: credentials?.connectionId,
+          scope: "codebuddy-cn"
+        });
+        convId = stableUuidFrom(sessionId || existingConvId || "codebuddy-cn-default");
+      }
+
+      const reqUuid = randomUUID();
 
       headers["X-Conversation-ID"] = convId;
-      headers["X-Conversation-Request-ID"] = reqHex;
-      headers["X-Conversation-Message-ID"] = reqHex;
-      headers["X-Request-ID"] = reqHex;
-      headers["X-Agent-Intent"] = "craft";
-      headers["X-Agent-Type"] = "main";
+      headers["X-Conversation-Request-ID"] = reqUuid;
+      headers["X-Conversation-Message-ID"] = reqUuid;
+      headers["X-Request-ID"] = reqUuid;
+      // Do NOT set X-Agent-Intent or X-Agent-Type: official IDE extensions do not send
+      // these on completions endpoints and upstream WAF treats foreign tags as bot fingerprints.
     } catch {
-      // Fallback: safe random hex IDs if session resolution fails
-      const fallbackId = crypto.randomBytes(16).toString("hex");
-      headers["X-Conversation-ID"] = fallbackId;
-      headers["X-Conversation-Request-ID"] = fallbackId;
-      headers["X-Conversation-Message-ID"] = fallbackId;
-      headers["X-Request-ID"] = fallbackId;
+      const fallbackConvId = randomUUID();
+      const fallbackReqId = randomUUID();
+      headers["X-Conversation-ID"] = fallbackConvId;
+      headers["X-Conversation-Request-ID"] = fallbackReqId;
+      headers["X-Conversation-Message-ID"] = fallbackReqId;
+      headers["X-Request-ID"] = fallbackReqId;
     }
 
     return headers;
