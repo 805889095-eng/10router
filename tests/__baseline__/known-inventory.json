@@ -2007,7 +2007,7 @@
   "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4 capability resolution keeps plain V4 Flash / V4 Pro text-only": "passed",
   "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4 capability resolution offers both a vision and a text variant (sanity check on the fixture)": "passed",
   "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4 capability resolution reports vision on every provider that serves the -vision-exp id": "passed",
-  "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4.1-Flash id with dots (deepseek-v4.1-flash) is offered by apinex, opencode-go, opencode-zen and both CodeBuddy gateways": "passed",
+  "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4.1-Flash id with dots (deepseek-v4.1-flash) is offered by apinex, opencode-go, opencode-zen, both CodeBuddy gateways and opendesign-amr": "passed",
   "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4.1-Flash id with dots (deepseek-v4.1-flash) keeps codebuddy-cn on its provider-exact override (openai thinking shape)": "passed",
   "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4.1-Flash id with dots (deepseek-v4.1-flash) resolves from the canonical row where the provider has no override": "passed",
   "tests/unit/deepseek-v4-capabilities.test.js :: DeepSeek V4.1-Flash official id (deepseek-flash) carries the first-party V4.1-Flash profile": "passed",
