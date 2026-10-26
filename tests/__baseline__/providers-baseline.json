@@ -343,7 +343,12 @@
       "Content-Type": "application/connect+proto",
       "User-Agent": "connect-es/1.6.1"
     },
-    "clientVersion": "3.12.17"
+    "clientVersion": "3.12.17",
+    "usage": {
+      "url": "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage",
+      "planInfoUrl": "https://api2.cursor.sh/aiserver.v1.DashboardService/GetPlanInfo",
+      "authUsageUrl": "https://api2.cursor.sh/auth/usage"
+    }
   },
   "deepgram": {
     "baseUrl": "https://api.deepgram.com/v1/listen",
@@ -1399,6 +1404,16 @@
     "baseUrl": "https://api.inceptionlabs.ai/v1/chat/completions",
     "validateUrl": "https://api.inceptionlabs.ai/v1/models",
     "thinkingFormat": "openai",
+    "format": "openai"
+  },
+  "opendesign-amr": {
+    "baseUrl": "https://amr-link.open-design.ai/v1/chat/completions",
+    "validateUrl": "https://amr-link.open-design.ai/v1/models",
+    "strictProxy": true,
+    "modelsFetcher": {
+      "url": "https://amr-link.open-design.ai/v1/models",
+      "type": "openai"
+    },
     "format": "openai"
   }
 }
