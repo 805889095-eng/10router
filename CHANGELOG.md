@@ -2,6 +2,17 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.6.2 (2026-10-26)
+
+### 🐛 修复
+
+- **流式思考内容被整段丢弃（上游用 `reasoning` 而非 `reasoning_content` 时）**：实测 NAS 网关上的 `oda/deepseek-v4.1-flash`，非流式思考链完整，流式却累计 0 字——而 `usage.reasoning_tokens` 有值，说明思考发生了但到不了客户端。根因是 amr-link / OpenDesign 这类兼容网关用 `delta.reasoning` 下发思考（逐帧 `"We"` / `" need"` /…），而网关三处只认 `delta.reasoning_content`：
+  1. `hasValuableContent` 认不出该帧 → 整帧被当无用帧丢掉；
+  2. 直通统计只累加 `reasoning_content` → 用量估算漏思考；
+  3. `sseToJsonHandler` 流式转非流式只收集 `reasoning_content` → 思考整段消失。
+
+  修复：`hasValuableContent` 同时接受 `reasoning` / `reasoning_details`；直通模式把 `reasoning` 归一化补成 `reasoning_content`（原字段保留），让只认后者的客户端（`@ai-sdk/openai-compatible`、Hermes 等）也能收到；统计与聚合侧同时认两种拼写。
+
 ## v1.6.1 (2026-10-26)
 
 ### ✨ 新增
