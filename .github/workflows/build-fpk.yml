@@ -167,6 +167,7 @@ jobs:
 
       # 校验清单：从 Release 上已存在的 fpk 资产算，供下载方 `sha256sum -c` 核对。
       # 三个发布工作流并行，各写各的一份，避免互相覆盖。
+      # 怎么核对（以及它挡不了什么）见 docs/zh-CN/verify-downloads.md
       - name: Generate checksum
         run: |
           set -euo pipefail

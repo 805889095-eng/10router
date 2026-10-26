@@ -38,8 +38,15 @@ describe("release checksums are generated and attached", () => {
     // 自 v1.4.0 起 fpk 资产名平台化(10Router-FnOS-… )。Linux 大小写敏感,
     // sums glob / attach glob 必须跟 mv 的重命名同源 — 这里两处都钉,防漂移。
     expect(fpk).toContain('mv 10router.fpk "10Router-FnOS-${VERSION}-${{ matrix.arch }}.fpk"');
+    // fpk 自 v1.6.1 起不经 artifact 中转（GitHub 免费版 artifact 配额 500MB，
+    // 一次全平台发布会爆），改为各架构 job 直接 action-gh-release，release job
+    // 从 Release 上已有的 fpk 反算校验和，再单独挂上去。
     expect(fpk).toContain("sha256sum 10Router-*.fpk > SHA256SUMS-fpk.txt");
-    expect(fpk).toMatch(/files: \|\r?\n\s+fpk-assets\/10Router-\*\.fpk\r?\n\s+fpk-assets\/SHA256SUMS-fpk\.txt/);
+    expect(fpk).toContain("gh release download");
+    expect(fpk).toMatch(/files: fpk-assets\/SHA256SUMS-fpk\.txt/);
+    // 每个架构 job 自己把 fpk 挂上 Release，不依赖 artifact 下载
+    expect(fpk).toContain("Publish fpk to release");
+    expect(fpk).toMatch(/files: fnos-packaging\/10Router-\*\.fpk/);
   });
 
   it("the three groups use distinct filenames (parallel runs must not race)", () => {

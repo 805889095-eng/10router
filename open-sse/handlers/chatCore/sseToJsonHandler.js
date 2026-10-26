@@ -155,7 +155,12 @@ export function parseSSEToOpenAIResponse(rawSSE, fallbackModel) {
     const choice = chunk?.choices?.[0];
     const delta = choice?.delta || {};
     if (typeof delta.content === "string" && delta.content.length > 0) contentParts.push(delta.content);
-    if (typeof delta.reasoning_content === "string" && delta.reasoning_content.length > 0) reasoningParts.push(delta.reasoning_content);
+    // `reasoning` 与 `reasoning_content` 是同一语义的两个字段名（amr-link / OpenDesign
+    // 之流用后者之外的拼写）。只认 `reasoning_content` 会让流式转非流式后思考内容整段消失。
+    const dReasoning = (typeof delta.reasoning_content === "string" && delta.reasoning_content)
+      || (typeof delta.reasoning === "string" && delta.reasoning)
+      || "";
+    if (dReasoning) reasoningParts.push(dReasoning);
     if (choice?.finish_reason) finishReason = choice.finish_reason;
     if (chunk?.usage && typeof chunk.usage === "object") usage = chunk.usage;
 

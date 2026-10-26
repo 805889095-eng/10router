@@ -42,8 +42,13 @@ export function hasValuableContent(chunk, format) {
   // OpenAI format
   if (format === FORMATS.OPENAI && chunk.choices?.[0]?.delta) {
     const delta = chunk.choices[0].delta;
+    // `reasoning` 是部分 OpenAI 兼容网关（如 amr-link / OpenDesign）的思考字段名，
+    // 与 `reasoning_content` 等价。只认后者会把上游逐帧下发的思考内容整段丢掉，
+    // 表现为：usage.reasoning_tokens 有值、但流式里 reasoning 累计为 0。
     return delta.content && delta.content !== "" ||
            delta.reasoning_content && delta.reasoning_content !== "" ||
+           delta.reasoning && delta.reasoning !== "" ||
+           (Array.isArray(delta.reasoning_details) && delta.reasoning_details.length > 0) ||
            delta.tool_calls && delta.tool_calls.length > 0 ||
            chunk.choices[0].finish_reason ||
            delta.role;

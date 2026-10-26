@@ -7,6 +7,8 @@ import {
   applyThinking,
 } from "../../open-sse/translator/concerns/thinkingUnified.js";
 import { extractReasoningText } from "../../open-sse/translator/concerns/reasoning.js";
+import { hasValuableContent } from "../../open-sse/utils/streamHelpers.js";
+import { FORMATS } from "../../open-sse/translator/formats.js";
 
 const apply = (targetFormat, model, body, provider) => {
   const b = JSON.parse(JSON.stringify(body));
@@ -206,5 +208,33 @@ describe("extractReasoningText (response shapes)", () => {
   });
   it("no reasoning → empty", () => {
     expect(extractReasoningText({ content: "hello" })).toBe("");
+  });
+});
+
+// hasValuableContent 决定一帧要不要发给客户端。它曾只认 `reasoning_content`，
+// 于是 amr-link / OpenDesign 这类只用 `reasoning` 下发思考的上游，思考帧被整段丢弃：
+// usage.reasoning_tokens 有值，客户端却收不到任何思考内容（2026-10-26 NAS 实测）。
+describe("hasValuableContent (OpenAI delta)", () => {
+  const wrap = (delta) => ({ choices: [{ delta }] });
+  const FMT = FORMATS.OPENAI;
+
+  it("keeps a delta carrying `reasoning`", () => {
+    expect(hasValuableContent(wrap({ reasoning: "We need" }), FMT)).toBeTruthy();
+  });
+  it("drops a delta whose `reasoning` is empty", () => {
+    expect(hasValuableContent(wrap({ reasoning: "" }), FMT)).toBeFalsy();
+  });
+  it("keeps a delta carrying only reasoning_details", () => {
+    expect(
+      hasValuableContent(wrap({ reasoning_details: [{ type: "reasoning.text", text: "x" }] }), FMT)
+    ).toBeTruthy();
+  });
+  it("still keeps reasoning_content / content / tool_calls", () => {
+    expect(hasValuableContent(wrap({ reasoning_content: "a" }), FMT)).toBeTruthy();
+    expect(hasValuableContent(wrap({ content: "b" }), FMT)).toBeTruthy();
+    expect(hasValuableContent(wrap({ tool_calls: [{ index: 0 }] }), FMT)).toBeTruthy();
+  });
+  it("drops a genuinely empty delta", () => {
+    expect(hasValuableContent(wrap({}), FMT)).toBeFalsy();
   });
 });

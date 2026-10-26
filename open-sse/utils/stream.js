@@ -270,9 +270,27 @@ export function createSSEStream(options = {}) {
                 continue;
               }
 
+              // 思考字段归一化：部分上游（amr-link / OpenDesign）只在 `delta.reasoning`
+              // 下发思考内容，而绝大多数客户端（含 @ai-sdk/openai-compatible、Hermes）
+              // 只读 `reasoning_content`。直通模式原本不改字段名，导致思考内容到了客户端
+              // 就是空的。这里统一补成 `reasoning_content`，原字段保留以免破坏其他消费方。
+              if (parsed?.choices) {
+                for (const choice of parsed.choices) {
+                  const d = choice?.delta;
+                  if (d && typeof d.reasoning === "string" && d.reasoning
+                      && typeof d.reasoning_content !== "string") {
+                    d.reasoning_content = d.reasoning;
+                    fieldsInjected = true;
+                  }
+                }
+              }
+
               const delta = parsed.choices?.[0]?.delta;
               const content = delta?.content;
-              const reasoning = delta?.reasoning_content;
+              // 思考字段名各家不一：`reasoning_content`（GLM/Qwen/DeepSeek 直连）与
+              // `reasoning`（amr-link / OpenDesign 等兼容网关）语义相同，两者都要计入
+              // 用量估算，否则只见 reasoning_tokens 有值、累计思考长度却是 0。
+              const reasoning = delta?.reasoning_content || delta?.reasoning;
               if (content && typeof content === "string") {
                 totalContentLength += content.length;
                 accumulatedContent += content;
@@ -398,10 +416,11 @@ export function createSSEStream(options = {}) {
           totalContentLength += parsed.choices[0].delta.content.length;
           accumulatedContent += parsed.choices[0].delta.content;
         }
-        // OpenAI format - reasoning
-        if (parsed.choices?.[0]?.delta?.reasoning_content) {
-          totalContentLength += parsed.choices[0].delta.reasoning_content.length;
-          accumulatedThinking += parsed.choices[0].delta.reasoning_content;
+        // OpenAI format - reasoning（`reasoning` 与 `reasoning_content` 同义，见 streamHelpers）
+        const dReason = parsed.choices?.[0]?.delta?.reasoning_content || parsed.choices?.[0]?.delta?.reasoning;
+        if (dReason) {
+          totalContentLength += dReason.length;
+          accumulatedThinking += dReason;
         }
         
         // Gemini format
