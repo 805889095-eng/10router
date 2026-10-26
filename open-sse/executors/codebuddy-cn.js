@@ -81,8 +81,18 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       headers["X-Conversation-Request-ID"] = reqUuid;
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
-      // Do NOT set X-Agent-Intent or X-Agent-Type: official IDE extensions do not send
-      // these on completions endpoints and upstream WAF treats foreign tags as bot fingerprints.
+      // Agent identity headers: @tencent-ai/codebuddy-code 2.176.0 sets all three on
+      // every completions call (dist/codebuddy-headless.js):
+      //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
+      //   X-Agent-Runtime = resolveAgentRuntime() → "local-agent" for the local CLI
+      //   X-Agent-Type    = resolveModelCallAgentType() → "main" for main-loop calls
+      // Since this channel declares X-IDE-Type: CLI and a CLI user agent, omitting them
+      // is an identity contradiction the WAF can flag (a real CLI always sends them).
+      // The previous "IDE extensions do not send these" note applied to the IDE-plugin
+      // identity, which this provider does not claim.
+      headers["X-Agent-Intent"] = "craft";
+      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Type"] = "main";
     } catch {
       const fallbackConvId = randomUUID();
       const fallbackReqId = randomUUID();

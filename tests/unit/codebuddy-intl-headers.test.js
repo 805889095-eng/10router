@@ -8,7 +8,7 @@ describe("CodeBuddy channel verification headers & anti-fingerprint protection",
   it.each([
     ["intl", CodeBuddyIntlExecutor],
     ["cn", CodeBuddyExecutor],
-  ])("%s outputs RFC-4122 compliant UUIDs and strips unwanted bot fingerprints", (name, Exec) => {
+  ])("%s outputs RFC-4122 compliant UUIDs and identity headers", (name, Exec) => {
     const exec = new Exec();
     const headers = exec.buildHeaders(
       { connectionId: "conn-1" },
@@ -23,9 +23,19 @@ describe("CodeBuddy channel verification headers & anti-fingerprint protection",
     expect(headers["X-Conversation-Message-ID"]).toMatch(UUID_RE);
     expect(headers["X-Request-ID"]).toBe(headers["X-Conversation-Message-ID"]);
 
-    // Must NOT leak bot detection flags
-    expect(headers["X-Agent-Intent"]).toBeUndefined();
-    expect(headers["X-Agent-Type"]).toBeUndefined();
+    // Agent identity: the real @tencent-ai/codebuddy-code 2.176.0 CLI sets all three
+    // on every completions call (extracted from dist/codebuddy-headless.js), so the CN
+    // channel — which declares X-IDE-Type: CLI — must send them too. Omitting them is an
+    // identity contradiction the WorkBuddy WAF can fingerprint (2026-10 tightening).
+    // intl still runs on the legacy IDE-plugin identity and keeps omitting them.
+    if (name === "cn") {
+      expect(headers["X-Agent-Intent"]).toBe("craft");
+      expect(headers["X-Agent-Runtime"]).toBe("local-agent");
+      expect(headers["X-Agent-Type"]).toBe("main");
+    } else {
+      expect(headers["X-Agent-Intent"]).toBeUndefined();
+      expect(headers["X-Agent-Type"]).toBeUndefined();
+    }
   });
 
   it("maintains session continuity with stable conversation ID and unique request IDs", () => {
