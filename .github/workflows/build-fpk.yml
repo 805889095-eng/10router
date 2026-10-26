@@ -75,6 +75,13 @@ jobs:
           chmod +x /usr/local/bin/fnpack
           fnpack --help | head -3
 
+      # The fpk version is read straight out of fnos-packaging/manifest below, so the
+      # manifest MUST be synced from package.json first — otherwise a release/tag bump
+      # silently ships artifacts named after the previous version (v1.6.3 shipped
+      # 10Router-FnOS-1.6.2-*.fpk because this step was missing).
+      - name: Sync manifest version from package.json
+        run: node scripts/sync-manifest-version.mjs
+
       - name: Set manifest platform
         run: |
           cd fnos-packaging
