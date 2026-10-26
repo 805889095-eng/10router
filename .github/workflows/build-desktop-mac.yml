@@ -75,7 +75,11 @@ jobs:
           cat release-files-mac/SHA256SUMS-mac.txt
           ls -la release-files-mac/
 
+      # 纯留档用途：真正的发布走下方 action-gh-release。GitHub 免费版 artifact
+      # 配额 500MB、按 6-12h 重算，配额见底时这一步会把「dmg 已编译好」判红
+      # （2026-10-26 实测），故降级为尽力而为。
       - uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: desktop-mac
           path: release-files-mac/*

@@ -44,8 +44,13 @@ jobs:
         run: npx electron-builder --win --x64
         working-directory: desktop
 
+      # 仅当 SignPath 已配置（有 SIGNPATH_PROJECT_SLUG）时才需要这层 artifact 中转：
+      # 签名工作流要按 artifact-id 去取原始 exe。未配置签名时整条链路是多余的，
+      # 而 GitHub 免费版 artifact 配额只有 500MB、按 6-12h 重算，配额见底时
+      # 连这一步都会失败并把「exe 已经编译好」的流水线判红（2026-10-26 实测）。
       - uses: actions/upload-artifact@v4
         id: unsigned
+        if: vars.SIGNPATH_PROJECT_SLUG != ''
         with:
           name: desktop-win-unsigned
           path: |
