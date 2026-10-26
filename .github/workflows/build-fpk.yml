@@ -122,6 +122,11 @@ jobs:
           ls -lh "10Router-FnOS-Window-${VERSION}-${{ matrix.arch }}.fpk"
 
       - name: Upload fpk artifact
+        # GitHub 免费版 artifact 存储配额只有 500MB，一次全平台发布会直接打爆，
+        # 而且配额是按 6-12 小时重新计算的 —— 配额见底时连 27MB 的 fpk 都传不上去，
+        # 打包成功却让整条流水线判红（2026-10-26 实测）。这里降级为「尽力而为」：
+        # 真正的发布产物走下面的 workflow artifact (release_assets)，不进 artifact 存储。
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           # artifact 名是 run 内部标识,不进 release,保持旧拼写;path glob 跟随平台化名
@@ -130,22 +135,28 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # 发布产物不再依赖 artifact 存储中转：每个架构 job 生成 fpk 后，在 tag 发布时
+      # 直接挂到 Release 上。配额见底也不会阻断发布（失败仅跳过，release job 会补传）。
+      - name: Publish fpk to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        with:
+          files: fnos-packaging/10Router-*.fpk
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   release:
     needs: build-fpk
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - name: Download all fpk artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: fpk-assets
-          pattern: 10router-fpk-*
-          merge-multiple: true
-
-      # 确保 release 存在且带标题——否则第一个 attach 文件的 step 会用空 body/裸 tag 名创建它。
-      # 已存在时不动（notes 手工维护，绝不能覆盖）。
+      # fpk 已由各架构 job 直接挂上 Release（见 build-fpk 的 Publish 步骤）。
+      # 这里不再 download-artifact：GitHub 免费版 artifact 配额 500MB，
+      # 全平台发布一次就爆，且按 6-12h 重新计算，配额见底时连 27MB 都传不上去，
+      # 会让「打包全部成功」被判红（2026-10-26 实测）。
       - name: Ensure release exists with title
-        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
@@ -153,21 +164,24 @@ jobs:
               --notes "Release notes pending — see [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)."
         env:
           GH_TOKEN: ${{ github.token }}
+
+      # 校验清单：从 Release 上已存在的 fpk 资产算，供下载方 `sha256sum -c` 核对。
+      # 三个发布工作流并行，各写各的一份，避免互相覆盖。
       - name: Generate checksum
         run: |
           set -euo pipefail
-          # 校验清单供下载方自行核对（标准 `sha256sum -c` 格式）。三个发布工作流并行
-          # 运行，所以每组各自一份，不用共享的 SHA256SUMS.txt（会互相覆盖）。
-          # 怎么核对见 docs/zh-CN/verify-downloads.md
+          mkdir -p fpk-assets
+          gh release download "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
+            --pattern '10Router-FnOS-*.fpk' --dir fpk-assets --clobber
           ( cd fpk-assets && sha256sum 10Router-*.fpk > SHA256SUMS-fpk.txt )
           cat fpk-assets/SHA256SUMS-fpk.txt
+        env:
+          GH_TOKEN: ${{ github.token }}
 
-      - name: Upload to Release
+      - name: Upload checksum to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            fpk-assets/10Router-*.fpk
-            fpk-assets/SHA256SUMS-fpk.txt
+          files: fpk-assets/SHA256SUMS-fpk.txt
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
