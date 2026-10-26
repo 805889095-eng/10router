@@ -2,6 +2,21 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.6.1 (2026-10-26)
+
+### ✨ 新增
+
+- **OpenDesign（AMR）供应商**：接入 open-design.ai 的 Design Plan 额度网关 `amr-link.open-design.ai`，标准 OpenAI Chat Completions 协议。模型列表走 `/v1/models` 动态拉取（13 个模型，自带 context_limit / output_budget / cost / 输入模态元数据），静态兜底清单对齐实测结果；别名 `oda` / `amr` / `od-amr` / `open-design`。注意与既有 `opendesign`（manalkaff/opendesign 设计技能包，不提供模型端点）是两个不同标的，故使用独立 id `opendesign-amr`。实测 `deepseek-v4.1-flash` 的思考链（非流式 + 流式）与工具链（非流式 + 流式分片）均完整。
+
+### 🐛 修复
+
+- **antigravity 推理档位按客户端请求动态解析**：客户端传 `reasoning_effort`（含 `xhigh` / `max` → high、`minimal` → low）或 `thinking.budget_tokens`（>16384 high / ≤4096 low / 其余 medium）时，自动映射到对应分级实体（如 `gemini-3.8-flash` → `gemini-3.8-flash-high(high)`）。显式模型后缀仍优先于请求体，避免覆盖调用方的明确意图。此前这些请求会因模型名不带分级后缀被上游 400/404 拒绝。
+- **CodeBuddy 会话头对齐 RFC-4122 UUID**：会话标识改标准 UUID 格式并清除机器人指纹，规避上游校验。
+
+### 🔧 工程
+
+- **CI artifact 上传不再拖垮整条流水线**：GitHub 免费额度耗尽时 `upload-artifact` 曾让一次全绿的测试跑判定为失败，现降级为 `continue-on-error`。
+
 ## v1.6.0 (2026-10-21)
 
 ### ✨ 新增
