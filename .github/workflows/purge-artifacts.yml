@@ -1,0 +1,105 @@
+name: Purge old artifacts
+
+# GitHub 免费版的 Actions artifact 存储额度是 500MB（与 Packages 共享），
+# 而且用量是「按 6-12 小时重新计算」的 —— 配额见底时连 27MB 的 fpk 都传不上去，
+# 表现为「构建全绿但整条流水线判红」（2026-10-26 实测）。
+#
+# 仓库转 public 之后分钟数已无限，但存储额度官方文档没有明确说 public 豁免，
+# 所以这里做一道保险：每天定时把旧 artifact 清掉，只留最近几个。
+#
+# 注意：只删 Actions artifact，**不碰 Release assets**（用户下载的是 Release）。
+
+on:
+  schedule:
+    # UTC 03:00 = 北京时间 11:00，避开构建高峰
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: "保留最新的 N 个 artifact（按创建时间倒序）"
+        required: false
+        default: "5"
+      dry_run:
+        description: "只打印将要删除的内容，不真删"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  # 删除 artifact 需要 actions:write；仓库默认是 read，必须显式声明
+  actions: write
+  contents: read
+
+concurrency:
+  group: purge-artifacts
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Purge artifacts
+        uses: actions/github-script@v7
+        env:
+          KEEP: ${{ github.event.inputs.keep || '5' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        with:
+          script: |
+            const keep = Math.max(0, parseInt(process.env.KEEP, 10) || 5);
+            const dryRun = String(process.env.DRY_RUN).toLowerCase() === 'true';
+
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+
+            const totalBytes = artifacts.reduce((s, a) => s + (a.size_in_bytes || 0), 0);
+            core.info(`现有 artifact: ${artifacts.length} 个，合计 ${(totalBytes / 1048576).toFixed(1)} MB`);
+            core.info(`保留最新 ${keep} 个，dry_run=${dryRun}`);
+
+            const sorted = [...artifacts].sort(
+              (a, b) => new Date(b.created_at) - new Date(a.created_at)
+            );
+            const drop = sorted.slice(keep);
+            const keepBytes = sorted.slice(0, keep).reduce((s, a) => s + (a.size_in_bytes || 0), 0);
+
+            if (!drop.length) {
+              core.info('没有需要清理的 artifact ✅');
+              return;
+            }
+
+            let freed = 0;
+            for (const a of drop) {
+              const mb = ((a.size_in_bytes || 0) / 1048576).toFixed(1);
+              if (dryRun) {
+                core.info(`[dry-run] 会删除 ${a.name} (${mb} MB, ${a.created_at})`);
+                freed += a.size_in_bytes || 0;
+                continue;
+              }
+              try {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: a.id,
+                });
+                core.info(`已删除 ${a.name} (${mb} MB, ${a.created_at})`);
+                freed += a.size_in_bytes || 0;
+              } catch (err) {
+                core.warning(`删除失败 ${a.name} (id=${a.id}): ${err.message}`);
+              }
+            }
+
+            const summary = [
+              '## 🧹 Artifact 清理结果',
+              '',
+              `| 项 | 值 |`,
+              `| --- | --- |`,
+              `| 清理前 | ${artifacts.length} 个 / ${(totalBytes / 1048576).toFixed(1)} MB |`,
+              `| 保留 | ${Math.min(keep, artifacts.length)} 个 / ${(keepBytes / 1048576).toFixed(1)} MB |`,
+              `| ${dryRun ? '预计释放' : '已释放'} | ${drop.length} 个 / ${(freed / 1048576).toFixed(1)} MB |`,
+              '',
+              `> 免费额度 500 MB（artifact 与 Packages 共享）。Release 上的 fpk 资产不受影响。`,
+            ].join('\n');
+            await core.summary.addRaw(summary).write();
