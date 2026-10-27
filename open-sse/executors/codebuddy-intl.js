@@ -94,8 +94,16 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
       headers["X-Conversation-Request-ID"] = reqUuid;
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
-      // Do NOT set X-Agent-Intent or X-Agent-Type: official IDE extensions do not send
-      // these on completions endpoints and upstream WAF treats foreign tags as bot fingerprints.
+      // Agent identity headers: the channel now declares X-IDE-Type: CLI (see registry),
+      // and @tencent-ai/codebuddy-code 2.176.0 sets all three on every completions call:
+      //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
+      //   X-Agent-Runtime = "local-agent" (local CLI runtime)
+      //   X-Agent-Type    = "main" (main-loop model call)
+      // Omitting them while claiming a CLI identity is itself a fingerprint, so the intl
+      // channel mirrors the verified CN set from v1.6.3.
+      headers["X-Agent-Intent"] = "craft";
+      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Type"] = "main";
     } catch {
       const fallbackConvId = randomUUID();
       const fallbackReqId = randomUUID();

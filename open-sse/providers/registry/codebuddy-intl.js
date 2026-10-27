@@ -27,13 +27,20 @@ export default {
     forceStream: true,
     // CodeBuddy intl speaks the same unified OpenAI reasoning_effort shape as CN.
     thinkingFormat: "openai",
+    // Identity headers: declared as the official CLI, not the IDE plugin. The previous
+    // IDE identity was self-contradictory — it claimed X-IDE-Type: IDE while reporting
+    // version 2.108.1, which belongs to the CLI series (VSCode extension is 4.12.x),
+    // so no real IDE client could ever produce that pair. Values below are copied from
+    // @tencent-ai/codebuddy-code 2.176.0 (dist/codebuddy-headless.js), the same verified
+    // set the CN channel uses in v1.6.3.
     headers: {
-      "User-Agent": "IDE/2.108.1 CodeBuddy/2.108.1",
+      "User-Agent": "CLI/2.176.0 CodeBuddy/2.176.0",
       "X-Product": "SaaS",
-      "X-IDE-Type": "IDE",
-      "X-IDE-Name": "IDE",
+      "X-IDE-Type": "CLI",
+      "X-IDE-Name": "CLI",
+      "X-IDE-Version": "2.176.0",
+      "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest",
-      "x-codebuddy-request": "1",
     },
     auth: {
       combined: true,
@@ -187,8 +194,8 @@ export default {
     stateUrl: "https://www.codebuddy.ai/v2/plugin/auth/state",
     tokenUrl: "https://www.codebuddy.ai/v2/plugin/auth/token",
     refreshUrl: "https://www.codebuddy.ai/v2/plugin/auth/token/refresh",
-    userAgent: "IDE/2.63.2 CodeBuddy/2.63.2",
-    platform: "ide",
+    userAgent: "CLI/2.176.0 CodeBuddy/2.176.0",
+    platform: "CLI",
     pollInterval: 5000,
   },
   features: {
