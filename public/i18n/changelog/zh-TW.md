@@ -2,6 +2,14 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.7.1 (2026-10-30)
+
+### 🔒 安全清理
+
+- `codearts` 供應商的使用說明註解裡，憑證示例原先填的是真實 AccessKey（SecretKey / SecurityToken 為截斷片段）。
+  缺少完整 SecretKey 無法構造合法簽章，實際不可利用，但真實憑證片段本就不應出現在公開原始碼中。
+  三個值已全部替換為佔位符。**執行時期程式碼零改動**，介面行為與 v1.7.0 完全一致，僅為換掉帶真實值的註解。
+
 ## v1.7.0 (2026-10-30)
 
 ### ✨ 新增

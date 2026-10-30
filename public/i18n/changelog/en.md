@@ -2,6 +2,16 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.7.1 (2026-10-30)
+
+### 🔒 Security cleanup
+
+- The `codearts` provider's usage comment showed a real AccessKey in its credential example
+  (SecretKey / SecurityToken were truncated fragments). Without a complete SecretKey no valid
+  signature can be built, so it was not exploitable — but real credential material does not
+  belong in public source. All three values are now placeholders.
+  **No runtime code changed**: behaviour is identical to v1.7.0, only the comment differs.
+
 ## v1.7.0 (2026-10-30)
 
 ### ✨ New
