@@ -38,6 +38,32 @@ describe("buildCloudCodeProbeError (connection test path)", () => {
   it("falls back to the status line when the body is unreadable", () => {
     expect(buildCloudCodeProbeError("", 503)).toBe("API returned 503");
   });
+
+  // 404 Requested entity was not found 在模型探测阶段不是服务端 bug，而是
+  // 「这个账号的 rollout 还没放量到该模型」。裸文案会让人跑去查上游故障。
+  it("rewrites a model-probe 404 into a rollout explanation naming the model", () => {
+    const body = JSON.stringify({
+      error: { code: 404, message: "Requested entity was not found.", status: "NOT_FOUND" },
+    });
+    const msg = buildCloudCodeProbeError(body, 404, "gemini-3.8-flash-high");
+    expect(msg).toBe("Model not available on this account (Google preview/rollout not granted)");
+    expect(msg).not.toContain("Requested entity was not found");
+  });
+
+  it("rewrites a credential-level 404 without naming a model", () => {
+    const body = JSON.stringify({
+      error: { code: 404, message: "Requested entity was not found.", status: "NOT_FOUND" },
+    });
+    const msg = buildCloudCodeProbeError(body, 404);
+    expect(msg).toBe(
+      "Requested resource not available on this account (Google preview/rollout not granted)",
+    );
+  });
+
+  it("leaves non-404 errors untouched even when a model is targeted", () => {
+    const body = JSON.stringify({ error: { message: "API key not valid" } });
+    expect(buildCloudCodeProbeError(body, 400, "gemini-3.8-flash-high")).toBe("API key not valid");
+  });
 });
 
 describe("extractAccountsVerificationUrl", () => {

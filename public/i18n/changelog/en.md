@@ -2,6 +2,44 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.0 (2026-10-30)
+
+### ✨ Added
+
+- **Model-level real-generation probe for Antigravity** (aligned with upstream techysy/10router v1.6.2).
+  When the caller targets a specific model, "Test connection" now sends one real
+  `generateContent` request for that model after the credential probe passes. This catches the
+  case where the token is valid but the account was never granted that model — previously that
+  showed as a passing test and only failed once you actually chatted (404).
+  - The probe goes through the real `AntigravityExecutor` transform chain (same body shape,
+    headers and URL builder as live chat) instead of hand-rolling the envelope. A hand-rolled
+    envelope missing `requestId` / `sessionId` makes Google answer a blanket 404 for every model,
+    which reads as "rollout not granted" but is really a malformed probe.
+  - `envelope.model` has its `(level)` suffix stripped after translation (the tier rides in
+    `thinkingConfig`). Leaving the suffix on (e.g. `gemini-3.8-flash-high(high)`) 404s every model.
+  - If no real cloudcode `projectId` can be resolved, the generation probe is skipped entirely
+    with a warning — never a fabricated id, because a fabricated id produces a 404 that is
+    indistinguishable from "model not granted".
+  - `429` means credentials and model access are both fine, just rate-limited: returned as a
+    warning, not a failure.
+
+### 🔧 Improved
+
+- **Probe error text**: a `404 Requested entity was not found` during a model probe no longer
+  surfaces verbatim (it reads like a server bug). It now says the account was not granted this
+  model's preview/rollout; credential-level probes say the resource is not available to the account.
+
+### 📝 Docs
+
+- `docs/zh-CN/antigravity-integration-guide.md` fully rewritten (aligned with upstream v1.6.2):
+  exit-IP consistency (gate A) vs billing region (gate B), `validation_url` handling, tiered model
+  addressing pitfalls (4.6 family uses bare ids, 5.5 family uses `(level)` — opposite rules),
+  per-account `modelLock 120s` and quota endpoint precedence.
+
+### 🧪 Tests
+
+- `connection-test-validation-url` gained 3 cases covering all three 404 classification branches.
+
 ## v1.7.2 (2026-10-30)
 
 ### 🔥 Removed

@@ -2,7 +2,7 @@ import { getProviderConnectionById, updateProviderConnection } from "@/lib/local
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider, USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
-import { getDefaultModel } from "open-sse/config/providerModels.js";
+import { getDefaultModel, getModelUpstreamId } from "open-sse/config/providerModels.js";
 import { CODEX_CLI_VERSION } from "open-sse/config/appConstants.js";
 import { GROK_CLI_PAGER_USER_AGENT, GROK_CLI_VERSION } from "open-sse/config/grokCli.js";
 import { resolveOllamaLocalHost, PROVIDERS } from "open-sse/config/providers.js";
@@ -250,11 +250,24 @@ function parseProviderErrorMessage(bodyText, fallback) {
  * the bare error.message ("Verify your account to continue.") leaves the user with
  * no next step. Exported for unit tests.
  */
-export function buildCloudCodeProbeError(bodyText, fallbackStatus) {
-  return (
+const NOT_FOUND_ENTITY_RE = /Requested entity was not found/i;
+
+export function buildCloudCodeProbeError(bodyText, fallbackStatus, targetModel = null) {
+  const base = (
     buildAccountValidationMessage(bodyText) ||
     parseProviderErrorMessage(bodyText, `API returned ${fallbackStatus}`)
   );
+  // 模型探测阶段的「404 Requested entity was not found」是 rollout 未放量的信号，
+  // 不是服务端 bug。裸文案会让人以为是上游挂了，所以换成两句可操作的说明：
+  //   带 targetModel → 明确「这个账号没拿到该模型」
+  //   不带（凭证级探测）→ 泛化为「该资源对你这个账号未开放」
+  // 用固定骨架（不做插值）方便 i18n 字典整体命中；模型名由路由层翻译后再拼。
+  if (NOT_FOUND_ENTITY_RE.test(base)) {
+    return targetModel
+      ? "Model not available on this account (Google preview/rollout not granted)"
+      : "Requested resource not available on this account (Google preview/rollout not granted)";
+  }
+  return base;
 }
 
 async function probeCloudCodeAssistAccess(connection, accessToken, effectiveProxy = null) {
@@ -278,6 +291,144 @@ async function probeCloudCodeAssistAccess(connection, accessToken, effectiveProx
   return {
     valid: false,
     error: buildCloudCodeProbeError(bodyText, res.status),
+    status: res.status,
+  };
+}
+
+/**
+ * 取这个连接真实的 cloudcode project id。
+ *
+ * 生成类探测（generateContent）必须带上账号真实的 project。编一个假 id 时，
+ * Google 会对**所有**模型一律返回「404 Requested entity was not found」，
+ * 跟「模型没放量」长得一模一样，根本没法区分是哪种原因。
+ */
+async function resolveCloudCodeProjectId(connection, accessToken, effectiveProxy = null) {
+  const stored = String(connection.projectId || "").trim();
+  if (stored) return stored;
+  try {
+    const res = await fetchWithConnectionProxy(CLOUD_CODE_ASSIST_TEST_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        // 这里刻意用官方 IDE 的 UA，而不是凭证探测用的 google-api-nodejs-client：
+        // 要的是「真实客户端视角」下这个账号归属于哪个 project。
+        "User-Agent": connection.provider === "antigravity"
+          ? "antigravity/ide/2.22.0 darwin/arm64"
+          : "google-api-nodejs-client/9.15.1 gemini-cli/0.34.0",
+      },
+      body: JSON.stringify({
+        metadata: {
+          ideType: "IDE_UNSPECIFIED",
+          platform: "PLATFORM_UNSPECIFIED",
+          pluginType: "GEMINI",
+        },
+      }),
+    }, effectiveProxy);
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    const pid = data?.cloudaicompanionProject?.id || data?.cloudaicompanionProject;
+    const s = typeof pid === "string" ? pid.trim() : "";
+    return s || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 真实生成探针：拿指定模型实际发一次 generateContent，验证「这个账号能不能真的用上这个模型」。
+ *
+ * 为什么必须走这一步：只探 Code Assist 访问权的话，凭证有效但模型没放量的账号会
+ * 显示「测试通过」，真去聊天才 404。逐个模型下拉测试时尤其误导。
+ *
+ * 为什么不再手搓 envelope：少了 requestId/sessionId 时 Google 会对所有模型一律回
+ * 404，看着像 rollout 没给、其实是探测请求本身畸形 —— 这个坑烧掉过两个版本。
+ * 现在走真实的 AntigravityExecutor 转换链，body 形状 / headers / URL 构造跟线上聊天完全一致。
+ */
+async function probeAntigravityModelAccess(
+  connection,
+  accessToken,
+  effectiveProxy = null,
+  targetModel = "gemini-3.8-flash-high",
+) {
+  const { AntigravityExecutor } = await import("open-sse/executors/antigravity.js");
+  const executor = new AntigravityExecutor();
+
+  // 拿不到真实 project 就整段跳过，绝不发假 id。
+  const projectId = await resolveCloudCodeProjectId(connection, accessToken, effectiveProxy);
+  if (!projectId) {
+    return {
+      valid: true,
+      error: null,
+      warning: "Credential OK; model probe skipped (no project ID — reconnect OAuth to store it)",
+    };
+  }
+
+  const credentials = {
+    accessToken,
+    projectId,
+    connectionId: connection.id,
+    email: connection.email,
+    providerSpecificData: connection.providerSpecificData,
+  };
+
+  const openaiishBody = {
+    model: targetModel,
+    stream: false,
+    messages: [{ role: "user", content: "ping" }],
+    max_tokens: 8,
+  };
+
+  const { translateRequest, initTranslators } = await import("open-sse/translator/index.js");
+  const { stripThinkingSuffix } = await import("open-sse/translator/concerns/thinkingUnified.js");
+  await initTranslators();
+  const nativeBody = translateRequest(
+    "openai",
+    "antigravity",
+    targetModel,
+    openaiishBody,
+    false,
+    credentials,
+    "antigravity",
+    null,
+    [],
+    connection.id,
+    null,
+  );
+
+  // chatCore 是在翻译之后才把 "(level)" 从 envelope.model 上剥掉的 —— 层级改走
+  // thinkingConfig。envelope.model 里若仍带后缀（如 gemini-3.8-flash-high(high)），
+  // Google 一律 404，于是每个模型都报同一个错。探测必须照做这一步。
+  const cleanModel = stripThinkingSuffix(targetModel);
+  nativeBody.model = cleanModel;
+
+  const transformedBody = executor.transformRequest(cleanModel, nativeBody, false, credentials);
+  const url = executor.buildUrl(cleanModel, false, 0);
+  const headers = executor.buildHeaders(credentials, false, null);
+
+  const res = await fetchWithConnectionProxy(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(transformedBody),
+  }, effectiveProxy);
+
+  // 2xx = 完全可用
+  if (res.ok) {
+    // 尽量把响应读完，别留半开的连接
+    try { await res.text(); } catch { /* best effort */ }
+    return { valid: true, error: null };
+  }
+
+  const bodyText = await res.text().catch(() => "");
+
+  // 429 = 凭证和模型权限都没问题，只是被限流
+  if (res.status === 429) {
+    return { valid: true, error: null, warning: "Model rate-limited (quota exhausted)" };
+  }
+
+  return {
+    valid: false,
+    error: buildCloudCodeProbeError(bodyText, res.status, targetModel),
     status: res.status,
   };
 }
@@ -496,14 +647,56 @@ async function testOAuthConnection(connection, effectiveProxy = null, options = 
   }
 
   if (connection.provider === "gemini-cli" || connection.provider === "antigravity") {
-    const initial = await probeCloudCodeAssistAccess(connection, accessToken, effectiveProxy);
-    if (initial.valid) return { valid: true, error: null, refreshed, newTokens };
+    // 调用方若指定了具体模型（逐个模型下拉测试走的就是这条），要把「真实生成」也探一遍。
+    // 只探凭证的话，「Token 有效但账号没拿到该模型」会被判成通过，真去聊天才 404 / 403。
+    const selectedModel = options?.model;
+    const targetModel = selectedModel
+      ? getModelUpstreamId(connection.provider, selectedModel)
+      : null;
+
+    const runProbe = async (token) => {
+      // ① 先探 Cloud Code 访问权
+      const accessProbe = await probeCloudCodeAssistAccess(connection, token, effectiveProxy);
+      if (!accessProbe.valid) return accessProbe;
+
+      // ② 指定了模型，再发一次真实生成
+      if (targetModel) {
+        const modelProbe = await probeAntigravityModelAccess(
+          connection, token, effectiveProxy, targetModel,
+        );
+        if (!modelProbe.valid) return modelProbe;
+        if (modelProbe.warning) {
+          return { valid: true, error: null, warning: modelProbe.warning, soft: true };
+        }
+      }
+      return { valid: true, error: null };
+    };
+
+    const initial = await runProbe(accessToken);
+    if (initial.valid) {
+      // soft success：warning 会透给前端，但不把连接标成错误
+      return {
+        valid: true,
+        error: initial.warning || null,
+        warning: initial.warning || null,
+        refreshed,
+        newTokens,
+      };
+    }
 
     if (initial.status === 401 && config.refreshable && !refreshed && connection.refreshToken) {
       const tokens = await refreshOAuthToken(connection);
       if (tokens?.accessToken) {
-        const retry = await probeCloudCodeAssistAccess(connection, tokens.accessToken, effectiveProxy);
-        if (retry.valid) return { valid: true, error: null, refreshed: true, newTokens: tokens };
+        const retry = await runProbe(tokens.accessToken);
+        if (retry.valid) {
+          return {
+            valid: true,
+            error: retry.warning || null,
+            warning: retry.warning || null,
+            refreshed: true,
+            newTokens: tokens,
+          };
+        }
         return { valid: false, error: retry.error, refreshed: true, newTokens: tokens };
       }
       return { valid: false, error: "Token invalid or revoked", refreshed: false };

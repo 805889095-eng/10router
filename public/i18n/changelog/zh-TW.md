@@ -2,6 +2,40 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.8.0 (2026-10-30)
+
+### ✨ 新增
+
+- **Antigravity 模型級真實生成探針**（對齊上游 techysy/10router v1.6.2 的「真實生成探針」）。
+  「測試連線」在呼叫方指定了具體模型時，會在憑證探測通過後再拿該模型**真發一次
+  `generateContent`**，從而辨識出「Token 有效但帳號沒拿到這個模型」的情況 ——
+  以前這種情況會顯示測試通過，真去聊天才 404。
+  - 探測走真實的 `AntigravityExecutor` 轉換鏈（body 形狀 / headers / URL 構造與線上聊天一致），
+    不再手搓 envelope。手搓時缺 `requestId` / `sessionId` 會讓 Google 對所有模型一律回 404，
+    看起來像「rollout 沒給」而其實是探測請求本身畸形。
+  - `envelope.model` 會在翻譯後剝掉 `(level)` 後綴（層級改由 `thinkingConfig` 承載）。
+    帶後綴（如 `gemini-3.8-flash-high(high)`）會讓每個模型都 404。
+  - 拿不到真實 cloudcode `projectId` 時**整段跳過**探測並給 warning，絕不用假 id ——
+    假 id 得到的 404 與「模型未放量」無法區分。
+  - `429` 視為「憑證與模型權限都正常，只是被限流」，回傳 warning 而不是失敗。
+
+### 🔧 改進
+
+- **探測錯誤文案**：模型探測階段遇到 `404 Requested entity was not found` 時，不再原樣透出
+  這句看起來像伺服端故障的文案，改為說明「該帳號未獲得該模型的 preview/rollout 授權」；
+  憑證級探測則泛化為「該資源對目前帳號未開放」。
+
+### 📝 文件
+
+- `docs/zh-CN/antigravity-integration-guide.md` 全面重寫（對齊上游 v1.6.2）：
+  補齊出口 IP 一致性（門禁 A）與付款地區（門禁 B）的獨立性、`validation_url` 處理、
+  模型 tiered 尋址易錯點（4.6 家族裸 id vs 5.5 家族帶 `(level)`，兩代規則相反）、
+  多帳號 `modelLock 120s` 與配額端點優先序。
+
+### 🧪 測試
+
+- `connection-test-validation-url` 新增 3 個用例涵蓋 404 歸類的三種分支。
+
 ## v1.7.2 (2026-10-30)
 
 ### 🔥 移除
