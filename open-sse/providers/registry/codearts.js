@@ -8,8 +8,8 @@
  *
  *     AK|SK|STS
  *
- * 例：
- *     HSTA86B1IUP7KIQGZD01|28XPSA...R6A5|hQpjbi...
+ * 例（三个值都是占位符，别填真实凭据进代码）：
+ *     your-access-key|your-secret-key|your-security-token
  *
  * 也支持更规范的写法：apiKey 填 AK，providerSpecificData.secretKey 填 SK，
  * accessToken 填 STS —— executor 两种都认，优先用分开的字段。
