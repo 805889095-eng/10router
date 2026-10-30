@@ -29,7 +29,6 @@ import ZedExecutor from "./zed.js";
 import WindsurfExecutor from "./windsurf.js";
 import { DefaultExecutor } from "./default.js";
 import { DevinCliExecutor } from "./devin-cli.js";
-import { CodeArtsExecutor } from "./codearts.js";
 
 const executors = {
   antigravity: new AntigravityExecutor(),
@@ -37,7 +36,6 @@ const executors = {
   "gemini-cli": new GeminiCLIExecutor(),
   github: new GithubExecutor(),
   iflow: new IFlowExecutor(),
-  codearts: new CodeArtsExecutor(),
   qoder: new QoderExecutor(),
   "qoder-cn": new QoderExecutor("qoder-cn", QODER_CN_GATEWAY_BASE),
   kiro: new KiroExecutor(),
@@ -93,7 +91,6 @@ export { AzureExecutor } from "./azure.js";
 export { GeminiCLIExecutor } from "./gemini-cli.js";
 export { GithubExecutor } from "./github.js";
 export { IFlowExecutor } from "./iflow.js";
-export { CodeArtsExecutor } from "./codearts.js";
 export { QoderExecutor } from "./qoder.js";
 export { KiroExecutor } from "./kiro.js";
 export { KimchiExecutor } from "./kimchi.js";

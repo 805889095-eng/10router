@@ -30,7 +30,6 @@ import p26 from "./claude.js";
 import p27 from "./cline.js";
 import p28 from "./clinepass.js";
 import p29 from "./cloudflare-ai.js";
-import p5c from "./codearts.js";
 import p30 from "./codebuddy-cn.js";
 import p31 from "./codebuddy-intl.js";
 import p32 from "./codex.js";
@@ -192,7 +191,6 @@ export default [
   p27,
   p28,
   p29,
-  p5c,
   p30,
   p31,
   p32,

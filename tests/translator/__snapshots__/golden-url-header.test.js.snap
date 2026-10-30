@@ -583,25 +583,6 @@ exports[`GOLDEN buildHeaders (default executor providers) > cloudflare-ai → he
 }
 `;
 
-exports[`GOLDEN buildHeaders (default executor providers) > codearts → headers (apiKey / oauth) 1`] = `
-{
-  "apiKey": {
-    "Accept": "text/event-stream",
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-  "nonStream": {
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-  "oauth": {
-    "Accept": "text/event-stream",
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-}
-`;
-
 exports[`GOLDEN buildHeaders (default executor providers) > codebuddy-cn → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -2241,13 +2222,6 @@ exports[`GOLDEN buildUrl (default executor providers) > cloudflare-ai → url (s
 {
   "nonStream": "https://api.cloudflare.com/client/v4/accounts/ACC123/ai/v1/chat/completions",
   "stream": "https://api.cloudflare.com/client/v4/accounts/ACC123/ai/v1/chat/completions",
-}
-`;
-
-exports[`GOLDEN buildUrl (default executor providers) > codearts → url (stream + non-stream) 1`] = `
-{
-  "nonStream": "https://snap-access.cn-north-4.myhuaweicloud.com/api/v2/chat/completions",
-  "stream": "https://snap-access.cn-north-4.myhuaweicloud.com/api/v2/chat/completions",
 }
 `;
 

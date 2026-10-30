@@ -2,6 +2,30 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.7.2 (2026-10-30)
+
+### 🔥 Removed
+
+- **Reverted the Huawei Cloud CodeArts channel** (`codearts`, alias `ca`, introduced in v1.7.0).
+  Its credentials are an AccessKey + SecretKey + temporary STS triplet that expires in about
+  1.8 hours, and renewal goes through IAM OAuth2 + DPoP — which needs a JWT signed on the fly
+  with the P-256 private key inside the client's `loginContext`. A gateway cannot replicate that,
+  so using it meant re-exporting credentials by hand every 1.8 hours. Not viable, removed entirely.
+- Deleted: `providers/registry/codearts.js`, `executors/codearts.js`,
+  `shared/huaweiApigSign.js`, `public/providers/codearts.svg`, plus two dedicated test files
+  (36 cases).
+- Cleaned every reference from `executors/index.js`, `providers/registry/index.js`,
+  `providers/pricing.js`, `src/shared/utils/providerIcon.js`, `providers/capabilities.js`
+  and `scripts/audit-capabilities.mjs`.
+- Provider count 117 -> 116; alias resolution 285 -> 283 tokens; baselines re-snapshotted.
+
+### 📝 Note
+
+- Existing channels (`ag/`, `cbcn/`, `oda/`, ...) are **completely unchanged** — this only
+  removes an unused new channel.
+- If you are on v1.7.1 and added a CodeArts provider, delete that entry from the
+  Providers page after upgrading.
+
 ## v1.7.1 (2026-10-30)
 
 ### 🔒 Security cleanup

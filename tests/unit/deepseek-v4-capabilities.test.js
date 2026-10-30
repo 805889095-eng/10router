@@ -127,7 +127,7 @@ const DOTTED_ID = REGISTRY.flatMap((entry) =>
 
 describe("DeepSeek V4.1-Flash id with dots (deepseek-v4.1-flash)", () => {
   it("is offered by apinex, opencode-go, opencode-zen, both CodeBuddy gateways and opendesign-amr", () => {
-    expect(DOTTED_ID.map((m) => m.provider).sort()).toEqual(["apinex", "codearts", "codebuddy-cn", "codebuddy-intl", "opencode-go", "opencode-zen", "opendesign-amr", "trae-free"]);
+    expect(DOTTED_ID.map((m) => m.provider).sort()).toEqual(["apinex", "codebuddy-cn", "codebuddy-intl", "opencode-go", "opencode-zen", "opendesign-amr", "trae-free"]);
   });
 
   it("resolves from the canonical row where the provider has no override", () => {

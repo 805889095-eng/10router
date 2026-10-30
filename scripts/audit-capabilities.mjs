@@ -107,11 +107,6 @@ export const ALLOWLIST = {
   "inception/mercury-3": "no-models-dev-entry",
   "inception/mercury-2.5": "no-models-dev-entry",
 
-  // 华为云 CodeArts 的 openPangu 两档：models.dev 未收录，官方只给参数量
-  // （92B / 505B）与一句 model_desc，没有 context/输出规格可依。保留地板值
-  // 而不是编一个数字 —— 编大了会让客户端把超长上下文发上来被上游截断。
-  "codearts/openpangu-2.0-flash": "no public spec",
-  "codearts/openpangu-2.0-pro": "no public spec",
 
   // Private codenames with no public spec and no models.dev entry.
   "github/oswe-vscode-prime": "codename",

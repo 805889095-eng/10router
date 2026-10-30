@@ -2,6 +2,27 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.7.2 (2026-10-30)
+
+### 🔥 移除
+
+- **撤回華為雲 CodeArts（碼道）通道**（v1.7.0 引入的 `codearts` / 別名 `ca`）。
+  該通道的憑證是「AccessKey + SecretKey + 臨時 STS」三元組，STS 約 1.8 小時過期，
+  而續期走 IAM OAuth2 + DPoP —— 需要用客戶端 `loginContext` 裡的 P-256 私鑰現簽 JWT，
+  閘道端沒有這份上下文，無法複刻。實際使用變成每 1.8 小時手動跑一次腳本導憑證，
+  體驗不成立，故整體移除。
+- 刪除檔案：`open-sse/providers/registry/codearts.js`、`open-sse/executors/codearts.js`、
+  `open-sse/shared/huaweiApigSign.js`、`public/providers/codearts.svg`
+  以及兩份專屬單測（共 36 個用例）。
+- 清理關聯條目：`executors/index.js`、`providers/registry/index.js`、`providers/pricing.js`、
+  `src/shared/utils/providerIcon.js`、`providers/capabilities.js`、`scripts/audit-capabilities.mjs`。
+- Provider 總數 117 → 116，別名解析 285 → 283 tokens，基線已重快照。
+
+### 📝 說明
+
+- 既有通道（`ag/` `cbcn/` `oda/` 等）**行為零改動**，本次只是移除一個未被使用的新通道。
+- 已裝 v1.7.1 並新增過 CodeArts 供應商的，升級後請在「供應商」頁把該筆記錄刪掉。
+
 ## v1.7.1 (2026-10-30)
 
 ### 🔒 安全清理

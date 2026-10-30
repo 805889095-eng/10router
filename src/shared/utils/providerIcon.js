@@ -37,7 +37,6 @@ const ICON_ALIASES = {
 // Providers whose asset ships as SVG (everything else is .png).
 const ICON_EXTENSIONS = {
   bai: ".svg",
-  codearts: ".svg",
   // 官方百炼 wordmark 只有 SVG（docs.bailian.console.aliyun.com/logo/）
 };
 
