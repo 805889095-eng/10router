@@ -2,6 +2,18 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.6.5 (2026-10-28)
+
+### ✨ New
+
+- **Upstream v0.5.109 → v0.5.112 ports**: Codex gains GPT 6.1 Terra (Lite transport, 500k Codex window, $1/$5, $0.05 cached); Kimi K3.1 Pro added to both Command Code and OpenCode Go (1M window, 131k output, always-on thinking, $2/$10).
+- **Command Code headers now match the official CLI 1.88.0**: version bumped to 1.88.0, environment switched to `production`, plus the missing `x-cli-surface` / `x-taste-learning`; the two dynamic headers the CLI sends are added too — `x-project-slug` (slugified working directory) and `x-session-id` (a conversation-stable threadId instead of a fresh UUID per request). Three call sites that each carried their own drifted version constant now share one module.
+
+### 🐛 Fixed
+
+- **Non-streaming requests no longer report upstream SSE errors as success**: a terminal error frame inside the stream used to surface as HTTP 200 with no `choices`, so the client neither retried nor failed over. It now returns the upstream status (valid 4xx/5xx, else 502), and the terminal error wins over any partial content in the same stream.
+- **Gemini / Antigravity tool schemas are no longer rejected**: enforce the proto predicates that `items` only accompanies `type:"array"` and `properties`/`required` only accompany `type:"object"`. Union types are no longer resolved by taking the first non-null entry — that could pick `boolean` while the node still carried `items`, triggering `field predicate failed: $type == Type.ARRAY`.
+
 ## v1.6.0 (2026-10-21)
 
 ### ✨ New

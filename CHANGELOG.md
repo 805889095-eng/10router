@@ -2,6 +2,38 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.6.5 (2026-10-28)
+
+### ✨ 新增
+
+- **上游 9router v0.5.109 → v0.5.112 择优移植**（31 提交 / 95 文件，逐项读懂后本地重写，非 merge）：
+  - **Codex GPT 6.1 Terra**：Lite 传输 + 五档思考（无 minimal，ultra→max），Codex 侧窗口 500k（API 本身 1.05M，但 codex-rs 的 models.json 把它截到 500k，不显式登记会落到 `*gpt-6*` 家族规则把窗口说过头），定价 $1/$5、缓存 0.05。
+  - **Kimi K3.1 Pro**：Command Code 与 OpenCode Go 双渠道收录。Command Code 侧 id 保持上游原样大小写 `moonshotai/Kimi-K3.1-Pro`（该路由器不做 model-id 归一化）；OpenCode Go 侧 1M 窗口、131k 输出、思考常开（`thinkingCanDisable: false`，实测 reasoning_effort=none 也照思考），定价 $2/$10。
+- **Command Code 请求头对齐官方 CLI 1.88.0**：抽出 `open-sse/shared/commandCodeHeaders.js` 作为唯一来源。静态头改 `User-Agent: cli` / `x-command-code-version: 1.88.0` / `x-cli-environment: production` / `x-cli-surface: cli` / `x-taste-learning: false`；动态头补 `x-project-slug`（= slugify(process.cwd())，与请求体的 `config.workingDir` 同源）与 `x-session-id`（= 请求体的 `threadId`，哈希自会话键，确定性 UUID v4 形状）。执行器、用量查询、连接测试三处调用点全部改走该模块。
+
+### 🐛 修复
+
+- **非流式请求把上游 SSE 错误帧当成功返回**：provider 强制流式时，终止错误会以 `data: {"error":{...}}` 落在流内，解析结果 `{ error }` 原本被直接当成响应体继续往下走，客户端于是收到 HTTP 200、没有 `choices` 的"空成功"，既不重试也不切备用渠道。现按 `error.status` 返回（仅接受合法 4xx/5xx，其余 502），且终止错误优先于同一流里已产生的部分内容与 usage 上报。
+- **Gemini / Antigravity 函数调用 schema 被上游拒绝**（`field predicate failed: $type == Type.ARRAY` / `Type.OBJECT`）：Gemini 的 Schema proto 硬性要求 `items` 只出现在 `type:"array"`、`properties`/`required` 只出现在 `type:"object"`，违反任一条整个请求被拒。三处修复：
+  1. type 联合数组不再盲取第一个非 null 项 —— zod 给 `unknown` 生成的是 `["null","boolean","object","array","number","string"]`，旧逻辑会选成 `boolean` 却仍带着 `items`。改为先看结构线索（有 `properties` 且含 object → object；有非空 `items` 且含 array → array），再按 string → number → integer → boolean 保守退让。
+  2. 补 `items` 时覆盖两种漏网：`items: {}`（空对象能通过旧的真值判断）、以及有 `properties`/`items` 但自身缺 `type` 的 items schema。
+  3. 新增后序遍历的 `enforceTypeConstraints`，在最后阶段保证两条谓词成立。
+  - **实现注意**：下降必须走 `forEachSubschema` 而非 `Object.values`。`properties` 是"子 schema 的字典"，不是 schema 节点；按原始值递归会把这个字典当节点，从而把**名叫 `items` / `properties` 的字段本身删掉**（本地 `antigravity-tool-sanitize` 的 "keeps properties whose NAMES collide" 用例挡住了这个回归，上游没有对应用例）。
+
+### 🔧 工程
+
+- Command Code 的版本号此前散落三处且互不一致（registry `0.25.7`、usage 内置 `1.53.1`、官方 `1.88.0`），现统一收敛到共享模块，杜绝再次漂移。
+
+## v1.6.4 (2026-10-28)
+
+- `codebuddy-intl` 渠道改声明 CLI 身份（UA `CLI/2.176.0`、`X-IDE-Type/Name: CLI`、`X-IDE-Version`），修复「声称 IDE 却报 CLI 版本线」的自相矛盾组合。
+- 仓库转 public：GitHub Actions 分钟数不再受 2000 分钟额度与 macOS ×10 倍率限制（此前额度耗尽会让 push 触发的 job 直接 0-step 秒拒）。
+
+## v1.6.3 (2026-10-27)
+
+- `codebuddy-cn` 请求头对齐官方 CLI 2.176.0（新增 `X-IDE-Version`、`Content-Type: application/json;charset=UTF-8`，删除只用于本地 daemon 的 `x-codebuddy-request`，补三个 `X-Agent-*` 头）。
+- CI 出包流程补上 `fnos-packaging/manifest` 版本同步步骤（此前 tag 升了但 fpk 仍按旧版本命名）。
+
 ## v1.6.2 (2026-10-26)
 
 ### 🐛 修复

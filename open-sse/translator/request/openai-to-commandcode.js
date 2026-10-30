@@ -12,8 +12,8 @@
  */
 import { register } from "../index.js";
 import { FORMATS } from "../formats.js";
-import { randomUUID } from "crypto";
 import { ROLE, OPENAI_BLOCK, CLAUDE_BLOCK } from "../schema/index.js";
+import { COMMAND_CODE_WORKING_DIR, toCommandCodeSessionUuid } from "../../shared/commandCodeHeaders.js";
 import { DEFAULT_MAX_TOKENS } from "../../config/runtimeConfig.js";
 import { parseDataUri, encodeDataUri } from "../concerns/image.js";
 
@@ -177,7 +177,7 @@ function convertTools(tools) {
   return result.length ? result : undefined;
 }
 
-export function openaiToCommandCodeRequest(model, body, stream /* , credentials */) {
+export function openaiToCommandCodeRequest(model, body, stream, credentials) {
   const { messages, system } = convertMessages(body.messages);
   const params = {
     model,
@@ -196,10 +196,13 @@ export function openaiToCommandCodeRequest(model, body, stream /* , credentials 
   const today = new Date().toISOString().slice(0, 10);
 
   return {
-    threadId: randomUUID(),
+    // Conversation-stable: hashed from the session key captured by
+    // translateRequest(), and reused verbatim as the `x-session-id` header by
+    // the executor. A fresh UUID per request made every turn a new conversation.
+    threadId: toCommandCodeSessionUuid(credentials?._clientSessionId),
     memory: "",
     config: {
-      workingDir: process.cwd(),
+      workingDir: COMMAND_CODE_WORKING_DIR,
       date: today,
       environment: process.platform,
       structure: [],

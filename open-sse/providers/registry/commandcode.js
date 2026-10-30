@@ -30,9 +30,17 @@ export default {
     baseUrl: "https://api.commandcode.ai/alpha/generate",
     format: "commandcode",
     forceStream: true,
+    // Static identity headers from command-code@1.88.0 buildCommandAuthHeaders().
+    // The two dynamic ones (x-project-slug = slugify(cwd), x-session-id = the
+    // conversation's threadId) are added per request in
+    // shared/commandCodeHeaders.js. The old pair (version 0.25.7 / environment
+    // "cli") announced a CLI build six months behind what upstream expects.
     headers: {
-      "x-command-code-version": "0.25.7",
-      "x-cli-environment": "cli",
+      "User-Agent": "cli",
+      "x-command-code-version": "1.88.0",
+      "x-cli-environment": "production",
+      "x-cli-surface": "cli",
+      "x-taste-learning": "false",
     },
   },
   models: [
@@ -68,6 +76,9 @@ export default {
     { id: "MiniMaxAI/MiniMax-M3", name: "MiniMax M3" },
     { id: "moonshotai/Kimi-K2.5", name: "Kimi K2.5" },
     { id: "moonshotai/Kimi-K2.6", name: "Kimi K2.6" },
+    // Command Code serves this upstream; the id must stay verbatim (capitalized)
+    // because the router does not normalize model-id casing.
+    { id: "moonshotai/Kimi-K3.1-Pro", name: "Kimi K3.1 Pro" },
     { id: "moonshotai/Kimi-K2.7-Code", name: "Kimi K2.7 Code" },
     { id: "moonshotai/Kimi-K2.7-Code-Highspeed", name: "Kimi K2.7 Code HighSpeed" },
     { id: "moonshotai/Kimi-K3", name: "Kimi K3" },

@@ -15,8 +15,7 @@
 
 import { proxyAwareFetch } from "../../utils/proxyFetch.js";
 import { U, parseResetTime, toFiniteNumber } from "./shared.js";
-
-const CLI_VERSION = "1.53.1";
+import { buildCommandCodeHeaders } from "../../shared/commandCodeHeaders.js";
 
 const PLAN_LABELS = {
   "individual-go": "Go",
@@ -52,14 +51,10 @@ export async function getCommandCodeUsage(apiKey, proxyOptions = null) {
   const creditsUrl = urls?.creditsUrl || "https://api.commandcode.ai/alpha/billing/credits";
   const subscriptionsUrl = urls?.subscriptionsUrl || "https://api.commandcode.ai/alpha/billing/subscriptions";
 
-  const headers = {
-    Authorization: `Bearer ${apiKey.trim()}`,
-    "x-command-code-version": CLI_VERSION,
-    "x-cli-environment": "cli",
-    "User-Agent": "cli",
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+  // One source of truth for identity headers (shared/commandCodeHeaders.js).
+  // This call site used to carry its own CLI_VERSION constant — it had drifted
+  // to 1.53.1 while the registry still said 0.25.7 and upstream shipped 1.88.0.
+  const headers = buildCommandCodeHeaders({ apiKey: apiKey.trim(), accept: "application/json" });
 
   try {
     const creditsPromise = proxyAwareFetch(creditsUrl, { method: "GET", headers }, proxyOptions);

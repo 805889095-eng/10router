@@ -355,6 +355,21 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
       return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Invalid SSE response for non-streaming request");
     }
+    // Providers that force streaming can still emit a terminal error frame inside
+    // the SSE body (`data: {"error":{"status":503,...}}`). parseSSEToOpenAIResponse
+    // surfaces that as `{ error }` — and without this guard the object sailed on
+    // as `responseBody`, so the client got HTTP 200 with no `choices` and an
+    // "empty but successful" answer instead of failing over. Trust the upstream
+    // status when it is a real 4xx/5xx, otherwise report 502. The terminal error
+    // wins over any partial content/usage earlier in the same stream.
+    if (parsed.error) {
+      const upstreamStatus = Number(parsed.error.status);
+      const status = Number.isInteger(upstreamStatus) && upstreamStatus >= 400 && upstreamStatus <= 599
+        ? upstreamStatus
+        : HTTP_STATUS.BAD_GATEWAY;
+      appendLog({ status: `FAILED ${status}` });
+      return createErrorResult(status, parsed.error.message || "Upstream SSE stream failed");
+    }
     responseBody = parsed;
   } else {
     try {

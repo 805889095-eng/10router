@@ -336,11 +336,35 @@ const flattenAnyOfOneOf = schemaPass(node => {
   }
 });
 
-// Flatten type arrays
+// Flatten type arrays. Picking the FIRST non-null entry is wrong whenever the
+// union is a real one (`["null","boolean","object","array","number","string"]`
+// is what zod/JSON-Schema emit for `unknown`): it landed on "boolean" and Gemini
+// then rejected the whole request with
+// "field predicate failed: $type == Type.ARRAY" because that node still carried
+// `items`. Choose by structural evidence first, then by a conservative type
+// preference (string before number/boolean — the permissive choice).
 const flattenTypeArrays = schemaPass(node => {
-  if (Array.isArray(node.type)) {
-    const nonNullTypes = node.type.filter(t => t !== "null");
-    node.type = nonNullTypes.length > 0 ? nonNullTypes[0] : "string";
+  if (!Array.isArray(node.type)) return;
+  const nonNullTypes = node.type.filter(t => t !== "null");
+  if (nonNullTypes.length === 0) {
+    node.type = "string";
+  } else if (nonNullTypes.length === 1) {
+    node.type = nonNullTypes[0];
+  } else if (node.properties && nonNullTypes.includes("object")) {
+    node.type = "object";
+  } else if (node.items && typeof node.items === "object" && Object.keys(node.items).length > 0
+             && node.items.type && nonNullTypes.includes("array")) {
+    node.type = "array";
+  } else if (nonNullTypes.includes("string")) {
+    node.type = "string";
+  } else if (nonNullTypes.includes("number")) {
+    node.type = "number";
+  } else if (nonNullTypes.includes("integer")) {
+    node.type = "integer";
+  } else if (nonNullTypes.includes("boolean")) {
+    node.type = "boolean";
+  } else {
+    node.type = nonNullTypes[0];
   }
 });
 
@@ -362,9 +386,20 @@ const convertPrefixItems = schemaPass(node => {
   delete node.prefixItems;
 });
 
-// Gemini requires items on every type:"array" schema — fill a permissive placeholder
+// Gemini requires items on every type:"array" schema — fill a permissive placeholder.
+// Two shapes slip past the old `!node.items` check and both get rejected upstream:
+//   - `items: {}` (empty object survives truthiness)
+//   - `items: {properties:{...}}` / `{items:{...}}` with no `type` — the proto
+//     requires `type` on the items schema itself.
 const ensureArrayItems = schemaPass(node => {
-  if (node.type === "array" && !node.items) node.items = { type: "string" };
+  if (node.type !== "array") return;
+  if (!node.items || typeof node.items !== "object" || Object.keys(node.items).length === 0) {
+    node.items = { type: "string" };
+  } else if (!node.items.type) {
+    if (node.items.properties) node.items.type = "object";
+    else if (node.items.items) node.items.type = "array";
+    else node.items.type = "string";
+  }
 });
 
 // Drop required entries that name no declared property
@@ -389,6 +424,50 @@ const addPlaceholders = schemaPass(node => {
     Object.assign(node, placeholderReason());
   }
 });
+
+// Gemini `Schema` proto enforces two hard predicates on top of the JSON-Schema
+// cleanup above — violating either rejects the WHOLE request:
+//   1. `items` may only exist when `type == "array"`
+//      → "field predicate failed: $type == Type.ARRAY"
+//   2. `properties` / `required` may only exist when `type == "object"`
+//      → "field predicate failed: $type == Type.OBJECT"
+// Agent tool schemas routinely produce both violations: a union type flattened
+// to a scalar keeps a stale `items`, and an array branch keeps `properties`.
+//
+// Deliberately POST-order (children before the node itself) and not `schemaPass`,
+// which is pre-order: a parent's `items` verdict must see children already fixed,
+// otherwise `items:{properties:{...}}` gets deleted before it can be typed.
+function enforceTypeConstraints(node) {
+  if (!node || typeof node !== "object" || Array.isArray(node)) return;
+
+  // Descend with forEachSubschema, NOT Object.values. A property literally
+  // NAMED "items"/"properties" lives inside the properties map, which is a
+  // dictionary of subschemas rather than a schema node: walking raw values
+  // treated that map as a node and deleted the colliding field name
+  // (regression caught by antigravity-tool-sanitize
+  // "keeps properties whose NAMES collide with stripped keywords").
+  forEachSubschema(node, enforceTypeConstraints);
+
+  if (node.type === "array") {
+    delete node.properties;
+    delete node.required;
+    // Re-run the items guarantee here: children were rewritten after phase 2.5.
+    if (!node.items || typeof node.items !== "object" || Object.keys(node.items).length === 0) {
+      node.items = { type: "string" };
+    } else if (!node.items.type) {
+      if (node.items.properties) node.items.type = "object";
+      else if (node.items.items) node.items.type = "array";
+      else node.items.type = "string";
+    }
+  } else {
+    delete node.items;
+  }
+
+  if (node.type !== "object") {
+    delete node.properties;
+    delete node.required;
+  }
+}
 
 // Clean JSON Schema for Antigravity API compatibility - removes unsupported keywords recursively.
 // Returns a new schema; the input is not modified.
@@ -420,6 +499,11 @@ export function cleanJSONSchemaForAntigravity(schema) {
 
   // Phase 5: Add placeholder for empty object schemas (Antigravity requirement)
   addPlaceholders(cleaned);
+
+  // Phase 6: Enforce the Gemini proto's type predicates last — `items` only on
+  // arrays, `properties`/`required` only on objects. Runs after placeholders so
+  // a placeholder object doesn't get its `properties` stripped.
+  enforceTypeConstraints(cleaned);
 
   return cleaned;
 }

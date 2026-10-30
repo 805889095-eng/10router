@@ -1,6 +1,6 @@
-import { randomUUID } from "crypto";
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS } from "../config/providers.js";
+import { buildCommandCodeHeaders } from "../shared/commandCodeHeaders.js";
 import { commandCodeToOpenAIResponse } from "../translator/response/commandcode-to-openai.js";
 import { SSE_DONE } from "../utils/sseConstants.js";
 
@@ -31,18 +31,18 @@ export class CommandCodeExecutor extends BaseExecutor {
     return body;
   }
 
-  buildHeaders(credentials, stream = true) {
-    const headers = {
-      "Content-Type": "application/json",
-      ...(this.config.headers || {}),
-      "x-session-id": randomUUID(),
-    };
-
-    const token = credentials?.apiKey || credentials?.accessToken;
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    if (stream) headers["Accept"] = "text/event-stream";
-    return headers;
+  /**
+   * Official-CLI identity header set (static half in the registry, dynamic half
+   * in shared/commandCodeHeaders.js). `x-session-id` is the CONVERSATION id —
+   * the same value the body carries as `threadId` — not a fresh UUID per call:
+   * a random one made every turn look like a separate conversation upstream.
+   */
+  buildHeaders(credentials, stream = true, url, model, transformedBody) {
+    return buildCommandCodeHeaders({
+      apiKey: credentials?.apiKey || credentials?.accessToken,
+      sessionId: transformedBody?.threadId,
+      accept: stream ? "text/event-stream" : null,
+    });
   }
 
   async execute(opts) {

@@ -2,6 +2,18 @@
 
 这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.6.5 (2026-10-28)
+
+### ✨ 新增
+
+- **上游 v0.5.109 → v0.5.112 择优移植**：Codex 新增 GPT 6.1 Terra（Lite 传输、Codex 侧 500k 窗口、$1/$5、缓存 0.05）；Kimi K3.1 Pro 收录进 Command Code 与 OpenCode Go（1M 窗口、131k 输出、思考常开、$2/$10）。
+- **Command Code 请求头对齐官方 CLI 1.88.0**：静态头版本号补到 1.88.0、环境改为 `production`、补 `x-cli-surface` / `x-taste-learning`；动态补 `x-project-slug`（工作目录 slug）与 `x-session-id`（会话级 threadId，不再每请求换新），并收敛此前三处互相矛盾的版本号常量。
+
+### 🐛 修复
+
+- **非流式请求不再把上游 SSE 错误当成功**：流内终止错误此前会让客户端收到 HTTP 200 的「空回复」，既不重试也不切渠道；现按上游状态码返回错误，且终止错误优先于同流内的部分内容。
+- **Gemini / Antigravity 工具 schema 不再被上游拒**：强制 `items` 只配 `array`、`properties`/`required` 只配 `object`；联合类型不再盲取第一个非 null 项（曾选出 `boolean` 却仍带着 `items`，触发 `field predicate failed`）。
+
 ## v1.6.0 (2026-10-21)
 
 ### ✨ 新增
