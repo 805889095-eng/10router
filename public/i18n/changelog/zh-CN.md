@@ -2,6 +2,13 @@
 
 这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.7.0 (2026-10-30)
+
+### ✨ 新增
+
+- **华为云 CodeArts（码道）通道**：把桌面端登录后的模型额度接成 OpenAI 兼容接口，流式/非流式均可用，思考链完整透出。收录 10 个实测可用模型，含 `deepseek-v4.1-flash`（含 `-1017` 变体）、`GLM-5.2`、`glm-5.3`、`openpangu-2.0-flash/pro`、`kimi-k3` 及两个视觉模型，窗口 1M / 输出 131k。
+- 新增华为 APIG `SDK-HMAC-SHA256` 签名器，凭据三元组一个字段填完：`AccessKey|SecretKey|SecurityToken`；`SecurityToken` 约 1.8 小时过期，重新导出即可。
+
 ## v1.6.5 (2026-10-28)
 
 ### ✨ 新增

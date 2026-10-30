@@ -2,6 +2,22 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.7.0 (2026-10-30)
+
+### ✨ 新增
+
+- **华为云 CodeArts（码道）桌面端额度通道** —— 新增 provider `codearts`（别名 `ca`），把客户端登录后获得的模型额度接成标准 OpenAI 兼容接口。
+  - 端点 `https://snap-access.cn-north-4.myhuaweicloud.com/api/v2/chat/completions`，流式与非流式均实测通过（非流式 1.5s / 流式 TTFB 1.2s，`reasoning_content` 思考链完整透出）。
+  - 10 个模型逐个发真实请求验证可用：`deepseek-v4.1-flash`、`deepseek-v4.1-flash-1017`、`GLM-5.2`、`glm-5.3`、`glm-5.2-sft-harmony`、`openpangu-2.0-flash`、`openpangu-2.0-pro`、`kimi-k3`、`Qwen3-VL-235B`、`kimi-k2.6-vl`。**模型 id 保留上游大小写**（该网关不做归一化，写成小写会 `Route missed for model`）。
+  - 窗口按该网关 `/api/v1/gateway/config` 的真实下发值配置：1M 上下文 / 131k 输出。
+- **华为 APIG `SDK-HMAC-SHA256` 签名器** `open-sse/shared/huaweiApigSign.js`：纯函数实现四段式 canonical request（URI 逐段编码并以 `/` 结尾、头按小写名排序、body 取已序列化字符串的 sha256），支持随请求携带 `X-Security-Token`（临时 STS）并参与签名。附 18 个单测，其中 3 个签名向量与一份独立实现逐字节对拍。
+
+### 📌 使用说明
+
+- 凭据是三元组，一个字段填完：`API Key` 填 `AccessKey|SecretKey|SecurityToken`。也支持分开放（`apiKey` / `providerSpecificData.secretKey` / `accessToken`）。
+- 三元组来自 CodeArts 桌面端登录态，`AccessKey`/`SecretKey` 长期有效，`SecurityToken` 约 1.8 小时过期，过期后网关返回 `401 APIG.0301`。客户端自身会静默续期，届时重新导出一次三元组即可。
+- 该网关要求 `Agent-Type: PromptCenter` 头，缺失会直接 `TM.00001001 请求头Agent-Type为空`；已在 executor 内固定发送。
+
 ## v1.6.5 (2026-10-28)
 
 ### ✨ 新增

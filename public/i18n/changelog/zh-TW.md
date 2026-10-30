@@ -2,6 +2,13 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.7.0 (2026-10-30)
+
+### ✨ 新增
+
+- **華為雲 CodeArts（碼道）通道**：把桌面端登入後的模型額度接成 OpenAI 相容介面，串流／非串流皆可用，思考鏈完整透出。收錄 10 個實測可用模型，含 `deepseek-v4.1-flash`（含 `-1017` 變體）、`GLM-5.2`、`glm-5.3`、`openpangu-2.0-flash/pro`、`kimi-k3` 及兩個視覺模型，視窗 1M／輸出 131k。
+- 新增華為 APIG `SDK-HMAC-SHA256` 簽名器，憑證三元組一個欄位填完：`AccessKey|SecretKey|SecurityToken`；`SecurityToken` 約 1.8 小時過期，重新匯出即可。
+
 ## v1.6.5 (2026-10-28)
 
 ### ✨ 新增

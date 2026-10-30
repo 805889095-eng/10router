@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Huawei Cloud CodeArts">
+  <rect width="64" height="64" rx="14" fill="#C7000B"/>
+  <!-- 几何化花瓣：两片对称弧线，取华为花瓣标志的简化形态，非官方素材 -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round">
+    <path d="M32 14c7.6 5.2 7.6 16.4 0 22-7.6-5.6-7.6-16.8 0-22z"/>
+    <path d="M32 50c-7.6-5.2-7.6-16.4 0-22 7.6 5.6 7.6 16.8 0 22z"/>
+  </g>
+  <circle cx="32" cy="32" r="3.4" fill="#FFFFFF"/>
+</svg>

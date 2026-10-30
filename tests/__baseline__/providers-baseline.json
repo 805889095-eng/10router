@@ -253,6 +253,12 @@
     "thinkingFormat": "openai",
     "format": "openai"
   },
+  "codearts": {
+    "baseUrl": "https://snap-access.cn-north-4.myhuaweicloud.com/api/v2/chat/completions",
+    "thinkingFormat": "openai",
+    "headers": {},
+    "format": "openai"
+  },
   "codebuddy-cn": {
     "baseUrl": "https://copilot.tencent.com/v2/chat/completions",
     "forceStream": true,

@@ -262,6 +262,9 @@ export const MODEL_CAPABILITIES = {
   // vision:false）——两者都会把图片在 modality 层静默剥掉。
   "deepseek-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
   "deepseek-v4.1-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
+  // 1017 是同架构续训（Qoder 侧内部名 dfmodel 也标 vision:true）。缺这一行它会落
+  // `*deepseek-v4*` 通配，图片在 modality 层被静默剥掉。
+  "deepseek-v4.1-flash-1017": { vision: true, reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 384000 },
   // 横杠形态别名：部分转售商以 `deepseek-v4-1-flash`（点号换成横杠）暴露同一模型；
   // 裸配会落 `*deepseek-v4*` 通配（vision:false），图片在 modality 层被静默剥掉。
   "deepseek-v4-1-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },

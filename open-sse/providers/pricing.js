@@ -263,6 +263,21 @@ export const MODEL_PRICING = {
  * Keyed by provider alias (cc, cx, gc, gh, ...) or provider id (openai, anthropic, ...).
  */
 export const PROVIDER_PRICING = {
+  // 华为云 CodeArts（码道）。数值取自该网关 `/v1/model/builtin` 的 `credit`
+  // 字段原值（input_price / output_price），接口没有声明单位，因此这里的
+  // 数字**不是美元**，只用于同一渠道内部的相对成本比较。
+  // 同时下发的 `ratio`（如 deepseek-v4.1-flash 的 0.18x）表示实际按该比例
+  // 扣减额度，10Router 不做二次折扣，按原值展示即可。
+  codearts: {
+    "deepseek-v4.1-flash":      { input: 2.0,  output: 8.0 },
+    "deepseek-v4.1-flash-1017": { input: 2.0,  output: 8.0 },
+    "GLM-5.2":                  { input: 8.0,  output: 28.0 },
+    "glm-5.3":                  { input: 8.0,  output: 28.0 },
+    "glm-5.2-sft-harmony":      { input: 8.0,  output: 28.0 },
+    "openpangu-2.0-flash":      { input: 0.8,  output: 1.6 },
+    "openpangu-2.0-pro":        { input: 3.2,  output: 14.5 },
+    "kimi-k3":                  { input: 20.0, output: 100.0 },
+  },
   // DeepSeek 第一方官方价（2026-10-20 models.dev `deepseek` provider 条目）。
   // 只覆盖第一方连接；同名的转售商行（bai / baidu / apinex / blackbox /
   // alitp-intl / clinepass）继续走 canonical MODEL_PRICING，不受影响。

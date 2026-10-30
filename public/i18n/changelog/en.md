@@ -2,6 +2,13 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.7.0 (2026-10-30)
+
+### ✨ New
+
+- **Huawei Cloud CodeArts channel**: exposes the desktop client's model quota as an OpenAI-compatible endpoint. Both streaming and non-streaming verified, with reasoning content passed through. Ships 10 models that were each verified with a real request — `deepseek-v4.1-flash` (plus the `-1017` variant), `GLM-5.2`, `glm-5.3`, `openpangu-2.0-flash/pro`, `kimi-k3`, and two vision models — at 1M context / 131k output.
+- New Huawei APIG `SDK-HMAC-SHA256` signer. Credentials are a triple, entered in one field: `AccessKey|SecretKey|SecurityToken`. The `SecurityToken` expires in about 1.8 hours; re-export it when it does.
+
 ## v1.6.5 (2026-10-28)
 
 ### ✨ New
