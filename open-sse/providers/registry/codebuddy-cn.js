@@ -37,7 +37,7 @@ export default {
       // translator/concerns/toolCall.js and issue #27.
       sanitizeToolSchema: true,
     },
-    // Identity headers mirror @tencent-ai/codebuddy-code 2.176.0 (extracted from the
+    // Identity headers mirror @tencent-ai/codebuddy-code 2.179.1 (extracted from the
     // shipped bundle at dist/codebuddy-headless.js): the real CLI always sends
     // X-IDE-Version + X-IDE-Type/Name, X-Product=SaaS and Content-Type with charset.
     // `x-codebuddy-request: 1` is deliberately NOT sent — the CLI only emits it on
@@ -46,11 +46,11 @@ export default {
     // Bump the version string together with the upstream CLI release; a stale UA
     // (this used to say 2.108.1, 68 releases behind) is itself a bot fingerprint.
     headers: {
-      "User-Agent": "CLI/2.176.0 CodeBuddy/2.176.0",
+      "User-Agent": "CLI/2.179.1 CodeBuddy/2.179.1",
       "X-Product": "SaaS",
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.176.0",
+      "X-IDE-Version": "2.179.1",
       "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest",
     },
@@ -134,7 +134,7 @@ export default {
     stateUrl: "https://copilot.tencent.com/v2/plugin/auth/state",
     tokenUrl: "https://copilot.tencent.com/v2/plugin/auth/token",
     refreshUrl: "https://copilot.tencent.com/v2/plugin/auth/token/refresh",
-    userAgent: "CLI/2.176.0 CodeBuddy/2.176.0",
+    userAgent: "CLI/2.179.1 CodeBuddy/2.179.1",
     platform: "CLI",
     pollInterval: 5000,
   },

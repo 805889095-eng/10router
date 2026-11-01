@@ -31,14 +31,14 @@ export default {
     // IDE identity was self-contradictory — it claimed X-IDE-Type: IDE while reporting
     // version 2.108.1, which belongs to the CLI series (VSCode extension is 4.12.x),
     // so no real IDE client could ever produce that pair. Values below are copied from
-    // @tencent-ai/codebuddy-code 2.176.0 (dist/codebuddy-headless.js), the same verified
+    // @tencent-ai/codebuddy-code 2.179.1 (dist/codebuddy-headless.js), the same verified
     // set the CN channel uses in v1.6.3.
     headers: {
-      "User-Agent": "CLI/2.176.0 CodeBuddy/2.176.0",
+      "User-Agent": "CLI/2.179.1 CodeBuddy/2.179.1",
       "X-Product": "SaaS",
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.176.0",
+      "X-IDE-Version": "2.179.1",
       "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest",
     },
@@ -194,7 +194,7 @@ export default {
     stateUrl: "https://www.codebuddy.ai/v2/plugin/auth/state",
     tokenUrl: "https://www.codebuddy.ai/v2/plugin/auth/token",
     refreshUrl: "https://www.codebuddy.ai/v2/plugin/auth/token/refresh",
-    userAgent: "CLI/2.176.0 CodeBuddy/2.176.0",
+    userAgent: "CLI/2.179.1 CodeBuddy/2.179.1",
     platform: "CLI",
     pollInterval: 5000,
   },

@@ -23,7 +23,7 @@ describe("CodeBuddy channel verification headers & anti-fingerprint protection",
     expect(headers["X-Conversation-Message-ID"]).toMatch(UUID_RE);
     expect(headers["X-Request-ID"]).toBe(headers["X-Conversation-Message-ID"]);
 
-    // Agent identity: the real @tencent-ai/codebuddy-code 2.176.0 CLI sets all three
+    // Agent identity: the real @tencent-ai/codebuddy-code 2.179.1 CLI sets all three
     // on every completions call (extracted from dist/codebuddy-headless.js). Both
     // channels now declare the CLI identity (X-IDE-Type: CLI), so both must send them —
     // omitting them is an identity contradiction the WorkBuddy WAF can fingerprint.
