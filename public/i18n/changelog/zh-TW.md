@@ -2,6 +2,20 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
 
+## v1.8.1 (2026-11-01)
+
+### 🔧 改進
+
+- **CodeBuddy CLI 身分升到 2.179.1**（原 2.176.0，落後 6 個 release）。
+  `codebuddy-cn` / `codebuddy-intl` 的 `User-Agent`、`X-IDE-Version` 與 OAuth `userAgent`
+  一併同步，對齊目前官方 CLI。陳舊 UA 本身就是機器人指紋 —— 這段程式碼的註解裡已經記過
+  一次（它曾經停在 2.108.1，落後 68 個 release）。
+  - 反指紋加固本身不變：`x-codebuddy-request` 仍然不送、會話 ID 仍是 RFC-4122 v5 形狀、
+    `X-Agent-*` 三件套保持原樣。本次只動版本字面量。
+  - 同步更新測試基線 `providers-baseline.json` 與 golden 快照
+    `golden-url-header.test.js.snap`（後者鎖著兩個渠道共 6 組 headers 副本，漏改會變成
+    pass→fail）。
+
 ## v1.8.0 (2026-10-30)
 
 ### ✨ 新增

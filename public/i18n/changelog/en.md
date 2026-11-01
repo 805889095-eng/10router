@@ -2,6 +2,21 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.1 (2026-11-01)
+
+### 🔧 Improved
+
+- **CodeBuddy CLI identity bumped to 2.179.1** (was 2.176.0, six releases behind).
+  `User-Agent`, `X-IDE-Version` and the OAuth `userAgent` for both `codebuddy-cn` and
+  `codebuddy-intl` now match the current official CLI. A stale UA is itself a bot
+  fingerprint — the same trap this code already documents (it once sat on 2.108.1,
+  68 releases behind).
+  - The anti-fingerprint hardening is unchanged: `x-codebuddy-request` is still not sent,
+    conversation IDs remain RFC-4122 v5 shaped, and the `X-Agent-*` trio is untouched.
+  - Goldens synced: `tests/__baseline__/providers-baseline.json` and
+    `tests/translator/__snapshots__/golden-url-header.test.js.snap` (the latter locks
+    six header copies across both channels and turns into a pass→fail if missed).
+
 ## v1.8.0 (2026-10-30)
 
 ### ✨ Added

@@ -2,6 +2,28 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.1 (2026-11-01)
+
+### 🔧 改进
+
+- **CodeBuddy CLI 身份升到 2.179.1**（原 2.176.0，落后 6 个 release）。
+  `codebuddy-cn` / `codebuddy-intl` 的 `User-Agent`、`X-IDE-Version` 与 OAuth `userAgent`
+  一并同步。陈旧 UA 本身就是机器人指纹 —— `registry/codebuddy-cn.js` 里的既有注释已经
+  记过一次（上一轮从 2.108.1 追到 2.176.0 时落后了 68 个 release）。
+  - 反指纹加固本身不变：`x-codebuddy-request` 仍然不发、会话 ID 仍是 RFC-4122 v5 形状、
+    `X-Agent-*` 三件套保持原样。本次只动版本字面量。
+  - 同步更新 `tests/__baseline__/providers-baseline.json` 与
+    `tests/translator/__snapshots__/golden-url-header.test.js.snap`。后者锁着两个渠道共
+    6 组 headers 副本，漏改会让 golden 测试 pass→fail（v1.8.1 开发期实测踩到）。
+
+### 🧪 测试
+
+- `unit/codebuddy-*` + `translator/golden-url-header` 共 15 文件 319 用例通过。
+
+### 📦 构建
+
+- 完整发版：触发 fpk（x86 / arm）、standalone server、desktop 与 docker 镜像。
+
 ## v1.8.0 (2026-10-30)
 
 ### ✨ 新增
