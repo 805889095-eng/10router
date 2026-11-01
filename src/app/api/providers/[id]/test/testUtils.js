@@ -590,7 +590,7 @@ async function testQoderConnection(connection, effectiveProxy = null, options = 
       userinfoUrl,
       {
         method: "GET",
-        headers: { Authorization: `Bearer ${connection.accessToken}`, Accept: "application/json", "User-Agent": "qodercli/1.0.0" },
+        headers: { Authorization: `Bearer ${connection.accessToken}`, Accept: "application/json", "User-Agent": "qodercli/1.1.81" },
       },
       effectiveProxy,
     );

@@ -282,7 +282,7 @@ async function buildQoderRequestBody({ model, body, credentials, log, proxyOptio
       model_config: modelConfig,
       business: {
         product: "cli",
-        version: "1.0.0",
+        version: "1.1.81",
         type: "agent",
         stage: "start",
         id: uuidv4(),
