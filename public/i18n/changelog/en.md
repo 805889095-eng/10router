@@ -2,6 +2,22 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.2 (2026-11-01)
+
+### ✨ Added
+
+- **Fourth theme: `brutal`** (neo-brutalist) — cream paper background, hard black outlines,
+  zero-blur shadows and a punchy orange accent, alongside light / dark / follow-system.
+  Themes are still driven purely by CSS variables, so the whole dashboard re-skins without
+  touching a single component.
+- The theme button now cycles four states: system → light → dark → brutal → system.
+  The same option is available on the profile page.
+
+### 🐛 Fixed
+
+- Fixed a theme flash: with an explicit light preference on a dark OS, the page painted dark
+  for one frame before correcting itself.
+
 ## v1.8.1 (2026-11-01)
 
 ### 🔧 Improved

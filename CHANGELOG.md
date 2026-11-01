@@ -2,6 +2,34 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.2 (2026-11-01)
+
+### ✨ 新增
+
+- **第四套主题 `brutal`（Neo-Brutalism 粗野派）**。仪表盘此前只有 light / dark / 跟随系统三态，
+  现在多一套奶油纸底 + 硬黑描边 + 零模糊硬投影的皮肤，撞色用亮橙 `#ff6b35`。
+  - 仍然是纯 CSS 变量换肤：`globals.css` 新增 `.brutal` 变量块（surface / border / text /
+    shadow / radius 全套），`@theme inline` 里原有的语义类自动继承，**没有改任何一个业务组件**。
+  - 切换变成四态循环 `system → light → dark → brutal → system`；主题按钮图标换成 `palette`，
+    个人设置页的分段控件同步多一项。
+  - `applyTheme` 改为互斥 `classList.toggle`。dark → brutal 时若残留 `.dark`，
+    `.dark` 与 `.brutal` 两块变量特异性相同、后定义者胜，会得到一层半深色的皮。这是加主题唯一的坑。
+  - `layout.js` 的首屏预渲染脚本（防主题闪烁）同步认识 `brutal`，`theme-color` 切到 `#FFF6E5`。
+
+### 🐛 修复
+
+- **首屏预渲染脚本会让「显式选浅色」在深色系统上先闪成深色**。原判断是
+  `dark = t === 'dark' || matchMedia(dark)`，漏了 `t === 'system'` 前置条件，
+  于是 light + 深色系统 = 先渲染 dark，等 React 挂上再纠正。已改为 `t === 'system' && sysDark`。
+
+### 🔧 实现要点（给以后加主题的人）
+
+- 组件里写死的 `shadow-sm/md/lg` 和按钮上的 `bg-primary`（自带 `text-white`）都不走 CSS 变量，
+  得用 `.brutal [class~="shadow-md"]`、`.brutal button[class~="bg-primary"]` 兜底。
+- 属性选择器必须写 `[class~="border"]` 精确匹配独立 token。写成 `[class*="border"]`
+  会把 `border-b` 这类单边类画成四边描边，整站炸版。
+- 主按钮在 brutal 下改成橙底黑字：原来的橙底白字对比度只有 2.9:1，橙底黑字 8:1。
+
 ## v1.8.1 (2026-11-01)
 
 ### 🔧 改进
