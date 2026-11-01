@@ -2,6 +2,24 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.3 (2026-11-01)
+
+### 🐛 修复
+
+- **brutal 主题下主操作按钮的对比度**。`Button` 组件的 `primary` 变体写的是
+  `bg-brand-500`，而 CSS 变量别名是 `bg-primary` —— v1.8.2 的兜底规则只匹配了后者，
+  于是登录页 Login、仪表盘 Create Key 这类按钮没被命中，仍是橙底白字，对比度只有 2.9:1，
+  低于 WCAG AA 的 4.5:1 门槛。现在两个 token 都兜底，改成橙底黑字 8:1。
+  - 只作用于 `button` / `a` 上的这两个 token；`danger` / `success` 按钮保持白字，
+    进度条、徽章之类的同色元素不受影响。
+  - 实测 computed style：`color: rgb(20,19,26)`、`border: 2px solid`、
+    `box-shadow: 3px 3px 0 0 rgb(20,19,26)`。
+  - 同一修复也进了上游 PR `techysy/10router#95` 的第二个 commit。
+
+### 📦 构建
+
+- 完整发版：fpk（x86 / arm）、standalone server、desktop 与 docker 镜像。
+
 ## v1.8.2 (2026-11-01)
 
 ### ✨ 新增

@@ -2,6 +2,15 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.3 (2026-11-01)
+
+### 🐛 Fixed
+
+- Fixed the contrast of primary buttons in the brutal theme: buttons such as Login on the
+  sign-in page and Create Key on the dashboard were still light text on orange, which was hard
+  to read. They now use dark text on orange, with the same hard outline and shadow as the rest
+  of the UI.
+
 ## v1.8.2 (2026-11-01)
 
 ### ✨ Added
