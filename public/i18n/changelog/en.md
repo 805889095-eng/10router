@@ -2,6 +2,21 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.5 (2026-11-02)
+
+### ✨ Added
+
+- **Two new themes, "glass" and "dawn"**: translucent frosted cards, hairline white edges and
+  soft gradient backdrops. "glass" is a cool blue-violet take, "dawn" the warm amber-and-rose
+  variant; both share one glass skeleton.
+  The cycle is now: system → light → dark → brutal → grass → glass → dawn → system.
+
+### 🔧 Improved
+
+- Cards, sidebar and inputs now share the same glass material, over a fixed multi-layer
+  ambient gradient background.
+- The sidebar is more transparent, so the background gradient really shows through it.
+
 ## v1.8.4 (2026-11-02)
 
 ### ✨ Added

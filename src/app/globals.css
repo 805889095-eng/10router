@@ -441,6 +441,233 @@
   background-color: var(--color-surface-2);
 }
 
+/* ============================================================
+   玻璃拟态主题（第五主题 · Glass）& 晨曦主题（第六主题 · Dawn）
+   两者共用同一副「玻璃骨架」，只换色相 —— 和 brutal/grass 的关系一样：
+     glass = 冷蓝紫  · 低饱和渐变底 + 半透过白卡片 + 细白描边 + 柔光外阴影
+     dawn  = 暖琥珀玫瑰 · 同一副骨架的暖色变奏
+   都是亮色家族，所以永远不挂 .dark（applyTheme 保证互斥）。
+   关键差别不在变量，而在三个额外手法：
+     1. surface 用 rgba 半透明，让 body 的柔光渐变透进来；
+     2. 圆角收到 16/22，阴影换成大范围低透明度的「柔光」而不是灰影；
+     3. body 用 fixed 的多层 radial 渐变当环境光。
+   ============================================================ */
+.glass {
+  /* Brand scale —— indigo，500 号位取 #5b62ea（白字 5.2:1） */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #5b62ea;
+  --color-brand-600: #4a4fd0;
+  --color-brand-700: #3b3fae;
+  --color-brand-800: #2f328b;
+  --color-brand-900: #23265f;
+
+  --color-primary: #5b62ea;
+  --color-primary-hover: #4a4fd0;
+
+  /* Surfaces —— 半透明白，让底层柔光透上来 */
+  --color-bg: #eef1fb;
+  --color-bg-alt: #e7ecfa;
+  --color-surface: rgba(255, 255, 255, 0.52);
+  --color-surface-2: rgba(255, 255, 255, 0.34);
+  --color-surface-3: rgba(199, 210, 254, 0.55);
+  --color-sidebar: rgba(255, 255, 255, 0.58);
+
+  /* Borders —— 淡蓝紫细线（纯白在浅底上会消失，输入框就瞎了） */
+  --color-border: rgba(99, 102, 241, 0.24);
+  --color-border-subtle: rgba(99, 102, 241, 0.13);
+
+  /* Text */
+  --color-text: #1b2140;
+  --color-text-main: #1b2140;
+  --color-text-muted: #5a6285;
+  --color-text-subtle: #8b92ae;
+
+  /* Status */
+  --color-danger: #cf222e;
+  --color-success: #0f9f6e;
+  --color-warning: #b45309;
+  --color-info: #2f6fe0;
+
+  /* Radius —— 圆角卡片 */
+  --radius-brand: 14px;
+  --radius-brand-lg: 22px;
+
+  /* Shadows —— 柔光外发光 + 四边白描边兜底玻璃边缘，替代灰影 */
+  --shadow-soft:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 10px 26px -14px rgba(79, 70, 229, 0.30);
+  --shadow-warm:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 14px 34px -16px rgba(99, 102, 241, 0.55);
+  --shadow-elevated:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.68),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 22px 52px -26px rgba(79, 70, 229, 0.34);
+  --shadow-elev:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.70),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(79, 70, 229, 0.06),
+    0 28px 64px -30px rgba(79, 70, 229, 0.40);
+  --shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.22);
+
+  color-scheme: light;
+}
+
+.dawn {
+  /* Brand scale —— 玫瑰，500 号位取 #c9327a（白字 5.0:1） */
+  --color-brand-50: #fdf1f6;
+  --color-brand-100: #fbe2ec;
+  --color-brand-200: #f7bfd4;
+  --color-brand-300: #f093b8;
+  --color-brand-400: #e4659a;
+  --color-brand-500: #c9327a;
+  --color-brand-600: #ad2468;
+  --color-brand-700: #8f1d55;
+  --color-brand-800: #6f1642;
+  --color-brand-900: #4d0f2e;
+
+  --color-primary: #c9327a;
+  --color-primary-hover: #ad2468;
+
+  /* Surfaces —— 半透明白偏暖 */
+  --color-bg: #fffaf4;
+  --color-bg-alt: #fdf2ea;
+  --color-surface: rgba(255, 255, 255, 0.56);
+  --color-surface-2: rgba(255, 255, 255, 0.36);
+  --color-surface-3: rgba(252, 224, 205, 0.60);
+  --color-sidebar: rgba(255, 255, 255, 0.62);
+
+  /* Borders —— 淡玫瑰细线 */
+  --color-border: rgba(201, 50, 122, 0.22);
+  --color-border-subtle: rgba(201, 50, 122, 0.12);
+
+  /* Text —— 暖紫棕，不用纯黑（纯黑在奶油底上会发脏） */
+  --color-text: #3a2333;
+  --color-text-main: #3a2333;
+  --color-text-muted: #6f5766;
+  --color-text-subtle: #9b8391;
+
+  /* Status —— 在暖底上压深一档 */
+  --color-danger: #d92d20;
+  --color-success: #1f9a53;
+  --color-warning: #c2620f;
+  --color-info: #b04a86;
+
+  /* Radius */
+  --radius-brand: 14px;
+  --radius-brand-lg: 22px;
+
+  /* Shadows —— 暖调柔光，不能留冷灰影子 */
+  --shadow-soft:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 10px 26px -14px rgba(190, 90, 80, 0.30);
+  --shadow-warm:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 14px 34px -16px rgba(201, 50, 122, 0.50);
+  --shadow-elevated:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 22px 52px -26px rgba(190, 90, 80, 0.34);
+  --shadow-elev:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(190, 90, 80, 0.06),
+    0 28px 64px -30px rgba(190, 90, 80, 0.40);
+  --shadow-focus: 0 0 0 3px rgba(201, 50, 122, 0.20);
+
+  color-scheme: light;
+}
+
+/* ---- 环境光：body 铺一层 fixed 的多层柔光渐变 ---- */
+.glass body {
+  background-color: #eef1fb;
+  background-image:
+    radial-gradient(780px 640px at 6% 2%, rgba(165, 180, 252, 0.95) 0%, rgba(165, 180, 252, 0) 62%),
+    radial-gradient(720px 580px at 98% 8%, rgba(216, 180, 254, 0.90) 0%, rgba(216, 180, 254, 0) 60%),
+    radial-gradient(840px 640px at 50% 46%, rgba(196, 181, 253, 0.58) 0%, rgba(196, 181, 253, 0) 62%),
+    radial-gradient(940px 740px at 42% 102%, rgba(147, 197, 253, 0.88) 0%, rgba(147, 197, 253, 0) 65%),
+    linear-gradient(170deg, #eef1fb 0%, #f5f0ff 45%, #e9f2ff 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.dawn body {
+  background-color: #fffaf4;
+  background-image:
+    radial-gradient(780px 640px at 6% 2%, rgba(253, 196, 134, 0.95) 0%, rgba(253, 196, 134, 0) 62%),
+    radial-gradient(720px 580px at 98% 8%, rgba(251, 170, 196, 0.92) 0%, rgba(251, 170, 196, 0) 60%),
+    radial-gradient(840px 640px at 50% 46%, rgba(252, 208, 185, 0.62) 0%, rgba(252, 208, 185, 0) 62%),
+    radial-gradient(940px 740px at 42% 102%, rgba(255, 214, 165, 0.90) 0%, rgba(255, 214, 165, 0) 65%),
+    linear-gradient(170deg, #fffaf4 0%, #fdeef1 45%, #fdeade 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* 实色 bg-bg 容器会把环境光整块挡掉，这里放行让渐变透上来。
+   [class~="bg-bg"] 只匹配独立 token，不会误伤 bg-bg-alt。 */
+:is(.glass, .dawn) [class~="bg-bg"] {
+  background-color: transparent;
+}
+
+/* 悬浮层与卡片补真模糊。只点名几个类，不给全站 [class~="bg-surface"]
+   批量加 backdrop-filter —— 站内表面元素太多，逐个 blur 在 NAS 上会掉帧。
+   带 border 的 bg-surface 基本就是「卡片」，单独放这一条就够了。 */
+:is(.glass, .dawn) :is(.card-soft, .card-elev, .bg-vibrancy) {
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  backdrop-filter: blur(18px) saturate(165%);
+}
+
+:is(.glass, .dawn) [class~="bg-surface"][class~="border"] {
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+:is(.glass, .dawn) .bg-vibrancy {
+  background: rgba(255, 255, 255, 0.40);
+}
+.dawn .bg-vibrancy {
+  background: rgba(255, 255, 255, 0.44);
+}
+
+:is(.glass, .dawn) aside {
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* 选中态用主题色淡染，和柔光底协调 */
+.glass ::selection {
+  background-color: rgba(99, 102, 241, 0.22);
+  color: #1b2140;
+}
+.dawn ::selection {
+  background-color: rgba(201, 50, 122, 0.20);
+  color: #3a2333;
+}
+
+/* 输入框也玻璃化：半透明白 + 白描边高光，否则在渐变底上像挖了个洞 */
+:is(.glass, .dawn) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+:is(.glass, .dawn) textarea,
+:is(.glass, .dawn) select {
+  background-color: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+}
+
+:is(.glass, .dawn) select {
+  color-scheme: light;
+}
+:is(.glass, .dawn) select option {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+}
+
 
 
 

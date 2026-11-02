@@ -4,8 +4,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { THEME_CONFIG } from "@/shared/constants/config";
 
-// Toggle order: system → light → dark → brutal → grass → system.
-const THEME_CYCLE = ["system", "light", "dark", "brutal", "grass"];
+// Toggle order: system → light → dark → brutal → grass → glass → dawn → system.
+const THEME_CYCLE = ["system", "light", "dark", "brutal", "grass", "glass", "dawn"];
 
 const useThemeStore = create(
   persist(
@@ -57,6 +57,8 @@ function applyTheme(theme) {
   root.classList.toggle("dark", effectiveTheme === "dark");
   root.classList.toggle("brutal", effectiveTheme === "brutal");
   root.classList.toggle("grass", effectiveTheme === "grass");
+  root.classList.toggle("glass", effectiveTheme === "glass");
+  root.classList.toggle("dawn", effectiveTheme === "dawn");
   // Keeps native widgets (scrollbars, date pickers, select popups) in step
   // with the active skin instead of following the OS.
   root.style.colorScheme = effectiveTheme === "dark" ? "dark" : "light";

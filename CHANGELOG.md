@@ -2,6 +2,40 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.5 (2026-11-02)
+
+### ✨ 新增
+
+- **第五、第六套主题：`glass`（玻璃拟态）与 `dawn`（晨曦）**。两套共用一副「半透明玻璃骨架」，
+  只换色相 —— 和 `brutal`/`grass` 共用粗野派骨架是同一个思路：骨架一套，色相两套。
+  - `glass`：淡蓝紫环境光。`#eef1fb` 底、indigo `#5b62ea` 主色（白字 5.2:1）、
+    圆角 14/22px、阴影换成「四边内白描边 + 顶内高光 + 外柔光」。
+  - `dawn`：同一骨架的暖色变奏。`#fffaf4` 底、琥珀 `#c2620f` + 玫瑰 `#c9327a`
+    （白字 5.0:1），阴影同步换成暖调 `rgba(190,90,80,…)`，不留冷灰影子；
+    正文墨色改暖紫棕 `#3a2333`，避免纯黑在奶油底上发脏。
+  - 两者都是**亮色家族，永不挂 `.dark`**；`applyTheme` 用 `classList.toggle(x, cond)`
+    逐项互斥，glass ↔ dawn ↔ brutal ↔ grass 互切不会留下残类。
+  - 主题循环变成七态：跟随系统 → 浅色 → 深色 → 粗野派 → 青草绿 → 玻璃 → 晨曦 → 跟随系统。
+
+### 🔧 改进
+
+- **玻璃质感的三个必要条件**（只换 CSS 变量出不来效果，本轮实测总结）：
+  1. `--color-surface` 用 `rgba(255,255,255,.52)` 半透明，让 body 的固定环境光透上来；
+  2. `[class~="bg-bg"]` 放行为 `transparent`，否则登录页那种 `min-h-screen bg-bg`
+     根容器会把整块环境光挡死，只剩卡片缝隙能看见渐变；
+  3. 卡片阴影必须带 `inset 0 0 0 1px rgba(255,255,255,.66)` 四边内描边 ——
+     只写 `inset 0 1px 0` 只有顶边一条高光，看着仍是普通卡片。
+- 环境光用 `background-attachment: fixed` 铺 4–5 层 radial 渐变；**光斑取 700–900px 且保持饱和**，
+  铺到 1400px 会被稀释成白色，卡片透过去还是白，白调半天不透明都没用。
+- `backdrop-filter` 只给 `.card-soft` / `.card-elev` / `.bg-vibrancy` 与带边框的
+  `[class~="bg-surface"]` 加，**不给全站表面元素批量模糊** —— 表格行、按钮都是同一个 token，
+  几百个元素同时 blur 在 NAS 上会掉帧。
+- `bg-vibrancy`（侧栏）压到 `rgba(255,255,255,.40)` + `blur(24px)`，让侧栏真正透出背景。
+- 输入框、textarea、select 统一玻璃化（半透明白 + 内顶高光），避免在渐变底上像挖了个洞。
+- 设置页主题选择器由深嵌套三元改为查表 `{light:'light_mode', …}[option]`，以后加主题不必再改判断链。
+- `theme-color` meta 同步：`glass` → `#EEF1FB`，`dawn` → `#FFFAF4`。
+- 回归确认：`dark` / `brutal` / `grass` 三套的变量与硬投影实测零变化，未被新主题污染。
+
 ## v1.8.4 (2026-11-02)
 
 ### ✨ 新增

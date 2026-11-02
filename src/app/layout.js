@@ -45,18 +45,22 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var raw=null;try{raw=localStorage.getItem('theme')}catch(e){}
 var t=null;if(raw){try{var j=JSON.parse(raw);t=(j&&j.state&&j.state.theme)||null}catch(e){t=raw}}
-if(t!=='light'&&t!=='dark'&&t!=='brutal'&&t!=='grass')t='system';
+if(t!=='light'&&t!=='dark'&&t!=='brutal'&&t!=='grass'&&t!=='glass'&&t!=='dawn')t='system';
 var sysDark=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
 var dark=t==='dark'||(t==='system'&&sysDark);
 var brutal=t==='brutal';
 var grass=t==='grass';
+var glass=t==='glass';
+var dawn=t==='dawn';
 var r=document.documentElement;
 if(dark)r.classList.add('dark');else r.classList.remove('dark');
 if(brutal)r.classList.add('brutal');else r.classList.remove('brutal');
 if(grass)r.classList.add('grass');else r.classList.remove('grass');
+if(glass)r.classList.add('glass');else r.classList.remove('glass');
+if(dawn)r.classList.add('dawn');else r.classList.remove('dawn');
 r.style.colorScheme=dark?'dark':'light';
 var m=document.querySelector('meta[name="theme-color"]');
-if(m)m.setAttribute('content',brutal?'#FFF6E5':grass?'#F4F9EC':dark?'#0a0a0a':'#FDFAF6');
+if(m)m.setAttribute('content',brutal?'#FFF6E5':grass?'#F4F9EC':glass?'#EEF1FB':dawn?'#FFFAF4':dark?'#0a0a0a':'#FDFAF6');
 }catch(e){}})();`,
           }}
         />
