@@ -95,7 +95,7 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
       // Agent identity headers: the channel now declares X-IDE-Type: CLI (see registry),
-      // and @tencent-ai/codebuddy-code 2.179.1 sets all three on every completions call:
+      // and @tencent-ai/codebuddy-code 2.179.2 sets all three on every completions call:
       //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
       //   X-Agent-Runtime = "local-agent" (local CLI runtime)
       //   X-Agent-Type    = "main" (main-loop model call)

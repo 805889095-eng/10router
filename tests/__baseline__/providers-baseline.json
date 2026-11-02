@@ -261,11 +261,11 @@
       "sanitizeToolSchema": true
     },
     "headers": {
-      "User-Agent": "CLI/2.179.1 CodeBuddy/2.179.1",
+      "User-Agent": "CLI/2.179.2 CodeBuddy/2.179.2",
       "X-Product": "SaaS",
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.179.1",
+      "X-IDE-Version": "2.179.2",
       "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest"
     },
@@ -285,11 +285,11 @@
     "forceStream": true,
     "thinkingFormat": "openai",
     "headers": {
-      "User-Agent": "CLI/2.179.1 CodeBuddy/2.179.1",
+      "User-Agent": "CLI/2.179.2 CodeBuddy/2.179.2",
       "X-Product": "SaaS",
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.179.1",
+      "X-IDE-Version": "2.179.2",
       "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest"
     },

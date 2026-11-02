@@ -2,6 +2,20 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.4 (2026-11-02)
+
+### ✨ Added
+
+- **New fifth theme, "grass"**: keeps the neo-brutalist skeleton (thick outlines, hard
+  offset shadows) but swaps the palette to a meadow-green one — sprout-white paper,
+  grass green, with lime accents. The cycle is now:
+  system → light → dark → brutal → grass → system.
+
+### 🔧 Improved
+
+- Bumped the CodeBuddy CLI identity to 2.179.2 to stay in step with upstream releases,
+  which keeps the client looking like the official CLI.
+
 ## v1.8.3 (2026-11-01)
 
 ### 🐛 Fixed

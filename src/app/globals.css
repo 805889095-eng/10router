@@ -273,6 +273,174 @@
   background-color: var(--color-surface-2);
 }
 
+/* ============================================================
+   青草绿主题（第四主题 · Grass）
+   Neo-Brutalism 骨架 + 草地绿配色：
+   粗硬墨绿描边 + 零模糊硬投影 + 小圆角贴纸感。
+   与 brutal 同一套语言（硬边/硬影/互斥类），区别只在色相：
+   brutal 是奶油+橙，grass 是芽白+草绿+青柠。
+   ============================================================ */
+.grass {
+  /* Brand scale —— 500 号位放亮草绿：按钮上是黑字（4.6:1），
+     文字场景（text-brand-500）会偏跳，但这是粗野派故意保留的“撞”。
+     需要白字的深底场景用 brand-600/700。 */
+  --color-brand-50: #f2f9e6;
+  --color-brand-100: #e6f5ce;
+  --color-brand-200: #d0ebae;
+  --color-brand-300: #b0dd85;
+  --color-brand-400: #7ec95a;
+  --color-brand-500: #4a9c3a;
+  --color-brand-600: #357a36;
+  --color-brand-700: #2a6230;
+  --color-brand-800: #1f4a26;
+  --color-brand-900: #14331a;
+
+  --color-primary: #4a9c3a;
+  --color-primary-hover: #57ad45;
+
+  /* Surfaces —— 芽白纸 */
+  --color-bg: #f3f8e6;
+  --color-bg-alt: #e8f2d4;
+  --color-surface: #fdfef9;
+  --color-surface-2: #eaf3d9;
+  --color-surface-3: #d9e8bf;
+  --color-sidebar: rgba(243, 248, 230, 0.94);
+
+  /* Borders —— 硬描边，墨绿近黑（不是纯黑：#0f2416 保住绿调） */
+  --color-border: #0f2416;
+  --color-border-subtle: rgba(15, 36, 22, 0.72);
+
+  /* Text */
+  --color-text: #0f2416;
+  --color-text-main: #0f2416;
+  --color-text-muted: #3d5340;
+  --color-text-subtle: #5b7157;
+
+  /* Status —— 在芽白底上保持可读 */
+  --color-danger: #d92d20;
+  --color-success: #0f9d6d;
+  --color-warning: #b06a00;
+  --color-info: #17787a;
+
+  /* Radius —— 收到 6/12，贴纸与卡片的切割感 */
+  --radius-brand: 6px;
+  --radius-brand-lg: 12px;
+
+  /* Shadows —— 零模糊硬投影，粗野派的灵魂 */
+  --shadow-soft: 4px 4px 0 0 #0f2416;
+  --shadow-warm: 4px 4px 0 0 #4a9c3a;
+  --shadow-elevated: 4px 4px 0 0 #0f2416;
+  --shadow-elev: 5px 5px 0 0 #0f2416;
+  --shadow-focus: 0 0 0 3px #d8e85e;
+
+  color-scheme: light;
+}
+
+/* 网格点底纹：纸感 */
+.grass body {
+  background-image: radial-gradient(rgba(15, 36, 22, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-attachment: fixed;
+}
+
+/* 全边框容器加粗。必须用 [class~="border"] 精确匹配独立 token，
+   用 [class*="border"] 会把 border-b 这类单边类变成四边框，整站炸版。 */
+.grass [class~="border"] {
+  border-width: 2.5px;
+}
+.grass [class~="border-2"] {
+  border-width: 2.5px;
+}
+
+.grass .card-soft,
+.grass .card-elev {
+  border: 2.5px solid var(--color-border);
+}
+
+/* 选中/焦点用青柠，全主题唯一撞色 */
+.grass ::selection {
+  background-color: #d8e85e;
+  color: #0f2416;
+}
+
+.grass select {
+  color-scheme: light;
+}
+.grass select option {
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+}
+
+/* 圆角收硬：组件里写死的 rounded-* 不走变量，这里是粗野派最后一道手感。
+   属性选择器用 [class~=...] 精确匹配独立 token，别用 *=，否则 rounded-t 之类会被误伤。 */
+.grass [class~="rounded-lg"],
+.grass [class~="rounded-xl"],
+.grass [class~="rounded-2xl"],
+.grass [class~="rounded-3xl"] {
+  border-radius: 8px;
+}
+.grass [class~="rounded-[10px]"],
+.grass [class~="rounded-[12px]"],
+.grass [class~="rounded-[14px]"],
+.grass [class~="rounded-[16px]"] {
+  border-radius: 8px;
+}
+
+/* 主操作按钮换成“贴纸”语言：亮草绿底 + 墨绿粗描边 + 硬投影 + 黑字。
+   要同时匹配 bg-primary（变量别名）和 bg-brand-500（Button 组件实际用的），
+   只兜底一个会漏掉登录页。绿底配白字只有 3.4:1，黑字才过线。
+   底色用 brand-400（#7ec95a）而不是 500：粗野派要的是“响”，500 太闷。
+   hover 必须锁回亮绿：组件自身 hover:bg-brand-600 是深绿，套黑字会糊。 */
+.grass button[class~="bg-primary"],
+.grass button[class~="bg-brand-500"],
+.grass a[class~="bg-primary"],
+.grass a[class~="bg-brand-500"] {
+  background-color: #7ec95a;
+  border: 2.5px solid #0f2416;
+  box-shadow: 3px 3px 0 0 #0f2416;
+  color: #0f2416;
+  font-weight: 700;
+}
+.grass button[class~="bg-primary"]:not(:disabled):hover,
+.grass button[class~="bg-brand-500"]:not(:disabled):hover,
+.grass a[class~="bg-primary"]:hover,
+.grass a[class~="bg-brand-500"]:hover {
+  background-color: #6cbc4b;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 0 #0f2416;
+}
+.grass button[class~="bg-primary"]:not(:disabled):active,
+.grass button[class~="bg-brand-500"]:not(:disabled):active,
+.grass a[class~="bg-primary"]:active,
+.grass a[class~="bg-brand-500"]:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 #0f2416;
+}
+
+/* 毛玻璃在纸上会发灰，换成半透明芽白 */
+.grass .bg-vibrancy {
+  background: rgba(243, 248, 230, 0.94);
+}
+
+/* 补偿写死的 Tailwind shadow-*：统一换成零模糊硬投影。
+   只匹配独立 token，"hover:shadow-md" 之类变体不受影响。 */
+.grass [class~="shadow-sm"],
+.grass [class~="shadow"],
+.grass [class~="shadow-md"],
+.grass [class~="shadow-lg"],
+.grass [class~="shadow-xl"],
+.grass [class~="shadow-2xl"] {
+  box-shadow: 3px 3px 0 0 #0f2416;
+}
+
+/* 侧边栏硬分隔线，和卡片描边同重量级 */
+.grass aside {
+  border-right: 2.5px solid #0f2416;
+}
+.grass aside a:hover {
+  background-color: var(--color-surface-2);
+}
+
 
 
 

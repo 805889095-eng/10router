@@ -2,6 +2,34 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.4 (2026-11-02)
+
+### ✨ 新增
+
+- **第五套主题 `grass`（青草绿 / Grass）**。视觉语言直接沿用 `brutal`：2.5px 硬描边、
+  零模糊硬投影、6/8px 小圆角、贴纸感按钮；配色换成芽白纸底 `#f3f8e6` + 草绿 `#4a9c3a` +
+  青柠高亮 `#d8e85e`。
+  - 仍是纯 CSS 变量换肤：`globals.css` 新增 `.grass` 块，业务组件一行未改。
+  - 主按钮实测 computed style：`rgb(126,201,90)` 底 / `rgb(15,36,22)` 字 / `2px` 描边 /
+    `3px 3px 0` 硬投影 / `6px` 圆角；hover 向左上弹、active 向右下陷。
+  - 卡片圆角由组件写死的 14px 收到 8px（`[class~="rounded-*"]` 精确匹配，不误伤单边）。
+  - `--color-info` / `--color-success` 挪到青绿族、`--color-warning` 压到土黄，
+    用量页五张 KPI 卡在满屏绿里仍能区分；`danger` 保持红，警示语义不让位。
+  - 主题循环变成五态：跟随系统 → 浅色 → 深色 → 粗野派 → 青草绿 → 跟随系统。
+
+### 🔧 改进
+
+- **CodeBuddy CLI 身份追到 2.179.2**（原 2.179.1）。
+  - 覆盖 `codebuddy-cn` / `codebuddy-intl` 两个渠道的 6 处硬编码（UA ×2 + `X-IDE-Version`），
+    以及 `golden-url-header.snap`、`providers-baseline.json` 两份副本，共 24 处。
+  - 已核对官方 2.179.2 包（`dist-server/codebuddy.js`）：官方侧已改为运行时读取
+    package.json 版本 + `X-Client-Version` 系列头，不再拼 `CLI/x.y.z CodeBuddy/x.y.z`。
+    本项目继续沿用该历史格式（线上实测有效），只追版本号，不引入未验证的新指纹。
+
+### 📦 构建
+
+- 完整发版：fpk（x86 / arm）、standalone server、desktop 与 docker 镜像。
+
 ## v1.8.3 (2026-11-01)
 
 ### 🐛 修复
