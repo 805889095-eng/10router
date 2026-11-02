@@ -3,12 +3,13 @@
 import { useTheme } from "@/shared/hooks/useTheme";
 import { cn } from "@/shared/utils/cn";
 
-// Toggle order: system → light → dark → brutal → grass → glass → dawn
+// Toggle order: system → light → dark → brutal → grass → glass → dawn → candy
 // (the store's toggleTheme).
 // "system" tracks the OS day/night so Windows personalization / macOS
 // appearance / the fnOS browser drive the theme with no manual switching;
 // "brutal" is the neo-brutalist skin, "grass" the meadow-green one,
-// "glass" the frosted-indigo one and "dawn" its warm amber-rose sibling.
+// "glass" the frosted-indigo one, "dawn" its warm amber-rose sibling and
+// "candy" the pastel sweet-shop skin (cream paper, orchid pink, big radii).
 const MODE_META = {
   system: { icon: "routine", label: "Theme: system", next: "light" },
   light: { icon: "light_mode", label: "Theme: light", next: "dark" },
@@ -16,7 +17,8 @@ const MODE_META = {
   brutal: { icon: "palette", label: "Theme: brutal", next: "grass" },
   grass: { icon: "grass", label: "Theme: grass", next: "glass" },
   glass: { icon: "blur_on", label: "Theme: glass", next: "dawn" },
-  dawn: { icon: "wb_twilight", label: "Theme: dawn", next: "system" },
+  dawn: { icon: "wb_twilight", label: "Theme: dawn", next: "candy" },
+  candy: { icon: "cake", label: "Theme: candy", next: "system" },
 };
 
 export default function ThemeToggle({ className, variant = "default" }) {

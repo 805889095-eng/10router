@@ -1058,14 +1058,14 @@ export default function ProfilePage() {
                 <p className="text-sm text-text-muted">Running on your machine</p>
               </div>
             </div>
-            <div className="inline-flex p-1 rounded-lg bg-black/5 dark:bg-white/5 w-full sm:w-auto">
-              {["light", "dark", "brutal", "grass", "glass", "dawn", "system"].map((option) => (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5 w-full sm:w-auto">
+              {["light", "dark", "brutal", "grass", "glass", "dawn", "candy", "system"].map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setTheme(option)}
                   className={cn(
-                    "flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-md font-medium transition-all flex-1 sm:flex-initial",
+                    "flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-md font-medium transition-all w-full whitespace-nowrap",
                     theme === option
                       ? "bg-white dark:bg-white/10 text-text-main shadow-sm"
                       : "text-text-muted hover:text-text-main"
@@ -1079,6 +1079,7 @@ export default function ProfilePage() {
                       grass: "grass",
                       glass: "blur_on",
                       dawn: "wb_twilight",
+                      candy: "cake",
                       system: "contrast",
                     }[option] || "contrast"}
                   </span>

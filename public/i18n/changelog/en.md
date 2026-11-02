@@ -2,6 +2,23 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.6 (2026-11-02)
+
+### ✨ Added
+
+- **Seventh theme, "candy"**: creamy pink background, pink cards and a deep berry primary,
+  finished with hairline white edges and pink-tinted shadows — no pure white anywhere.
+  White text on the primary colour reaches 6.85:1: sweet without being harsh.
+  The cycle is now: system → light → dark → brutal → grass → glass → dawn → candy → system.
+- **Primary buttons are now "jelly candy"**: pill-shaped, with a specular highlight strip on top
+  and an inner shadow at the bottom. They lift slightly on hover and sink when pressed.
+  Every primary button follows, including the login page and modal actions.
+
+### 🔧 Improved
+
+- The theme picker in Settings is now a 2×4 grid, so all eight themes fit without cramping.
+- Input fields sit one step brighter than the cards, so it is obvious where you can type.
+
 ## v1.8.5 (2026-11-02)
 
 ### ✨ Added

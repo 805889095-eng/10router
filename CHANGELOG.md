@@ -2,6 +2,43 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.6 (2026-11-02)
+
+### ✨ 新增
+
+- **第七套主题 `candy`（甜系少女）**。与 `glass`/`dawn` 的冷调玻璃相反，走的是「奶油粉 + 蕾丝白边」
+  的甜系路线：`#ffe4ef` 点阵粉底、卡片 `#ffd0e3`、主色深莓 `#b30a4c`（白字 6.85:1）。
+  主题循环变成八态：跟随系统 → 浅色 → 深色 → 粗野派 → 青草绿 → 玻璃 → 晨曦 → 甜系 → 跟随系统。
+  - **卡片刻意比底色更深**（1.14:1）。底浓卡白时，浓底会把白卡衬成「奶白」；反过来让卡片深一档，
+    卡片才真的读作粉卡，再用 1px 白蕾丝内描边 + 粉色柔影补回「浮起」感。
+  - 实体卡片 + 不透明底色，**刻意不做磨砂**：`glass`/`dawn` 已经占了「半透明 + backdrop-blur」
+    这套语法，三套甜/亮主题必须靠材质分开，否则切换时看起来像同一套换了个色相。
+  - 亮色家族，永不挂 `.dark`；`applyTheme` 继续用 `classList.toggle(x, cond)` 逐项互斥。
+
+- **主按钮「果冻糖」**：胶囊形 + 顶部白色高光带 + 底部内阴影 + 粉调柔影，hover 上浮 1.5px 提亮 7%，
+  active 下沉 1px 缩放 96.5% 变暗 10%。纯 CSS 覆盖，**没有改 `Button.js`**，所以全局主按钮
+  （Create Key / Enable / Set Password / 登录）一并生效。
+
+### 🔧 改进
+
+- **主题选择器由 `inline-flex` 改为 `grid grid-cols-2 sm:grid-cols-4`**。七套主题时最长的
+  `System` 已经开始折行，八套会直接塌成两行错位；改网格后 8 个按钮实测各 91px 等宽，容器零溢出。
+- 状态色在粉底上整体重算：`danger #b8102c` / `success #0a6640` / `warning #894505`；
+  `info` 从蓝移到洋红 `#a22970`，避免粉底上冒出一个突兀的蓝点。
+- 输入框单独提亮到 `#ffeaf4`（比卡片亮 1.19），输出「底 → 卡 → 输入框」三级亮度，
+  否则整块同色粉会发闷。
+- `theme-color` 同步 `#FFE4EF`。
+- 圆角兜底补齐任意值类：`Card` 渲染的是 `rounded-[14px]`，模板类 `rounded-lg` 那种改写匹配不到，
+  必须显式覆盖 `[class~="rounded-[8px]"] … [class~="rounded-[18px]"]`。
+
+### ⚠️ 踩坑记录
+
+- **`.candy [class~="bg-brand-500"]` 会误伤开关**。`Toggle` 开态轨道用的是同一个 token，
+  会被加上高光、位移和胶囊圆角，hover 时整颗开关往上跳。选择器必须收窄成
+  `button[class~="bg-brand-500"]:not([role="switch"])`。
+- **Turbopack 的 CSS 热更新会静默失效**：磁盘上已是新 hex，`fetch(<link>.href)` 也能看到新值，
+  但 `getComputedStyle` 读到还是旧的。处置是 `rm -rf .next` 后重启 dev server，重启不够。
+
 ## v1.8.5 (2026-11-02)
 
 ### ✨ 新增

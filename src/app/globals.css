@@ -586,7 +586,218 @@
   color-scheme: light;
 }
 
+/* ============================================================
+   Candy 主题（第八主题 · 甜系少女）
+   全粉家族：奶油粉底 + 樱桃玫粉主色 + 糖果粉/杏粉/淡紫三点柔光。
+   浅色家族：**不挂 .dark**（挂上会被全站 dark: 变体拖回暗底），color-scheme: light。
+   与其它皮肤互斥，applyTheme 保证同时只挂一个类。
+   ============================================================ */
+.candy {
+  /* Brand —— 樱桃玫粉，500 号位 #b30a4c（白字 6.85:1，压在最浓底纸上 4.63:1）。整条色阶不含紫，
+     300/400 号位才是甜系用来点缀的亮粉（它们不承载白字）。 */
+  --color-brand-50: #fff0f6;
+  --color-brand-100: #ffdfec;
+  --color-brand-200: #ffbfd9;
+  --color-brand-300: #ff97c3;
+  --color-brand-400: #ef5f9f;
+  --color-brand-500: #b30a4c;
+  --color-brand-600: #9c0841;
+  --color-brand-700: #830636;
+  --color-brand-800: #66052b;
+  --color-brand-900: #4a0320;
+
+  --color-primary: #b30a4c;
+  --color-primary-hover: #9c0841;
+
+  /* Surfaces —— **卡片比底更深**，这样卡片一眼就是粉的，不会被浓底衬成"奶白"：
+     底纸 #ffe4ef → 卡片 #ffd0e3 → 卡片内嵌行 #ffc6dc。
+     卡片边界靠 1.20 亮度差 + 1px 白蕾丝描边 + 粉柔影立住，全站没有一处纯白。 */
+  --color-bg: #ffe4ef;
+  --color-bg-alt: #ffd9e9;
+  --color-surface: #ffd0e3;
+  --color-surface-2: #ffc6dc;
+  --color-surface-3: #ffb8d2;
+  --color-sidebar: rgba(255, 214, 233, 0.96);
+
+  /* Borders —— 樱桃粉细线 */
+  --color-border: rgba(179, 10, 76, 0.26);
+  --color-border-subtle: rgba(179, 10, 76, 0.14);
+
+  /* Text —— 深莓紫。底纸很浓，subtle 必须压到 #87637a 才在底纸上过 3:1 */
+  --color-text: #47293d;
+  --color-text-main: #47293d;
+  --color-text-muted: #6b4557;
+  --color-text-subtle: #87637a;
+
+  /* Status —— 在粉纸上统一压深；info 也跟着走玫红，避免蓝点跳出粉家族 */
+  --color-danger: #b8102c;
+  --color-success: #0a6640;
+  --color-warning: #894505;
+  --color-info: #a22970;
+
+  /* Radius —— 大圆角是甜系的一半 */
+  --radius-brand: 16px;
+  --radius-brand-lg: 26px;
+
+  /* Shadows —— 全部樱桃粉染色 */
+  --shadow-soft:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.92),
+    0 4px 14px -10px rgba(179, 10, 76, 0.32);
+  --shadow-warm:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.94),
+    0 10px 24px -12px rgba(179, 10, 76, 0.52);
+  --shadow-elevated:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.90),
+    0 20px 44px -26px rgba(179, 10, 76, 0.38);
+  --shadow-elev:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.92),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(179, 10, 76, 0.06),
+    0 26px 60px -30px rgba(179, 10, 76, 0.44);
+  --shadow-focus: 0 0 0 3px rgba(179, 10, 76, 0.18);
+
+  color-scheme: light;
+}
+
+/* ---- 环境光：四团粉（樱花粉 / 玫粉 / 藕荷 / 杏粉）+ 糖点纹理 ----
+   粉占主调，紫与杏只当边缘反光，薄荷彻底拿掉，否则一眼就不是粉色站。 */
+.candy body {
+  background-color: #ffe4ef;
+  background-image:
+    radial-gradient(900px 740px at 0% -8%, rgba(255, 148, 190, 0.88) 0%, rgba(255, 148, 190, 0) 64%),
+    radial-gradient(820px 680px at 100% 0%, rgba(255, 166, 198, 0.85) 0%, rgba(255, 166, 198, 0) 62%),
+    radial-gradient(780px 640px at 86% 60%, rgba(250, 158, 208, 0.45) 0%, rgba(250, 158, 208, 0) 60%),
+    radial-gradient(940px 740px at 28% 106%, rgba(255, 198, 200, 0.70) 0%, rgba(255, 198, 200, 0) 66%),
+    radial-gradient(rgba(150, 30, 80, 0.10) 1px, transparent 1.2px),
+    linear-gradient(168deg, #ffe4ef 0%, #ffdcea 38%, #ffd2e4 70%, #ffe0ee 100%);
+  background-size: auto, auto, auto, auto, 24px 24px, auto;
+  background-attachment: fixed;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, no-repeat;
+}
+
+/* 实色 bg-bg 容器会整块盖掉环境光，放行让它透上来。
+   [class~="bg-bg"] 只匹配独立 token，不会误伤 bg-bg-alt。 */
+.candy [class~="bg-bg"] {
+  background-color: transparent;
+}
+
+/* 卡片：粉渐变面 + 白描边当蕾丝边 + 粉柔影。只点名「带 border 的 bg-surface」=
+   就是卡片，不给全站 bg-surface 批量上阴影（表格行、按钮都是这个 token）。 */
+.candy [class~="bg-surface"][class~="border"] {
+  background-image: linear-gradient(180deg, #ffd9ea 0%, #ffd1e4 56%, #ffc6dc 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.98),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+    0 12px 28px -22px rgba(179, 10, 76, 0.60);
+}
+
+/* 表格行 / 列表项这类 bg-surface 也跟着粉，否则卡片里会嵌着一条条纯白 */
+.candy [class~="bg-surface"]:not([class~="border"]) {
+  background-image: linear-gradient(180deg, rgba(255, 208, 227, 0.96), rgba(255, 194, 217, 0.96));
+}
+
+/* 白底浮层（tooltip / 下拉 / 弹窗）染成粉白，纯白在粉底上会像贴了张纸 */
+.candy [class~="bg-white"]:not([class~="rounded-full"]) {
+  background-color: #fffafc;
+}
+
+/* 侧栏：上粉白下深粉的奶油渐变，跟主区拉开一档 */
+.candy aside {
+  background-image: linear-gradient(180deg, rgba(255, 224, 239, 0.97), rgba(255, 168, 204, 0.94));
+}
+
+/* 大圆角：甜系的辨识度一半在这里 */
+.candy [class~="rounded-lg"] { border-radius: 14px; }
+.candy [class~="rounded-xl"] { border-radius: 18px; }
+.candy [class~="rounded-2xl"] { border-radius: 22px; }
+.candy [class~="rounded-3xl"] { border-radius: 26px; }
+
+/* 组件里写死像素的圆角（Card 用的是 rounded-[14px] 这类任意值，模板类改不到），
+   一并放大一档，否则卡片会跟按钮圆角打架，甜得不彻底。 */
+.candy [class~="rounded-[8px]"],
+.candy [class~="rounded-[10px]"] { border-radius: 14px; }
+.candy [class~="rounded-[12px]"],
+.candy [class~="rounded-[14px]"] { border-radius: 20px; }
+.candy [class~="rounded-[16px]"],
+.candy [class~="rounded-[18px]"] { border-radius: 24px; }
+
+/* 写死的 shadow-sm/md/lg 不走变量，在粉底上会留冷灰影，逐档染粉 */
+.candy [class~="shadow-sm"] { box-shadow: 0 1px 3px rgba(179, 10, 76, 0.11); }
+.candy [class~="shadow-md"] { box-shadow: 0 6px 16px -6px rgba(179, 10, 76, 0.26); }
+.candy [class~="shadow-lg"] { box-shadow: 0 16px 32px -18px rgba(179, 10, 76, 0.34); }
+.candy [class~="shadow-xl"] { box-shadow: 0 24px 44px -22px rgba(179, 10, 76, 0.36); }
+
+/* 选中态 / 输入框 */
+.candy ::selection {
+  background-color: rgba(179, 10, 76, 0.18);
+  color: #47293d;
+}
+
+.candy input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.candy textarea,
+.candy select {
+  background-color: #ffeaf4;
+  box-shadow: inset 0 0 0 1px rgba(179, 10, 76, 0.18);
+}
+
+.candy select {
+  color-scheme: light;
+}
+
+.candy select option {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+}
+
+/* 主按钮：果冻糖 —— 顶部高光带 + 底部内阴影 + 粉调柔影，按压有回弹 */
+.candy button[class~="bg-brand-500"]:not([role="switch"]):not(:disabled) {
+  border-radius: 999px;
+  background-color: #b30a4c;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.42) 0%,
+      rgba(255, 255, 255, 0.1) 42%,
+      rgba(255, 255, 255, 0) 43%
+    ),
+    linear-gradient(180deg, #c9145a 0%, #b30a4c 52%, #9c0841 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 6px rgba(102, 5, 43, 0.42),
+    0 6px 14px -5px rgba(179, 10, 76, 0.55),
+    0 2px 4px -1px rgba(179, 10, 76, 0.3);
+  transition: transform 0.13s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.candy button[class~="bg-brand-500"]:not([role="switch"]):not(:disabled):hover {
+  transform: translateY(-1.5px);
+  filter: saturate(1.12) brightness(1.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(102, 5, 43, 0.42),
+    0 9px 20px -5px rgba(179, 10, 76, 0.62),
+    0 2px 4px -1px rgba(179, 10, 76, 0.3);
+}
+
+.candy button[class~="bg-brand-500"]:not([role="switch"]):not(:disabled):active {
+  transform: translateY(1px) scale(0.965);
+  filter: brightness(0.9) saturate(1.05);
+  box-shadow:
+    inset 0 2px 5px rgba(102, 5, 43, 0.5),
+    0 1px 2px rgba(179, 10, 76, 0.35);
+}
+
+.candy button[class~="bg-brand-500"]:not([role="switch"]):disabled {
+  border-radius: 999px;
+  background-image: none;
+  background-color: var(--color-surface-3);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
 /* ---- 环境光：body 铺一层 fixed 的多层柔光渐变 ---- */
+
 .glass body {
   background-color: #eef1fb;
   background-image:
