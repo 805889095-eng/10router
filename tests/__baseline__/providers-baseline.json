@@ -69,7 +69,7 @@
     "format": "antigravity",
     "strictProxy": true,
     "headers": {
-      "User-Agent": "antigravity/ide/2.22.0 darwin/arm64"
+      "User-Agent": "antigravity/hub/2.24.0 darwin/arm64"
     },
     "stallTimeoutMs": 300000,
     "retry": {
@@ -261,11 +261,11 @@
       "sanitizeToolSchema": true
     },
     "headers": {
-      "User-Agent": "CLI/2.179.2 CodeBuddy/2.179.2",
+      "User-Agent": "CLI/2.179.3 CodeBuddy/2.179.3",
       "X-Product": "SaaS",
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.179.2",
+      "X-IDE-Version": "2.179.3",
       "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest"
     },
@@ -285,11 +285,11 @@
     "forceStream": true,
     "thinkingFormat": "openai",
     "headers": {
-      "User-Agent": "CLI/2.179.2 CodeBuddy/2.179.2",
+      "User-Agent": "CLI/2.179.3 CodeBuddy/2.179.3",
       "X-Product": "SaaS",
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.179.2",
+      "X-IDE-Version": "2.179.3",
       "Content-Type": "application/json;charset=UTF-8",
       "x-requested-with": "XMLHttpRequest"
     },
@@ -716,6 +716,15 @@
     "baseUrl": "https://api.llm7.io/v1/chat/completions",
     "validateUrl": "https://api.llm7.io/v1/models",
     "format": "openai"
+  },
+  "loomy": {
+    "baseUrl": "https://loomyad.xunfei.cn/api/v1/chat/completions",
+    "format": "openai",
+    "auth": {
+      "combined": true,
+      "header": "Authorization",
+      "scheme": "bearer"
+    }
   },
   "longcat-intl": {
     "baseUrl": "https://api.longcat.ai/openai/v1/chat/completions",
