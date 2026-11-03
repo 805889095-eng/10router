@@ -950,5 +950,15 @@
   "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 國際國內雙線限免（倍率 0x）至 10-25。",
   "Privacy redaction (experimental)": "隱私脫敏（實驗性）",
   "Redact API keys and secrets in the outbound request body, restore them in the model response. Enable only for untrusted upstreams.": "對出站請求體中的 API 密鑰與敏感字串做確定性脫敏，模型回顯內容自動還原。僅在對上游不信任時開啟（預設關）。",
-  "Privacy redaction on: secrets in the request body are redacted for this upstream": "隱私脫敏已開啟：該上游的請求體敏感字串將被脫敏"
+  "Privacy redaction on: secrets in the request body are redacted for this upstream": "隱私脫敏已開啟：該上游的請求體敏感字串將被脫敏",
+  "Loomy SMS Login": "Loomy 手機驗證碼登錄",
+  "Log in with your iFlytek phone number — no Loomy client needed. The session lasts about 14 days and is added as a connection automatically.": "使用訊飛手機號驗證碼直接登錄——無需安裝 Loomy 用戶端。會話約 14 天有效，登錄後自動加入為連線。",
+  "Phone Number": "手機號",
+  "Send Code": "發送驗證碼",
+  "Sending…": "發送中…",
+  "SMS Code": "簡訊驗證碼",
+  "6-digit code": "6 位驗證碼",
+  "Logging in…": "登錄中…",
+  "Verify & Add Connection": "驗證並新增連線",
+  "SMS Login": "驗證碼登錄"
 }
