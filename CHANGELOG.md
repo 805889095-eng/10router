@@ -2,6 +2,75 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/techysy/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.7 (2026-11-03)
+
+### ✨ 新增
+
+- **隐私脱敏管道**（出站脱敏 + 入站还原）。连接级显式开关，默认关。
+  - 出站把请求体里的 API key / PEM 私钥 / JWT / 凭据赋值扫成确定性占位符
+    `__SEC_KEY_<hmac12>__`，模型回显后自动还原成原文。占位符由
+    HMAC-SHA256(机器稳定 salt, secret) 生成，同一 secret 跨轮次、跨请求、跨重启都是
+    同一个占位符，上游 prompt 缓存不被打断。
+  - SSE 走滑动窗口还原：最多扣留 24 字符的可续接前缀，普通文本 TTFT 无感；
+    tool_calls 按 `index` 键控窗口，并行调用不会互相污染 arguments。
+  - 全程 fail-open；连接编辑弹窗加开关，连接行显示 🔒。
+  - 端到端实测（本地 mock 上游回显）：上游收到 `__SEC_KEY_089098a6ddce__`，
+    客户端收到完整原文；流式 5 chunk 跨边界重组后同样还原正确。
+
+- **讯飞 Loomy 免费池**（内置 freeTier 收录，8 模型）：`spark-x2.6`、`qwen3.8-flash`、
+  `qwen-3.8-max`、`DeepSeek-V4.1-Flash`、`deepseek-v4-flash-0731`、`MiniMax-M3`、
+  `Kimi-k2.6`、`GLM-5.3-Flash`。
+  - 手机验证码直登（`account.xfinfr.com` HMAC-SHA1 签名，与 CreditDaddy 同源）：
+    下发 + 换 14 天 session 两条路由，单号/单 IP 双档限流（6 位码在 msgid 5 分钟窗内
+    可爆破，必须限）。连接列表加「验证码登录」入口。
+  - capabilities 按各家族第一方剖面显式声明：上游模型 id 大小写敏感
+    （`DeepSeek-V4.1-Flash` 大写开头），不锁死会掉进通用文本档丢 vision、
+    或被压到 65536 输出。
+  - `/models` 与鉴权探活必须用自定义 `token:` 头——Bearer 反而回 100002。
+  - 积分额度卡：永久积分记为储值行（`isCreditBalance`，否则被当成资源包多渲染
+    「N 个资源包」），每日赠送记为 recurring 滚动窗口；`dailyConsumedPoints`
+    存在即直读（含 0），缺字段才倒推。
+
+- **Antigravity 图像生成支持参考图**：一次最多 10 张、识别 `{image_url:{url}}` 等对象形态、
+  `aspect_ratio`/`size` 折算成 `-16x9` 模型后缀、`negative_prompt` 折进 prompt、
+  从 429 里挖 `quotaResetTimeStamp` 供账号调度。**根因修复**：executor 的 image 分支
+  原来只挑 `text` 部件，参考图会被静默丢弃。
+
+### 🔧 改进
+
+- **402 欠费冷却 2 分钟 → 30 分钟**（`BILLING_COOLDOWN_MS`）。余额/免费活动包耗尽不会在
+  秒级自愈，原冷却到期后又对同一欠费渠道发起必败请求。改为 30 分钟避让 + 到期单次重探，
+  期间每次请求零耗时直落下一个健康渠道。
+
+- **Antigravity 思考链别名兼容**：改走共享 `extractReasoningText()`，
+  `reasoning_content` / `reasoning` / `reasoning_details[]` 三种写法都能转成 thought part，
+  别名来的思考不再静默丢失。
+
+- **Antigravity 客户端指纹 `ide/2.22.0` → `hub/2.24.0`**，并只在 `:generateContent`
+  改写（catalog/鉴权请求保留客户端真身，少一层风控暴露面）。
+  **实测记录（2026-11-03，真机账号）**：同一请求体、同一 token，只换指纹——
+  `gemini-3.8-flash-medium` 四种指纹全 200；`gemini-4-argon-{low,medium,high}` 与裸
+  `gemini-4-argon` 四种指纹全 404「Requested entity was not found」。
+  故 **Argon 404 是账号缺该模型 entitlement，与客户端版本无关**，升级常量不会换来 Argon
+  访问权；registry 仍保留三档供有权限的账号使用。
+
+- **CodeBuddy 身份版本 2.179.2 → 2.179.3**（`@tencent-ai/codebuddy-code` 2.179.3，
+  2026-11-03 发布）。该版本改动全在桌面端托盘/标题栏、企业策略下发与错误码显示，
+  无 UA/请求头/认证协议变化，故仅追版本号。
+  顺手把散在两 registry 与两 executor 的六处硬编码收敛到
+  `open-sse/shared/codebuddyIdentity.js`——**以后官方发版只改一个常量**。
+
+- **连接测试的 Antigravity UA 对齐**：`testUtils` 的 loadCodeAssist 探活原先硬编码旧指纹
+  `ide/2.22.0`，与线上聊天用的新指纹分裂（官方按指纹门控时表现为「测试通过、实际 404」），
+  改为直接引用 `ANTIGRAVITY_IDE_USER_AGENT` 常量。
+
+### 🧪 测试
+
+- 新增 `privacy-redaction`(28) / `privacy-wiring`(27) / `loomy-provider`(5) /
+  `loomy-usage`(10) / `antigravity-image-handler`(11) / `antigravity-response-reasoning`(5)。
+- 全量 514 文件对比：失败文件集合与改动前**完全一致**（20 个既有失败：路径硬编码、
+  缺 lowdb、live TLS 等），零新增回归。
+
 ## v1.8.6 (2026-11-02)
 
 ### ✨ 新增

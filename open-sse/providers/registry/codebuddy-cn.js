@@ -1,3 +1,5 @@
+import { CODEBUDDY_USER_AGENT, codebuddyIdentityHeaders } from "../../shared/codebuddyIdentity.js";
+
 export default {
   id: "codebuddy-cn",
   // Short model prefix (cbcn/glm-5.2). "cbcn" = CodeBuddy CN; reserve "cbai"
@@ -37,23 +39,10 @@ export default {
       // translator/concerns/toolCall.js and issue #27.
       sanitizeToolSchema: true,
     },
-    // Identity headers mirror @tencent-ai/codebuddy-code 2.179.2 (extracted from the
-    // shipped bundle at dist/codebuddy-headless.js): the real CLI always sends
-    // X-IDE-Version + X-IDE-Type/Name, X-Product=SaaS and Content-Type with charset.
-    // `x-codebuddy-request: 1` is deliberately NOT sent — the CLI only emits it on
-    // its LOCAL daemon endpoints, so forwarding it to copilot.tencent.com marks the
-    // request as a non-official client (WorkBuddy tightened detection in 2026-10).
-    // Bump the version string together with the upstream CLI release; a stale UA
-    // (this used to say 2.108.1, 68 releases behind) is itself a bot fingerprint.
-    headers: {
-      "User-Agent": "CLI/2.179.2 CodeBuddy/2.179.2",
-      "X-Product": "SaaS",
-      "X-IDE-Type": "CLI",
-      "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.179.2",
-      "Content-Type": "application/json;charset=UTF-8",
-      "x-requested-with": "XMLHttpRequest",
-    },
+    // Identity headers: single source in open-sse/shared/codebuddyIdentity.js, so a
+    // CLI release is one edit instead of six. See that file for what is (and is not)
+    // duplicated from the shipped bundle, and why `x-codebuddy-request` stays absent.
+    headers: codebuddyIdentityHeaders(),
     auth: {
       combined: true,
       header: "Authorization",
@@ -134,7 +123,7 @@ export default {
     stateUrl: "https://copilot.tencent.com/v2/plugin/auth/state",
     tokenUrl: "https://copilot.tencent.com/v2/plugin/auth/token",
     refreshUrl: "https://copilot.tencent.com/v2/plugin/auth/token/refresh",
-    userAgent: "CLI/2.179.2 CodeBuddy/2.179.2",
+    userAgent: CODEBUDDY_USER_AGENT,
     platform: "CLI",
     pollInterval: 5000,
   },

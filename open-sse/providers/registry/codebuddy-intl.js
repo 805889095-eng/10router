@@ -1,6 +1,8 @@
 // CodeBuddy international (codebuddy.ai) — mirrors codebuddy-cn registry shape,
 // swapping the Tencent CN domain for the .ai endpoint set. All OAuth/plugin URLs
 // use the /v2/plugin prefix with platform=ide (CN uses platform=CLI).
+import { CODEBUDDY_USER_AGENT, codebuddyIdentityHeaders } from "../../shared/codebuddyIdentity.js";
+
 export default {
   id: "codebuddy-intl",
   alias: "cbai",
@@ -29,19 +31,9 @@ export default {
     thinkingFormat: "openai",
     // Identity headers: declared as the official CLI, not the IDE plugin. The previous
     // IDE identity was self-contradictory — it claimed X-IDE-Type: IDE while reporting
-    // version 2.108.1, which belongs to the CLI series (VSCode extension is 4.12.x),
-    // so no real IDE client could ever produce that pair. Values below are copied from
-    // @tencent-ai/codebuddy-code 2.179.2 (dist/codebuddy-headless.js), the same verified
-    // set the CN channel uses in v1.6.3.
-    headers: {
-      "User-Agent": "CLI/2.179.2 CodeBuddy/2.179.2",
-      "X-Product": "SaaS",
-      "X-IDE-Type": "CLI",
-      "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.179.2",
-      "Content-Type": "application/json;charset=UTF-8",
-      "x-requested-with": "XMLHttpRequest",
-    },
+    // a CLI-series version, so no real IDE client could ever produce that pair.
+    // Single source in open-sse/shared/codebuddyIdentity.js (shared with the CN channel).
+    headers: codebuddyIdentityHeaders(),
     auth: {
       combined: true,
       header: "Authorization",
@@ -194,7 +186,7 @@ export default {
     stateUrl: "https://www.codebuddy.ai/v2/plugin/auth/state",
     tokenUrl: "https://www.codebuddy.ai/v2/plugin/auth/token",
     refreshUrl: "https://www.codebuddy.ai/v2/plugin/auth/token/refresh",
-    userAgent: "CLI/2.179.2 CodeBuddy/2.179.2",
+    userAgent: CODEBUDDY_USER_AGENT,
     platform: "CLI",
     pollInterval: 5000,
   },

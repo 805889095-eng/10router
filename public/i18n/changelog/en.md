@@ -2,6 +2,34 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.7 (2026-11-03)
+
+### ✨ Added
+
+- **Privacy redaction pipeline**: worried about an upstream seeing your API keys? Turn on
+  "Privacy redaction" in a connection and keys, private keys and JWTs in the outbound request
+  become placeholders; anything the model echoes back is restored before it reaches you.
+  Off by default — enable it only for upstreams you do not trust.
+- **iFlytek Loomy free pool**: eight free models built in (Spark X2.6, Qwen 3.8 Flash/Max,
+  DeepSeek V4.1 Flash, MiniMax M3, Kimi K2.6, GLM 5.3 Flash and more) — no custom node needed.
+  Ships with **phone-code sign-in**: enter your number, get a code, done — no Loomy client
+  required, session lasts about 14 days.
+- **Loomy points card**: the dashboard shows permanent points and today's free allowance side
+  by side.
+
+### 🔧 Improved
+
+- **402 billing cooldown is now 30 minutes**: it used to back off 2 minutes and then hammer the
+  same broke channel again. Now it sits out 30 minutes, probes once, and every request in
+  between goes straight to the next healthy channel.
+- **Antigravity image generation accepts reference images**: up to 10 per request, with the
+  aspect ratio derived from the requested size and the negative prompt folded into the body.
+  Reference images used to be silently dropped, leaving text-to-image only.
+- **Antigravity thinking now survives every wire shape**: some channels stream it as `reasoning`
+  or `reasoning_details[]`; those chunks used to vanish entirely.
+- **CodeBuddy identity bumped to 2.179.3**, staying level with the official client. The version
+  string lived in six places; it now lives in one, so future bumps are a single edit.
+
 ## v1.8.6 (2026-11-02)
 
 ### ✨ Added

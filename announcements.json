@@ -7,8 +7,26 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-10-21T00:30:00+08:00",
+  "updatedAt": "2026-11-03T09:30:00+08:00",
   "items": [
+    {
+      "id": "2026-11-03-privacy-redaction",
+      "date": "2026-11-03",
+      "level": "feature",
+      "title": "新功能：隐私脱敏——让上游看不到你的密钥",
+      "body": "连接详情里打开「隐私脱敏」，出站请求里的 API Key、私钥、JWT 会被替换成占位符，模型回显的内容自动还原成原文。默认关闭，只对你不信任的上游开启。",
+      "titleEn": "New: privacy redaction — keep your keys away from upstreams",
+      "bodyEn": "Turn on “Privacy redaction” in a connection and API keys, private keys and JWTs in the outbound request become placeholders; anything the model echoes back is restored before it reaches you. Off by default — enable it only for upstreams you do not trust."
+    },
+    {
+      "id": "2026-11-03-loomy-free-pool",
+      "date": "2026-11-03",
+      "level": "promo",
+      "title": "讯飞 Loomy 免费池：8 个免费模型 + 手机验证码直登",
+      "body": "内置 Spark X2.6、Qwen 3.8、DeepSeek V4.1、MiniMax M3、Kimi K2.6、GLM 5.3 Flash 等 8 个模型。供应商页点「验证码登录」，输手机号收码即可，无需安装客户端，会话 14 天有效。",
+      "titleEn": "iFlytek Loomy free pool: 8 free models + phone-code sign-in",
+      "bodyEn": "Eight models built in — Spark X2.6, Qwen 3.8, DeepSeek V4.1, MiniMax M3, Kimi K2.6, GLM 5.3 Flash and more. On the provider page press “SMS Login”, enter your phone number, done — no client install needed, session lasts about 14 days."
+    },
     {
       "id": "2026-10-20-proxy-strict",
       "date": "2026-10-20",
@@ -17,15 +35,6 @@
       "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
       "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
       "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
-    },
-    {
-      "id": "2026-10-20-qoder-qfmodel-free",
-      "date": "2026-10-20",
-      "level": "promo",
-      "title": "Qoder qfmodel 双线限免至 10-25",
-      "body": "qfmodel 更名 DeepSeek-V4.1-Flash 1017，qoder / qoder-cn 国际国内双线限免（倍率 0x）至 10-25。",
-      "titleEn": "Qoder qfmodel free on both lanes until 10-25",
-      "bodyEn": "qfmodel is renamed DeepSeek-V4.1-Flash 1017; free (0x rate) on both qoder and qoder-cn until 10-25."
     },
     {
       "id": "2026-10-20-cb-v41-flash",
@@ -89,15 +98,6 @@
       "body": "MiniMax Code Free 等推送卡改为每账号一张独立卡（余额不再跨账号加总），签到徽章紧贴余额数字；弹窗移动端居中体验对齐更新日志。",
       "titleEn": "Pushed quota cards: one card per account, badge beside the balance",
       "bodyEn": "Pushed cards (MiniMax Code Free and friends) are now one independent card per account — balances are no longer summed across accounts — with the check-in badge right beside the number; modals are now centered on mobile, matching the changelog dialog."
-    },
-    {
-      "id": "2026-10-20-community",
-      "date": "2026-10-20",
-      "level": "info",
-      "title": "社区与捐赠",
-      "body": "侧边栏新增 Community 分区：飞书群 / Discord / Telegram / GitHub。捐赠渠道：GitHub Sponsors / 爱发电 / 支付宝 / 微信。",
-      "titleEn": "Community & donations",
-      "bodyEn": "New sidebar Community section: Feishu / Discord / Telegram / GitHub. Donations: GitHub Sponsors / AiFaDian / Alipay / WeChat."
     }
   ]
 }
