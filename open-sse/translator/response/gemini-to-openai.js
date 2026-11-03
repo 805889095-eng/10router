@@ -30,6 +30,9 @@ function emitFunctionCall(functionCall, state, signature = null) {
     type: OPENAI_BLOCK.FUNCTION,
     function: { name: fcName, arguments: JSON.stringify(fcArgs) },
   };
+  if (signature) {
+    toolCall.extra_content = { google: { thought_signature: signature } };
+  }
   // Keep Gemini bookkeeping separate from the shared translator state.toolCalls map.
   // The downstream OpenAI→Claude translator uses state.toolCalls for Claude block
   // metadata; pre-populating it here makes Anthropic tool deltas lose index.

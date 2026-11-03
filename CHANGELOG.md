@@ -2,6 +2,17 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.8 (2026-11-03)
+
+### ✨ 新增与优化
+
+- **Antigravity 思考签名（`thought_signature`）双向闭环**：
+  - 响应下发时在 `tool_calls` 中携带 `extra_content.google.thought_signature`，与 Google 官方 OpenAI 兼容端点保持同一字段约定。
+  - 请求回填时优先识别客户端在历史消息里带回的真签名（包括 `extra_content.google.thought_signature`、`thought_signature`、`thoughtSignature`），没带时退回本地 SQLite 持久化缓存和真实兜底长签名。
+  - 严格遵循 Gemini 规则：多并行工具调用批次中仅首个保留签名、兄弟调用自动去签，彻底杜绝多轮工具调用出现 `400 Corrupted thought signature`。
+- **Google 企业 / Workspace 账号智能伪装**：
+  - 识别连接账号邮箱域名：个人账号（`@gmail.com` / `@googlemail.com`）保持 `"userAgent": "antigravity"`；企业/自定义域名账号自动将外壳切为 `"userAgent": "jetski"`（Google 官方内部代号），对齐企业级出口指纹，降低风控概率。
+
 ## v1.8.7 (2026-11-03)
 
 ### ✨ 新增

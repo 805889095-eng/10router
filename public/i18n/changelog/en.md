@@ -2,6 +2,13 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.8 (2026-11-03)
+
+### 🔧 Improved
+
+- **Antigravity tool thought signature round-trip**: client-supplied thought signatures in multi-turn tool conversations are now prioritized and preserved, eliminating upstream 400 "Corrupted thought signature" errors on Gemini 3+ models.
+- **Adaptive enterprise userAgent for Antigravity**: enterprise and Google Workspace accounts automatically switch to Google's official enterprise identity (`jetski`), matching official IDE fingerprinting to reduce account risk.
+
 ## v1.8.7 (2026-11-03)
 
 ### ✨ Added

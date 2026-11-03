@@ -8,6 +8,7 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { cleanJSONSchemaForAntigravity, normalizeGeminiContents } from "../translator/formats/gemini.js";
 import { DEFAULT_THINKING_AG_SIGNATURE } from "../config/defaultThinkingSignature.js";
 import { getGeminiThoughtSignatureSync } from "../services/thoughtSignatureStore.js";
+import { resolveAntigravityUserAgent } from "../providers/shared.js";
 
 // Sanitize function name: Gemini requires [a-zA-Z_][a-zA-Z0-9_.:\-]{0,63}
 function sanitizeFunctionName(name) {
@@ -222,7 +223,7 @@ export class AntigravityExecutor extends BaseExecutor {
       return {
         project: projectId,
         model: cleanModel,
-        userAgent: "antigravity",
+        userAgent: resolveAntigravityUserAgent(credentials?.email),
         requestType: "image_gen",
         requestId: buildIdeRequestId({ body, request, credentials, model: cleanModel, requestType: "image_gen" }),
         request,
@@ -345,7 +346,7 @@ export class AntigravityExecutor extends BaseExecutor {
       ...body,
       project: projectId,
       model: body.model || model,
-      userAgent: "antigravity",
+      userAgent: resolveAntigravityUserAgent(credentials?.email),
       requestId: buildIdeRequestId({ body, request: transformedRequest, credentials, model, requestType: "agent" }),
       request: transformedRequest
     };

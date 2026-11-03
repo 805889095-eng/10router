@@ -1,6 +1,7 @@
 import { register } from "../index.js";
 import { FORMATS } from "../formats.js";
 import { DEFAULT_THINKING_AG_SIGNATURE, DEFAULT_THINKING_GEMINI_CLI_SIGNATURE } from "../../config/defaultThinkingSignature.js";
+import { resolveAntigravityUserAgent } from "../../providers/shared.js";
 import { openaiToClaudeRequestForAntigravity } from "./openai-to-claude.js";
 import { getGeminiThoughtSignatureSync } from "../../services/thoughtSignatureStore.js";
 function generateUUID() {
@@ -148,8 +149,21 @@ function openaiToGeminiBase(model, body, stream, signature = DEFAULT_THINKING_AG
             }
 
             // Look up by the ORIGINAL id — the signature was stored against it.
+            // Client may also round-trip the thoughtSignature in standard /
+            // Google OpenAI locations (extra_content.google.thought_signature).
+            const clientSig = (
+              tc.extra_content?.google?.thought_signature ||
+              tc.thought_signature ||
+              tc.thoughtSignature ||
+              tc.function?.thought_signature ||
+              tc.function?.thoughtSignature ||
+              ""
+            ).trim();
+
             const cachedSig = rawId ? getGeminiThoughtSignatureSync(rawId, sessionId, model) : null;
-            const callSig = cachedSig || (!firstFunctionCallSeen ? signature : undefined);
+            const callSig = !firstFunctionCallSeen
+              ? (clientSig || cachedSig || signature)
+              : undefined;
             firstFunctionCallSeen = true;
 
             const fcPart = {
@@ -292,7 +306,7 @@ function wrapInCloudCodeEnvelope(model, geminiCLI, credentials = null, isAntigra
   const envelope = {
     project: projectId,
     model: model,
-    userAgent: isAntigravity ? "antigravity" : "gemini-cli",
+    userAgent: isAntigravity ? resolveAntigravityUserAgent(credentials?.email) : "gemini-cli",
     requestId: isAntigravity ? `agent-${generateUUID()}` : generateRequestId(),
     request: {
       sessionId: toNumericSessionId(credentials?._clientSessionId) || (isAntigravity ? deriveSessionId(credentials?.email || credentials?.connectionId) : generateSessionId()),
@@ -326,7 +340,7 @@ function wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials = nu
   const envelope = {
     project: projectId,
     model: model,
-    userAgent: "antigravity",
+    userAgent: resolveAntigravityUserAgent(credentials?.email),
     requestId: `agent-${generateUUID()}`,
     request: {
       sessionId: toNumericSessionId(credentials?._clientSessionId) || deriveSessionId(credentials?.email || credentials?.connectionId),

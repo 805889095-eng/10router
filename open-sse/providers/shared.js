@@ -113,6 +113,20 @@ export const ANTIGRAVITY_IDE_VERSION = "2.24.0";
 export const ANTIGRAVITY_IDE_BASE_URL = "https://daily-cloudcode-pa.googleapis.com";
 export const ANTIGRAVITY_IDE_USER_AGENT = `antigravity/hub/${ANTIGRAVITY_IDE_VERSION} darwin/arm64`;
 
+/**
+ * Antigravity envelope `userAgent` tag.
+ * Official IDE behavior (spec §3.3):
+ * - Personal accounts (@gmail.com, @googlemail.com, or empty): "antigravity"
+ * - Enterprise / Workspace accounts (non-gmail domains): "jetski"
+ */
+export function resolveAntigravityUserAgent(email) {
+  const norm = typeof email === "string" ? email.trim().toLowerCase() : "";
+  if (norm && !norm.endsWith("@gmail.com") && !norm.endsWith("@googlemail.com")) {
+    return "jetski";
+  }
+  return "antigravity";
+}
+
 // Antigravity OAuth client credentials (public CLI client — duplicated in usage.js + src/lib/oauth)
 export const ANTIGRAVITY_OAUTH_CLIENT = {
   clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
