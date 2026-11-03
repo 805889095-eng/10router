@@ -7,6 +7,7 @@ import { CODEX_CLI_VERSION } from "open-sse/config/appConstants.js";
 import { GROK_CLI_PAGER_USER_AGENT, GROK_CLI_VERSION } from "open-sse/config/grokCli.js";
 import { resolveOllamaLocalHost, PROVIDERS } from "open-sse/config/providers.js";
 import { getUsageForProvider } from "open-sse/services/usage.js";
+import { ANTIGRAVITY_IDE_USER_AGENT } from "open-sse/providers/shared.js";
 import { extractEarliestPackageExpiry } from "open-sse/services/usage/expiryExtractor.js";
 import { resolveQoderModels } from "open-sse/services/qoderModels.js";
 import { QODER_USERINFO_URL, QODER_CN_USERINFO_URL } from "open-sse/shared/qoder/constants.js";
@@ -314,7 +315,7 @@ async function resolveCloudCodeProjectId(connection, accessToken, effectiveProxy
         // 这里刻意用官方 IDE 的 UA，而不是凭证探测用的 google-api-nodejs-client：
         // 要的是「真实客户端视角」下这个账号归属于哪个 project。
         "User-Agent": connection.provider === "antigravity"
-          ? "antigravity/ide/2.22.0 darwin/arm64"
+          ? ANTIGRAVITY_IDE_USER_AGENT
           : "google-api-nodejs-client/9.15.1 gemini-cli/0.34.0",
       },
       body: JSON.stringify({
