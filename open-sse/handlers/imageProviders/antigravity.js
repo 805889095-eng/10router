@@ -1,10 +1,18 @@
 // Antigravity image adapter - delegates to the executor for correct request
 // envelope (project, model, requestType, sessionId) and auth headers.
-import { nowSec } from "./_base.js";
+import { nowSec, sizeToAspectRatio } from "./_base.js";
 import { getExecutor } from "../../executors/index.js";
 
-// Convert image input (data URI or raw base64) to Gemini inlineData part
+// Antigravity accepts up to 10 reference images per request
+const MAX_REFERENCE_IMAGES = 10;
+
+// Convert image input (data URI or raw base64) to Gemini inlineData part.
+// Accepts a bare string plus the object shapes OpenAI-compatible clients send
+// (`{ image_url: { url } }` / `{ url }` / `{ data }` / `{ b64_json }`).
 function resolveImageInput(input) {
+  if (input && typeof input === "object") {
+    input = input.image_url?.url || input.url || input.data || input.b64_json;
+  }
   if (!input || typeof input !== "string") return null;
   // data:image/png;base64,... format
   const dataUriMatch = input.match(/^data:(image\/[^;]+);base64,(.+)$/);
@@ -16,6 +24,19 @@ function resolveImageInput(input) {
     return { inlineData: { mimeType: "image/png", data: input } };
   }
   return null;
+}
+
+// Collect reference images from every accepted request field shape
+function collectImageInputs(body) {
+  const candidates = [
+    body.reference_images,
+    body.images,
+    body.reference_image,
+    body.image,
+  ];
+  return candidates
+    .flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))
+    .slice(0, MAX_REFERENCE_IMAGES);
 }
 
 export default {
@@ -31,20 +52,48 @@ export default {
     const executor = getExecutor("antigravity");
     if (!executor) throw new Error("Antigravity executor not found");
 
-    // Build parts: text prompt + optional input image for editing
-    const parts = [{ text: body.prompt }];
-    const imageInput = body.image || (Array.isArray(body.images) && body.images[0]);
-    if (imageInput) {
-      const inlineData = resolveImageInput(imageInput);
-      if (inlineData) parts.unshift(inlineData);
+    // Ensure an image model is used: a text model here would go down the chat
+    // path and never return an image part.
+    const isImageModel = (m) => /image|imagen|image-generation/i.test(m || "");
+    let targetModel = isImageModel(model) ? model : "gemini-3.1-flash-image";
+
+    // Aspect ratio: explicit body.aspect_ratio wins, then derive from body.size.
+    // The ratio rides the model id suffix (-16x9); the executor parses it back
+    // into generationConfig.imageConfig.aspectRatio and strips it off the
+    // upstream model name.
+    let ratio = null;
+    if (body.aspect_ratio && /^\d{1,2}:\d{1,2}$/.test(String(body.aspect_ratio))) {
+      ratio = String(body.aspect_ratio);
+    } else if (body.size && typeof body.size === "string") {
+      ratio = sizeToAspectRatio(body.size);
     }
+    if (ratio) {
+      const suffix = ratio.replace(":", "x");
+      if (!targetModel.includes(suffix)) {
+        targetModel = `${targetModel}-${suffix}`;
+      }
+    }
+
+    // Gemini image models have no negative-prompt parameter — fold it into the
+    // prompt text instead of silently dropping it.
+    const prompt = body.negative_prompt
+      ? `${body.prompt}\n\nNegative prompt: ${body.negative_prompt}`
+      : body.prompt;
+
+    // Build parts: reference images first, then the text prompt
+    const parts = [];
+    for (const imageInput of collectImageInputs(body)) {
+      const inlineData = resolveImageInput(imageInput);
+      if (inlineData) parts.push(inlineData);
+    }
+    parts.push({ text: prompt });
 
     const chatBody = {
       contents: [{ role: "user", parts }],
     };
 
     const result = await executor.execute({
-      model,
+      model: targetModel,
       body: chatBody,
       stream: false,
       credentials,
@@ -53,7 +102,25 @@ export default {
 
     if (!result.response.ok) {
       const text = await result.response.text();
-      throw new Error(text || `HTTP ${result.response.status}`);
+      const err = new Error(text || `HTTP ${result.response.status}`);
+      err.status = result.response.status;
+      // Surface the upstream quota reset so the account scheduler can bench this
+      // connection until it actually refills instead of retrying into a 429 wall.
+      try {
+        const json = JSON.parse(text);
+        const details = json.error?.details || [];
+        for (const d of details) {
+          const resetTimeStr = d.metadata?.quotaResetTimeStamp;
+          if (resetTimeStr) {
+            const ms = new Date(resetTimeStr).getTime();
+            if (ms > Date.now()) {
+              err.resetsAtMs = ms;
+              break;
+            }
+          }
+        }
+      } catch {}
+      throw err;
     }
 
     return result.response.json();

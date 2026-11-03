@@ -96,12 +96,22 @@ export const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/v1/messages";
 export const OPENAI_COMPAT_BASE = "https://api.openai.com/v1";
 export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 
-// Official Antigravity IDE Desktop 2.22.0 fingerprint captured from macOS arm64.
+// Official Antigravity Hub Desktop 2.24.0 fingerprint captured from macOS arm64.
+// Product line renamed IDE → Hub at 2.24.0, so the UA path segment changes too.
 // Keep this static even when 10Router runs on Linux: the provider profile is
-// intentionally matching the IDE client, not the server host.
-export const ANTIGRAVITY_IDE_VERSION = "2.22.0";
+// intentionally matching the Hub client, not the server host.
+//
+// Measured 2026-11-03 against a live account, replaying the identical envelope:
+//   gemini-3.8-flash-medium → 200
+//   gemini-4-argon-{low,medium,high}, bare `gemini-4-argon` → 404
+//   "Requested entity was not found"
+// under every fingerprint tried (ide/2.22.0, ide/2.24.0, hub/2.24.0, hub/2.25.0).
+// So the argon 404 is the ACCOUNT lacking the model entitlement, not the client
+// version — upgrading this constant does not grant argon access. The registry
+// still lists the argon tiers for accounts that do have it.
+export const ANTIGRAVITY_IDE_VERSION = "2.24.0";
 export const ANTIGRAVITY_IDE_BASE_URL = "https://daily-cloudcode-pa.googleapis.com";
-export const ANTIGRAVITY_IDE_USER_AGENT = `antigravity/ide/${ANTIGRAVITY_IDE_VERSION} darwin/arm64`;
+export const ANTIGRAVITY_IDE_USER_AGENT = `antigravity/hub/${ANTIGRAVITY_IDE_VERSION} darwin/arm64`;
 
 // Antigravity OAuth client credentials (public CLI client — duplicated in usage.js + src/lib/oauth)
 export const ANTIGRAVITY_OAUTH_CLIENT = {

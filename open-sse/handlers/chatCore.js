@@ -35,6 +35,7 @@ import { prefetchRemoteImages } from "../translator/concerns/prefetch.js";
 import { defaultClaudeToolType, shouldDefaultClaudeToolType, sanitizeToolSchemas, shouldSanitizeToolSchemas } from "../translator/concerns/toolCall.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 import { isFreeModel, formatFreeRateLimitMessage } from "../utils/freeModel.js";
+import { mountPrivacyRedaction } from "../privacy/index.js";
 
 /**
  * Core chat handler - shared between SSE and Worker
@@ -180,6 +181,18 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   const clientTool = detectClientTool(clientRawRequest?.headers || {}, body);
   const passthrough = isNativePassthrough(clientTool, provider);
 
+  // ── Privacy redaction: per-connection opt-in, off by default ──
+  // Mounted BEFORE translation (passthrough included) so placeholders ride
+  // through every translator unchanged. mountPrivacyRedaction works on a DEEP
+  // COPY so the caller's body stays pristine: chat.js retries the same body on
+  // the next account attempt, and a trusted channel must never receive
+  // placeholders minted for a failed untrusted one. Fail-open: any error skips
+  // redaction and returns the original body untouched.
+  let privacyCtx = null;
+  ({ body, privacyCtx } = await mountPrivacyRedaction(body, credentials, (e) =>
+    log?.debug?.("PRIVACY", `redaction skipped: ${e?.message || e}`),
+  ));
+
   // Expose raw client headers to translators/executors for session-id resolution
   if (credentials) credentials.rawHeaders = clientRawRequest?.headers || {};
 
@@ -262,6 +275,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     if (toolN) parts.push(`${toolN} TOOL`);
     if (think) parts.push(`THINK:${think}`);
     parts.push(`ACC:${acc}`);
+    if (privacyCtx?.stats?.redacted) parts.push(`PRIV:${privacyCtx.stats.redacted}`);
     log.line(reqTag, "▶", parts.join(" · "));
   }
 
@@ -606,7 +620,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
       ? translateNonStreamingResponse(rawBody, providerResponseFormat, sourceFormat, customToolNames, toolNameMap)
       : rawBody;
 
-  const sharedCtx = { provider, model, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess, pxpipe: pxpipeSummary, reqTag, log };
+  const sharedCtx = { provider, model, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess, pxpipe: pxpipeSummary, reqTag, log, privacyCtx };
   const appendLog = (extra) => appendRequestLog({ model, provider, connectionId, ...extra }).catch(() => { });
   const trackDone = () => trackPendingRequest(model, provider, connectionId, false);
 

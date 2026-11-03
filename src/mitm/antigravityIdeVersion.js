@@ -3,8 +3,14 @@
 // Rewrite Antigravity IDE markers so upstream AG 2.x backend accepts the request.
 // User-Agent header (antigravity/<old>) and body.metadata.ideVersion are forced
 // to a known-good IDE version. Hardcoded MVP — toggle/version configurable later.
+//
+// Generation endpoints only: the model catalog and other passthrough calls keep
+// the client's real identity. Rewriting those too means the MITM tells upstream
+// a different client version than the one actually running, which is extra
+// fingerprinting surface for zero benefit — the backend gates the rewrite-worthy
+// checks on :generateContent / :streamGenerateContent alone.
 
-const ANTIGRAVITY_IDE_VERSION = "2.22.0";
+const ANTIGRAVITY_IDE_VERSION = "2.24.0";
 const ANTIGRAVITY_IDE_VERSION_OVERRIDE_ENABLED = true;
 
 function shouldRewriteMetadata(metadata) {
@@ -19,8 +25,17 @@ function rewriteAntigravityUserAgent(userAgent, version) {
   return userAgent.replace(/antigravity\/[^\s]+/, `antigravity/${version}`);
 }
 
-function applyAntigravityIdeVersionOverride(bodyBuffer, headers) {
+function applyAntigravityIdeVersionOverride(bodyBuffer, headers, requestUrl) {
   if (!ANTIGRAVITY_IDE_VERSION_OVERRIDE_ENABLED) {
+    return { bodyBuffer, headers, applied: false, version: ANTIGRAVITY_IDE_VERSION };
+  }
+
+  // Catalog / auth / anything that is not a generation call keeps the client's
+  // own identity.
+  const isGenerationEndpoint =
+    typeof requestUrl === "string" &&
+    (requestUrl.includes(":generateContent") || requestUrl.includes(":streamGenerateContent"));
+  if (requestUrl !== undefined && !isGenerationEndpoint) {
     return { bodyBuffer, headers, applied: false, version: ANTIGRAVITY_IDE_VERSION };
   }
 

@@ -1,6 +1,7 @@
 import { register } from "../index.js";
 import { FORMATS } from "../formats.js";
 import { GEMINI_ROLE, OPENAI_FINISH, GEMINI_FINISH } from "../schema/index.js";
+import { extractReasoningText } from "../concerns/reasoning.js";
 
 // Convert OpenAI SSE chunk to Antigravity SSE format
 // Real Antigravity format:
@@ -27,9 +28,14 @@ export function openaiToAntigravityResponse(chunk, state) {
 
   const parts = [];
 
-  // Thinking/reasoning → thought part
-  if (delta.reasoning_content) {
-    parts.push({ thought: true, text: delta.reasoning_content });
+  // Thinking/reasoning → thought part.
+  // `reasoning_content` is the canonical field, but some lanes (notably
+  // OpenCode Free's MiMo route) stream the same content as `reasoning` or
+  // `reasoning_details[]`. Reuse the shared extractor the Claude/Responses
+  // translators already use so an alias-only chunk isn't dropped as empty.
+  const reasoningText = extractReasoningText(delta);
+  if (reasoningText) {
+    parts.push({ thought: true, text: reasoningText });
   }
 
   // Text content
