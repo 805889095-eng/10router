@@ -1,6 +1,6 @@
 # 更新日志
 
-这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)。
+这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md)。
 
 ## v1.8.7 (2026-11-03)
 

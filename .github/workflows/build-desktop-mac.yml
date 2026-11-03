@@ -90,10 +90,19 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
-              --title "10Router ${{ github.ref_name }}" \
-              --notes "Release notes pending — see [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)."
+          set -euo pipefail
+          if gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # 多个发布工作流并行，谁先创建谁定正文；其余只补资产，不覆盖。
+            echo "release ${{ github.ref_name }} 已存在，保留现有正文"
+            exit 0
+          fi
+          # 正文从用户版更新日志实时抽取。找不到对应版本会直接失败，
+          # 不再往下写 "notes pending" 占位文案（历史上四个工作流都硬编码了
+          # 上游 techysy 的 CHANGELOG 链接，Release 页面一直是错的）。
+          node scripts/release-notes.mjs --version "${GITHUB_REF_NAME#v}" --out "$RUNNER_TEMP/release-notes.md"
+          gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
+            --title "10Router ${{ github.ref_name }}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
         env:
           GH_TOKEN: ${{ github.token }}
 

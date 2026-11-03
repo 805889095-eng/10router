@@ -1,6 +1,6 @@
 # Changelog
 
-User-facing highlights per release. See [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md) for the full developer log.
+User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
 ## v1.8.7 (2026-11-03)
 

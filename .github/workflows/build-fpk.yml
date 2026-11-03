@@ -144,6 +144,15 @@ jobs:
 
       # 发布产物不再依赖 artifact 存储中转：每个架构 job 生成 fpk 后，在 tag 发布时
       # 直接挂到 Release 上。配额见底也不会阻断发布（失败仅跳过，release job 会补传）。
+      #
+      # ⚠ body_path 不能省：本步骤跑在 release job 之前，release 若尚不存在就由
+      # softprops 创建 —— 不传正文会建出一个 0 字节空 release，之后 release job 的
+      # `gh release view` 判定"已存在"直接跳过，页面就永远空白（v1.6.2/1.6.3/1.6.4
+      # 正是这样留下的空正文）。这里显式喂同一份正文，谁先到都一致。
+      - name: Generate release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: node scripts/release-notes.mjs --version "${GITHUB_REF_NAME#v}" --out "$RUNNER_TEMP/release-notes.md"
+
       - name: Publish fpk to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -151,6 +160,7 @@ jobs:
         with:
           files: fnos-packaging/10Router-*.fpk
           fail_on_unmatched_files: false
+          body_path: ${{ runner.temp }}/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -163,12 +173,26 @@ jobs:
       # 这里不再 download-artifact：GitHub 免费版 artifact 配额 500MB，
       # 全平台发布一次就爆，且按 6-12h 重新计算，配额见底时连 27MB 都传不上去，
       # 会让「打包全部成功」被判红（2026-10-26 实测）。
+      # 但 checkout 仍需要：release 正文由 scripts/release-notes.mjs 从仓库里的
+      # 用户版更新日志抽取，没有工作树就跑不了脚本。
+      - uses: actions/checkout@v4
+
       - name: Ensure release exists with title
+        shell: bash
         run: |
-          gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
-              --title "10Router ${{ github.ref_name }}" \
-              --notes "Release notes pending — see [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)."
+          set -euo pipefail
+          if gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # 多个发布工作流并行，谁先创建谁定正文；其余只补资产，不覆盖。
+            echo "release ${{ github.ref_name }} 已存在，保留现有正文"
+            exit 0
+          fi
+          # 正文从用户版更新日志实时抽取。找不到对应版本会直接失败，
+          # 不再往下写 "notes pending" 占位文案（历史上四个工作流都硬编码了
+          # 上游 techysy 的 CHANGELOG 链接，Release 页面一直是错的）。
+          node scripts/release-notes.mjs --version "${GITHUB_REF_NAME#v}" --out "$RUNNER_TEMP/release-notes.md"
+          gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
+            --title "10Router ${{ github.ref_name }}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
         env:
           GH_TOKEN: ${{ github.token }}
 

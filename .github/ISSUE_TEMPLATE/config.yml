@@ -7,15 +7,15 @@ blank_issues_enabled: false
 
 contact_links:
   - name: 📖 先读文档导航（架构 / 工程专题 / 构建与验证）
-    url: https://github.com/techysy/10router/blob/main/docs/README.md
+    url: https://github.com/805889095-eng/10router/blob/main/docs/README.md
     about: 中英双语专题文档。SQLite 驱动链、翻译器、供应商注册表、fnOS 热替换部署、下载校验等都有专门篇章。
 
   - name: 📦 下载与安装说明（五种安装方式）
-    url: https://github.com/techysy/10router/blob/main/README.md#下载
+    url: https://github.com/805889095-eng/10router/blob/main/README.md#下载
     about: Windows / macOS / fnOS fpk / Docker / npm / Standalone server 的产物清单与安装步骤，含 macOS 未签名应用的打开方式与 fnOS 忘记密码的重置入口。
 
   - name: 🧩 用量同步插件（10router-sync）
-    url: https://github.com/techysy/10router/blob/main/zcode-plugin/README.md
+    url: https://github.com/805889095-eng/10router/blob/main/zcode-plugin/README.md
     about: 跨宿主用量同步插件的配置、离线导出与灌回流程。
 
   - name: 🐣 上游 9Router（本仓库功能自行重写落地，不跟随上游 issue）

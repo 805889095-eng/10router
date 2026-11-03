@@ -99,15 +99,24 @@ jobs:
           ls -la release-files/
 
       # 确保 release 存在且带标题——否则第一个 attach 文件的 step 会用空 body/裸 tag 名创建它。
-      # 已存在时不动（notes 手工维护，绝不能覆盖）。
+      # 已存在时不动：四个发布工作流并行，先到者用真实更新日志建好正文，后来者只补资产。
       - name: Ensure release exists with title
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
-              --title "10Router ${{ github.ref_name }}" \
-              --notes "Release notes pending — see [CHANGELOG.md](https://github.com/techysy/10router/blob/main/CHANGELOG.md)."
+          set -euo pipefail
+          if gh release view "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # 多个发布工作流并行，谁先创建谁定正文；其余只补资产，不覆盖。
+            echo "release ${{ github.ref_name }} 已存在，保留现有正文"
+            exit 0
+          fi
+          # 正文从用户版更新日志实时抽取。找不到对应版本会直接失败，
+          # 不再往下写 "notes pending" 占位文案（历史上四个工作流都硬编码了
+          # 上游 techysy 的 CHANGELOG 链接，Release 页面一直是错的）。
+          node scripts/release-notes.mjs --version "${GITHUB_REF_NAME#v}" --out "$RUNNER_TEMP/release-notes.md"
+          gh release create "${{ github.ref_name }}" --repo "$GITHUB_REPOSITORY" \
+            --title "10Router ${{ github.ref_name }}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Upload desktop artifacts to Release
