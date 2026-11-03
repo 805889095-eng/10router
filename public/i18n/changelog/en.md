@@ -2,6 +2,16 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.8.9 (2026-11-04)
+
+### 🐛 Fixed
+
+- **Antigravity no longer mis-classifies accounts registered with third-party email providers**
+  (QQ, 163, etc.). Those accounts were treated as enterprise accounts, which made requests
+  intermittently fail with `400 User location is not supported for the API use.`. All accounts
+  now use the personal identity tag.
+- The tool-call signature improvements from the previous release are kept in full.
+
 ## v1.8.8 (2026-11-03)
 
 ### 🔧 Improved

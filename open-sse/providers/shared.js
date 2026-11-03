@@ -115,17 +115,21 @@ export const ANTIGRAVITY_IDE_USER_AGENT = `antigravity/hub/${ANTIGRAVITY_IDE_VER
 
 /**
  * Antigravity envelope `userAgent` tag.
- * Official IDE behavior (spec §3.3):
- * - Personal accounts (@gmail.com, @googlemail.com, or empty): "antigravity"
- * - Enterprise / Workspace accounts (non-gmail domains): "jetski"
+ *
+ * 固定发 "antigravity"。**不要**按邮箱域名推断企业身份。
+ *
+ * 踩过的坑（v1.8.8 回滚原因，2026-11-04）：曾照抄 Agent2API 的
+ * 「非 gmail/googlemail → jetski」规则，结果 NAS 上 `805889095@qq.com`
+ * 这类**第三方邮箱注册的个人 Google 账号**被误判成企业号，外壳带上
+ * `"userAgent": "jetski"` 后大量请求返回
+ * `400 User location is not supported for the API use.`（FAILED_PRECONDITION）——
+ * jetski 走企业后端，企业后端的地区策略更严，同一账号时好时坏。
+ * 回滚到固定 "antigravity" 后报错消失。
+ *
+ * 真要识别 Workspace 只能靠 id_token 的 `hd` claim（OAuth 登录时才有），
+ * 不能用邮箱域名猜；当前没有可靠来源，故此处不实现。
  */
-export function resolveAntigravityUserAgent(email) {
-  const norm = typeof email === "string" ? email.trim().toLowerCase() : "";
-  if (norm && !norm.endsWith("@gmail.com") && !norm.endsWith("@googlemail.com")) {
-    return "jetski";
-  }
-  return "antigravity";
-}
+export const ANTIGRAVITY_USER_AGENT_TAG = "antigravity";
 
 // Antigravity OAuth client credentials (public CLI client — duplicated in usage.js + src/lib/oauth)
 export const ANTIGRAVITY_OAUTH_CLIENT = {

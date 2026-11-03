@@ -2,6 +2,27 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.8.9 (2026-11-04)
+
+### 🐛 修复
+
+- **回滚 Antigravity 的 `jetski` 企业标识推断（重要）**。v1.8.8 按「非 gmail/googlemail 域名即企业账号」
+  推断外壳 `userAgent`，导致 `805889095@qq.com` 这类**用第三方邮箱注册的个人 Google 账号**被误判
+  成企业号，请求带上 `"userAgent": "jetski"` 后返回
+  `400 User location is not supported for the API use.`（`FAILED_PRECONDITION`）。
+  企业后端的地区策略比个人后端严格，表现为同一账号「时好时坏」：成功几次后突然 2 秒内 400。
+  - 现在固定发 `"antigravity"`，不再按邮箱域名推断任何身份。
+  - 真要识别 Workspace 企业号只能靠 `id_token` 的 `hd` claim，不能用邮箱域名猜；当前没有可靠
+    来源，故不实现。
+  - 新增回归守护测试：覆盖 QQ / 163 类第三方邮箱、 gmail、企业域、空值共 7 种账号，
+    断言外壳 `userAgent` 一律为 `antigravity`。
+
+### 🔧 保留（v1.8.8 另一项，与此故障无关）
+
+- **Antigravity 思考签名（`thought_signature`）双向闭环**：响应下发
+  `extra_content.google.thought_signature`，请求侧优先采用客户端回传的真签名，其次本地
+  SQLite 缓存，最后兜底签名；并行工具调用仅首个带签名，兄弟调用去签。
+
 ## v1.8.8 (2026-11-03)
 
 ### ✨ 新增与优化

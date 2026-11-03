@@ -1,59 +1,53 @@
 /**
  * Antigravity 针对 Agent2API 调研的优化项专项测试：
- * 1. 企业账号（非 gmail/googlemail）外壳 userAgent 转为 "jetski"；
- * 2. 多轮对话中，客户端回传的 thought_signature（包括 extra_content.google.thought_signature）优先回填。
+ * 1. thought_signature 双向闭环（保留）；
+ * 2. userAgent 回归守护：外壳必须固定发 "antigravity"，
+ *    第三方邮箱（qq/163 等）注册的个人 Google 账号**不得**被判成企业号 jetski。
  */
 import { describe, expect, it } from "vitest";
-import { resolveAntigravityUserAgent } from "../../open-sse/providers/shared.js";
+import { ANTIGRAVITY_USER_AGENT_TAG } from "../../open-sse/providers/shared.js";
 import { translateRequest } from "../../open-sse/translator/index.js";
 import { geminiToOpenAIResponse } from "../../open-sse/translator/response/gemini-to-openai.js";
 import { AntigravityExecutor } from "../../open-sse/executors/antigravity.js";
 
-describe("resolveAntigravityUserAgent", () => {
-  it("个人账号 (@gmail.com / @googlemail.com) 以及无邮箱返回 antigravity", () => {
-    expect(resolveAntigravityUserAgent("alice@gmail.com")).toBe("antigravity");
-    expect(resolveAntigravityUserAgent("bob@googlemail.com")).toBe("antigravity");
-    expect(resolveAntigravityUserAgent("ALICE@GMAIL.COM")).toBe("antigravity");
-    expect(resolveAntigravityUserAgent("")).toBe("antigravity");
-    expect(resolveAntigravityUserAgent(null)).toBe("antigravity");
-    expect(resolveAntigravityUserAgent(undefined)).toBe("antigravity");
-  });
-
-  it("企业 / Workspace 账号（自定义域名）返回 jetski", () => {
-    expect(resolveAntigravityUserAgent("engineer@deepmind.com")).toBe("jetski");
-    expect(resolveAntigravityUserAgent("team@company.org")).toBe("jetski");
-    expect(resolveAntigravityUserAgent("user@mycorp.cn")).toBe("jetski");
-  });
-});
-
-describe("Antigravity 外壳 userAgent 动态自适应", () => {
+describe("Antigravity 外壳 userAgent 回归守护", () => {
   const executor = new AntigravityExecutor();
 
-  it("企业邮箱在 executor.transformRequest 中外壳 userAgent 设置为 jetski", () => {
-    const transformed = executor.transformRequest(
-      "gemini-3-flash",
-      {
-        model: "gemini-3-flash",
-        messages: [{ role: "user", content: "hello" }],
-      },
-      false,
-      { email: "dev@mycompany.ai", projectId: "test-proj-123" }
-    );
-    expect(transformed.userAgent).toBe("jetski");
-    expect(transformed.project).toBe("test-proj-123");
+  it("常量固定为 antigravity", () => {
+    expect(ANTIGRAVITY_USER_AGENT_TAG).toBe("antigravity");
   });
 
-  it("个人 gmail 邮箱在 executor.transformRequest 中外壳 userAgent 保持 antigravity", () => {
+  // v1.8.8 事故：QQ 邮箱被误判 jetski → 400 User location is not supported。
+  // 任何第三方邮箱 / 企业域邮箱都不得改变这个值。
+  it.each([
+    ["805889095@qq.com"],
+    ["someone@gmail.com"],
+    ["bob@googlemail.com"],
+    ["engineer@deepmind.com"],
+    ["team@company.org"],
+    ["user@mycorp.cn"],
+    [""],
+  ])("账号 %s 的外壳 userAgent 一律为 antigravity", (email) => {
     const transformed = executor.transformRequest(
       "gemini-3-flash",
-      {
-        model: "gemini-3-flash",
-        messages: [{ role: "user", content: "hello" }],
-      },
+      { model: "gemini-3-flash", messages: [{ role: "user", content: "hello" }] },
       false,
-      { email: "user@gmail.com", projectId: "test-proj-123" }
+      { email, projectId: "test-proj-123" },
     );
     expect(transformed.userAgent).toBe("antigravity");
+  });
+
+  it("QQ 邮箱账号在信封组装路径上同样不发 jetski", () => {
+    const request = {
+      model: "gemini-3-flash",
+      messages: [{ role: "user", content: "hello" }],
+    };
+    const translated = translateRequest(
+      "openai", "antigravity", "gemini-3-flash", request, false,
+      { email: "805889095@qq.com", projectId: "p1" },
+    );
+    const envelope = translated.request ? translated : translated;
+    expect(JSON.stringify(envelope)).not.toContain("jetski");
   });
 });
 

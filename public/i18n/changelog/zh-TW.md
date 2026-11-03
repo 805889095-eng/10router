@@ -2,6 +2,16 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md)。
 
+## v1.8.9 (2026-11-04)
+
+### 🐛 修復
+
+- **修正 Antigravity 使用第三方信箱帳號時反覆出錯**：部分用 QQ / 163 等信箱註冊的 Google 帳號
+  會被誤判成企業帳號，導致請求間歇性失敗並回傳
+  `400 User location is not supported for the API use.`。現已改回統一使用個人帳號標識，
+  這類帳號不再被誤判。
+- 上一版新增的工具呼叫簽章改進完整保留。
+
 ## v1.8.8 (2026-11-03)
 
 ### 🔧 改進
