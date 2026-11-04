@@ -31,6 +31,7 @@ import BulkImportCodexModal from "./BulkImportCodexModal";
 import CodeBuddyImportModal from "./CodeBuddyImportModal";
 import OAuthTransferModal from "./OAuthTransferModal";
 import AutoPingScheduleModal from "./AutoPingScheduleModal";
+import LoomySmsModal from "../components/LoomySmsModal";
 import { getScheduleSlotLabels } from "@/shared/services/quotaPingSchedule";
 
 const ONE_BY_ONE_DELAY_MS = 1000;
@@ -80,6 +81,7 @@ export default function ProviderDetailPage() {
   const [addConnectionError, setAddConnectionError] = useState("");
   const [showBulkImportCodex, setShowBulkImportCodex] = useState(false);
   const [showCodeBuddyImport, setShowCodeBuddyImport] = useState(false);
+  const [showLoomySmsModal, setShowLoomySmsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditNodeModal, setShowEditNodeModal] = useState(false);
   const [showBulkProxyModal, setShowBulkProxyModal] = useState(false);
@@ -2232,6 +2234,11 @@ export default function ProviderDetailPage() {
                   </>
                 ) : (
                   <>
+                    {providerId === "loomy" && (
+                      <Button size="sm" icon="sms" variant="secondary" onClick={() => setShowLoomySmsModal(true)}>
+                        {translate("SMS Login")}
+                      </Button>
+                    )}
                     {!isCompatible && providerId === "iflow" && (
                       <Button size="sm" icon="cookie" variant="secondary" onClick={() => setShowIFlowCookieModal(true)}>
                         Cookie
@@ -2353,6 +2360,17 @@ export default function ProviderDetailPage() {
                       >
                         Add
                       </Button>
+                      {providerId === "loomy" && (
+                        <Button
+                          size="sm"
+                          icon="sms"
+                          variant="secondary"
+                          onClick={() => setShowLoomySmsModal(true)}
+                          className="w-full sm:w-auto"
+                        >
+                          {translate("SMS Login")}
+                        </Button>
+                      )}
                       {renderOAuthTransferButtons("w-full sm:w-auto")}
                       {hasClaimCheckin && renderQoderCheckinBlock()}
                     </>
@@ -2653,6 +2671,14 @@ export default function ProviderDetailPage() {
         message={confirmState?.message}
         variant="danger"
       />
+
+      {providerId === "loomy" && showLoomySmsModal && (
+        <LoomySmsModal
+          isOpen
+          onClose={() => setShowLoomySmsModal(false)}
+          onAdded={() => refreshAfterConnectionChange()}
+        />
+      )}
 
       {scheduleConnection && (
         <AutoPingScheduleModal

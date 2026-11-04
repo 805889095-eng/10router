@@ -2,6 +2,39 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.0 (2026-11-04)
+
+### ✨ 新增
+
+- **Loomy 手机验证码直登入口补齐**。后端（`src/lib/oauth/providers/loomy.js` 的 HMAC 签名、
+  `/api/oauth/loomy/sms-send`、`/api/oauth/loomy/sms-login`）一直存在且与上游 `techysy/10router`
+  字节级等价，但前端入口在移植时漏了三处，导致「新建环境根本点不到 SMS Login」：
+  - `components/ConnectionsCard.js` 的空状态分支只有 `Add Connection`，没有 SMS 按钮
+    ——必须手动造一条假连接，按钮才会冒出来。
+  - `providers/[id]/page.js`（服务商详情页）**完全没有**入口：既没 import 组件、没 state、
+    没按钮、没挂载，`grep LoomySmsModal` 命中 0。
+  - 现按上游的结构补齐：详情页空状态 + 有连接两个分支各一个按钮、卡片空状态 + 有连接两个
+    分支各一个按钮，成功回调分别接 `refreshAfterConnectionChange()` 与 `fetch_()`。
+
+### 🔧 改进
+
+- 把内联在 `ConnectionsCard.js` 里的 `LoomySmsModal` 抽成独立文件
+  `components/LoomySmsModal.js`（3642 B，与上游 `techysy/10router` 的同名文件**逐字节相同**），
+  供详情页复用，避免两处 UI 走样。`ConnectionsCard.js` 相应删掉 90 行内联代码改 import。
+
+### 🧪 测试
+
+- 新增 `tests/unit/sms-rate-limiter.test.js`（来自上游，4 例）：滑动窗口配额、
+  命中老化后恢复、phone/IP/不同手机号分桶独立、`retryAfterSeconds` 精确指向最老命中。
+  该测试 4/4 通过，同时反证本地 `src/lib/auth/smsRateLimiter.js` 与上游完全一致。
+
+### ✅ 验证
+
+- 入口计数：详情页 2 按钮 + 1 挂载，连接卡 2 按钮 + 1 挂载。
+- `npx next build` 通过，产物 2 个 chunk（详情页 / 仪表盘）均含 `Loomy SMS Login`。
+- `unit/loomy*` + `unit/sms-rate-limiter` 共 3 文件 19 测试全过。
+- 基线：117 providers / 284 alias tokens 字节一致。
+
 ## v1.8.9 (2026-11-04)
 
 ### 🐛 修复

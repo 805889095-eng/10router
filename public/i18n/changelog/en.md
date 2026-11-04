@@ -2,6 +2,26 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.0 (2026-11-04)
+
+### ✨ Added
+
+- **Log in to Loomy with a phone number and SMS code — no iFlytek client required.** Open
+  **Providers → Loomy** and click **SMS Login**, enter your phone number and the verification
+  code, and a connection is created automatically. The session lasts about 14 days.
+  - Fixes the case where the entry point could not be found at all in a fresh setup: the previous
+    build only showed the button when Loomy already had a connection.
+  - Both the provider detail page and the connections card now expose the entry point, with and
+    without existing connections.
+
+### 🔧 Improved
+
+- The SMS login dialog is now a standalone component shared by the detail page and the
+  connections card: 60-second resend countdown, inline errors, and an automatic connection list
+  refresh after a successful login.
+- Added unit tests for the SMS endpoint rate limiter (sliding window, independent phone/IP
+  buckets, retry-after calculation).
+
 ## v1.8.9 (2026-11-04)
 
 ### 🐛 Fixed
