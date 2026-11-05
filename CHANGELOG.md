@@ -2,6 +2,28 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.1 (2026-11-04)
+
+### 🔧 改进
+
+- **CodeBuddy 身份版本 2.179.3 → 2.180.0**（`@tencent-ai/codebuddy-code` 2.180.0，
+  2026-11-04 16:55 发布）。单点改动 `open-sse/shared/codebuddyIdentity.js` 的
+  `CODEBUDDY_CLI_VERSION`，UA 与 `X-IDE-Version` 均由该常量派生，两渠道自动同步。
+
+  上游 2.180.0 的更新日志集中在 PTC 工具模式下发、记忆摘要注入、REPL 能力边界与报错、
+  `permissions.deny` 覆盖范围、auto 模式审批重试、macOS 沙箱放行规则、Web UI 细节，
+  **无 auth / header / identity / device 相关条目**，因此本次仅追版本号，头集合不变。
+
+  同步更新了两处 executor 的上游版本注释、`tests/__baseline__/providers-baseline.json`
+  （官方快照脚本重生成）与 `tests/translator/__snapshots__/golden-url-header.test.js.snap`
+  （`vitest -u` 重录）。**快照 diff 逐行核对，只有版本号变化，头结构未动。**
+
+### 🧪 测试
+
+- `unit/codebuddy-*` + `translator/golden-url-header` 共 15 个文件 321 例全过。
+- 基线三连全绿：`PROVIDERS byte-for-byte equal (117 providers)`、
+  `Alias resolution byte-for-byte equal (284 tokens)`、`OAuth URLs byte-for-byte equal`。
+
 ## v1.9.0 (2026-11-04)
 
 ### ✨ 新增

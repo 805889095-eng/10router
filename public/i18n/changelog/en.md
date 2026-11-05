@@ -2,6 +2,14 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.1 (2026-11-04)
+
+### 🔧 Improvements
+
+- **CodeBuddy identity bumped to 2.180.0**, staying level with the official client.
+  Upstream's release covers tool modes, memory summaries, REPL and sandbox permissions —
+  **nothing touching auth or request headers** — so only the version number changed.
+
 ## v1.9.0 (2026-11-04)
 
 ### ✨ Added
