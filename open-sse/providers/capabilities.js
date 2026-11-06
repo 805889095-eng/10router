@@ -262,6 +262,14 @@ export const MODEL_CAPABILITIES = {
   // vision:false）——两者都会把图片在 modality 层静默剥掉。
   "deepseek-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
   "deepseek-v4.1-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
+  // V4.1-Flash 的省钱档（OpenDesign AMR 网关 2026-11-06 在售，cost=low）。
+  // 两点与上面那条不同，必须单独写行而不是蹭通配：
+  //   · vision=false —— 官方 /v1/models 的 input_modalities 只有 ["text"]，
+  //     该变体不带视觉；蹭 `*deepseek-v4*` 通配虽然也恰好是 false，但那是巧合。
+  //   · output_budget=128000 —— 通配会给 384000，等于放行一个上游必然拒绝的
+  //     max_tokens（同族 canonical 行是 384000，这里是它的 1/3）。
+  // contextWindow 取 1000000（与同族一致，比官方的 1048000 保守）。
+  "deepseek-v4.1-flash-eco": { vision: false, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 128000 },
   // 横杠形态别名：部分转售商以 `deepseek-v4-1-flash`（点号换成横杠）暴露同一模型；
   // 裸配会落 `*deepseek-v4*` 通配（vision:false），图片在 modality 层被静默剥掉。
   "deepseek-v4-1-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },

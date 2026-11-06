@@ -2,6 +2,31 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.4 (2026-11-06)
+
+### 🐛 修复
+
+- **v1.9.3 引入的回归：`deepseek-v4.1-flash-eco` 被当成多模态**。v1.9.3 把 eco 加进
+  opendesign-amr 的兜底列表后，`deepseek-v4-capabilities.test.js` 的 fixture 用
+  `/v4\.1-flash/` 匹配同族模型并统一要求 `vision: true` —— eco 撞上该正则即失败
+  （官方对其标注 `input_modalities: ["text"]`，是纯文本变体）。已把 eco 从多模态集合
+  拆出，并为它加专门断言。
+
+- **顺带修掉一个更严重的隐患：eco 的输出上限被放行到 384000**。eco 此前没有 canonical
+  能力行，落到 `*deepseek-v4*` 通配，该通配给的是 `maxOutput: 384000`；而官方
+  `output_budget` 只有 **128000**（同族的三分之一）。也就是说客户端设一个上游必然拒绝的
+  `max_tokens` 时，10Router 会照单放行。现已补 canonical 行：`vision: false`、
+  `maxOutput: 128000`、`contextWindow: 1000000`。
+
+  > v1.9.3 的六条构建流水线全部成功，但 `Tests` 流水线的回归门禁拦下了上述第一项，
+  > 故该版本的制品不含本修复 —— 请使用 v1.9.4。
+
+### 🧪 测试
+
+- `unit/deepseek-v4-capabilities` 由 1 例失败转为 10 例全过，并新增 eco 专门断言。
+- 全量回归：失败文件集合由 **20 → 19**，差集恰好只有 `deepseek-v4-capabilities`
+  —— 即本次改动只减少失败、未引入任何新失败（余下 19 个为仓库既有失败）。
+
 ## v1.9.3 (2026-11-06)
 
 ### ✨ 新增

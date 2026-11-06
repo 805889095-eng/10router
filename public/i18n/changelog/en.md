@@ -2,6 +2,19 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.4 (2026-11-06)
+
+### 🐛 Fixed
+
+- **Fixes a problem introduced in v1.9.3**: the budget variant of DeepSeek V4.1 Flash
+  (`deepseek-v4.1-flash-eco`) was wrongly treated as accepting image input. It is a
+  text-only model.
+- **Also tightens a more practical issue**: that variant's maximum output length was being
+  allowed up to 384,000 when the vendor grants only 128,000 — a client asking for more would
+  have been rejected upstream. Now clamped to the official value.
+
+> The v1.9.3 build does not include these fixes; please use v1.9.4.
+
 ## v1.9.3 (2026-11-06)
 
 ### ✨ Added

@@ -12,10 +12,11 @@ const OFFERED = REGISTRY.flatMap((entry) =>
 );
 
 const VISION_EXP = OFFERED.filter((m) => /vision/i.test(m.id));
-// V4.1-Flash (and its thinker variants) is multimodal per its model card and
-// models.dev; everything else in the family is text→text.
-const MULTIMODAL = OFFERED.filter((m) => /v4\.1-flash/i.test(m.id));
-const TEXT_ONLY = OFFERED.filter((m) => !/vision|v4\.1-flash/i.test(m.id));
+// V4.1-Flash is multimodal per its model card and models.dev — but NOT its
+// `-eco` sibling: OpenDesign AMR publishes input_modalities ["text"] for it, so a
+// bare /v4\.1-flash/ filter would wrongly demand vision on a text-only model.
+const MULTIMODAL = OFFERED.filter((m) => /v4\.1-flash/i.test(m.id) && !/-eco$/i.test(m.id));
+const TEXT_ONLY = OFFERED.filter((m) => !/vision|v4\.1-flash/i.test(m.id) || /-eco$/i.test(m.id));
 
 describe("DeepSeek V4 capability resolution", () => {
   it("offers both a vision and a text variant (sanity check on the fixture)", () => {
@@ -63,6 +64,23 @@ describe("DeepSeek V4 capability resolution", () => {
     expect(MULTIMODAL.length).toBeGreaterThan(0);
     for (const { provider, id } of MULTIMODAL) {
       expect(getCapabilitiesForModel(provider, id).vision).toBe(true);
+    }
+  });
+
+  it("keeps the V4.1-Flash -eco variant text-only with its 128K output ceiling", () => {
+    // OpenDesign AMR serves deepseek-v4.1-flash-eco: input_modalities ["text"] and
+    // output_budget 128000 — one third of the multimodal sibling's 384000. Without
+    // a canonical row it fell through to `*deepseek-v4*`, which greens-lights a
+    // max_tokens the upstream would reject.
+    const eco = OFFERED.filter((m) => /-eco$/i.test(m.id));
+    expect(eco.length).toBeGreaterThan(0);
+    for (const { provider, id } of eco) {
+      expect(`${provider}/${id}`).toBeTruthy();
+      expect(getCapabilitiesForModel(provider, id)).toMatchObject({
+        vision: false,
+        contextWindow: 1000000,
+        maxOutput: 128000,
+      });
     }
   });
 });
