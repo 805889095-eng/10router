@@ -258,6 +258,19 @@ export async function computeConnectionUsage(connection, { force = false } = {})
         } else {
           usage = { quotas: extQuotas, plan: claimed.quota.plan ?? usage?.plan ?? null };
         }
+        // #Loomy-daily-first: persist the daily/permanent split for the
+        // scheduler (upstream 同源，本地不带 quotaBalance 提取批次)。
+        try {
+          const { extractDailyGrantAndPermanent } = await import("open-sse/services/usage/balanceExtractor.js");
+          const grantPair = extractDailyGrantAndPermanent(usage);
+          if (grantPair) {
+            await updateProviderConnection(connection.id, {
+              dailyGrantRemaining: grantPair.dailyRemaining,
+              dailyGrantTotal: grantPair.dailyTotal,
+              permanentBalance: grantPair.permanent,
+            });
+          }
+        } catch { /* ignore */ }
       } else if (PUSH_ONLY_USAGE_PROVIDERS.has(connection.provider) && usage && usage.message) {
         usage = { message: "No pushed balance matched this connection — set the CreditDaddy account alias to this connection's name (same name claims the card)" };
       }

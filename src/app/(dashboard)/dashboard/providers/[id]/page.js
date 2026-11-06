@@ -42,6 +42,11 @@ const AUTO_PING_SETTINGS_KEYS = {
   codex: "codexAutoPing",
 };
 
+// #Loomy-daily-first: providers whose usage exposes the daily-grant/permanent
+// pair — the only ones allowed to show the Daily Grant First toggle (upstream
+// DAILY_GRANT_PROVIDERS，防历史误存 qoder-cn 之类复活).
+const DAILY_GRANT_PROVIDERS = new Set(["loomy"]);
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -114,6 +119,7 @@ export default function ProviderDetailPage() {
   const [providerStrategy, setProviderStrategy] = useState(null);
   const [providerStickyLimit, setProviderStickyLimit] = useState("");
   const [earliestExpiryFirst, setEarliestExpiryFirst] = useState(false);
+  const [dailyGrantFirst, setDailyGrantFirst] = useState(false);
   const [thinkingMode, setThinkingMode] = useState("auto");
   const [autoPing, setAutoPing] = useState({ enabled: false, connections: {} });
   const [suggestedModels, setSuggestedModels] = useState([]);
@@ -747,6 +753,7 @@ export default function ProviderDetailPage() {
     strategy,
     stickyLimit,
     earliestExpiry = earliestExpiryFirst,
+    grantFirst = dailyGrantFirst,
   ) => {
     try {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
@@ -768,6 +775,13 @@ export default function ProviderDetailPage() {
         override.earliestExpiryFirst = true;
       } else {
         delete override.earliestExpiryFirst;
+      }
+
+      // #Loomy-daily-first：不带上就会在下一次任何其他偏好保存时被抹掉
+      if (grantFirst) {
+        override.dailyGrantFirst = true;
+      } else {
+        delete override.dailyGrantFirst;
       }
 
       const updated = { ...current };
@@ -803,6 +817,13 @@ export default function ProviderDetailPage() {
   const handleEarliestExpiryToggle = (enabled) => {
     setEarliestExpiryFirst(enabled);
     saveProviderStrategy(providerStrategy, providerStickyLimit, enabled);
+  };
+
+  // #Loomy-daily-first：与 Earliest Expiry 同开时 earliest 分支优先（auth.js
+  // 的分支顺序），Toggle 各自独立保存，不做互斥强制。
+  const handleDailyGrantToggle = (enabled) => {
+    setDailyGrantFirst(enabled);
+    saveProviderStrategy(providerStrategy, providerStickyLimit, earliestExpiryFirst, enabled);
   };
 
   const saveThinkingConfig = async (mode) => {
@@ -877,17 +898,9 @@ export default function ProviderDetailPage() {
         setProviderStrategy(strategyOverride.fallbackStrategy || null);
         setProviderStickyLimit(strategyOverride.stickyRoundRobinLimit != null ? String(strategyOverride.stickyRoundRobinLimit) : "1");
         setEarliestExpiryFirst(strategyOverride.earliestExpiryFirst === true);
-        setBalanceStrategy(strategyOverride.balanceStrategy || "priority");
-        // dailyGrantFirst 的 UI 回显走同一个 Select（balanceStrategy='daily-grant'
-        // 是它的显示形态）：settings-effect 里不恢复它的话，保存后任何一次重进页面
-        // 都会把下拉显示打回「手动优先」，看起来像没保存（实际调度仍生效）。
-        // 与 fetchConnections(692) 的 DAILY_GRANT_PROVIDERS 门保持同一规则。
-        if (DAILY_GRANT_PROVIDERS.has(providerId) && strategyOverride.dailyGrantFirst === true) {
-          setBalanceStrategy("daily-grant");
-          setDailyGrantFirst(true);
-        } else {
-          setDailyGrantFirst(false);
-        }
+        // #Loomy-daily-first 回显：上游用 Select(balanceStrategy='daily-grant') 显示，
+        // 本地调度偏好是 Toggle 形态 —— 按 DAILY_GRANT_PROVIDERS 门直接恢复独立开关。
+        setDailyGrantFirst(DAILY_GRANT_PROVIDERS.has(providerId) && strategyOverride.dailyGrantFirst === true);
       })
       .catch((e) => console.log("Error reading settings:", e));
   }, []);
@@ -2223,6 +2236,23 @@ export default function ProviderDetailPage() {
                   onChange={handleEarliestExpiryToggle}
                 />
               </div>
+
+              {/* #Loomy-daily-first — Daily Grant First toggle (Loomy only) */}
+              {DAILY_GRANT_PROVIDERS.has(providerId) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="text-xs text-text-muted font-medium"
+                    title={translate("Daily Grant First Hint")}
+                  >
+                    {translate("Daily Grant First")}
+                  </span>
+                  <Toggle
+                    checked={dailyGrantFirst}
+                    disabled={earliestExpiryFirst}
+                    onChange={handleDailyGrantToggle}
+                  />
+                </div>
+              )}
 
               {/* Round Robin toggle */}
               <div className="flex flex-wrap items-center gap-2">

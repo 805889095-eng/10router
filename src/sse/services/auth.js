@@ -5,6 +5,7 @@ import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import { resolveProviderId, FREE_PROVIDERS } from "@/shared/constants/providers.js";
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { extractEarliestPackageExpiry } from "open-sse/services/usage/expiryExtractor.js";
+import { extractDailyGrantAndPermanent } from "open-sse/services/usage/balanceExtractor.js";
 import { selectRelayCarrier } from "open-sse/services/relaySelection.js";
 import { getAntigravityQuotaCache, getAntigravityModelQuota } from "./antigravityQuota.js";
 import { NEEDS_REAUTH_MESSAGE } from "./tokenRefresh.js";
@@ -174,6 +175,12 @@ function triggerBackgroundQuotaRefresh(connections) {
         };
         const usage = await getUsageForProvider(conn, proxyOptions);
         const expiryInfo = extractEarliestPackageExpiry(usage);
+        // #Loomy-daily-first: persist the daily-grant / permanent split so the
+        // dailyGrantFirst scheduler can rank accounts without a live usage call.
+        const grantPair = extractDailyGrantAndPermanent(usage);
+        const grantPatch = grantPair
+          ? { dailyGrantRemaining: grantPair.dailyRemaining, dailyGrantTotal: grantPair.dailyTotal, permanentBalance: grantPair.permanent }
+          : {};
         await updateProviderConnection(conn.id, {
           earliestPackageExpiry: expiryInfo?.expiry || null,
           earliestPackageName: expiryInfo?.name || null,
@@ -183,6 +190,7 @@ function triggerBackgroundQuotaRefresh(connections) {
           earliestPackageRemaining:
             typeof expiryInfo?.remainingPercentage === "number" ? expiryInfo.remainingPercentage : null,
           quotaCheckedAt: new Date().toISOString(),
+          ...grantPatch,
         });
       } catch {
         // Non-blocking, ignore background errors
@@ -401,6 +409,13 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     const providerOverride = (settings.providerStrategies || {})[providerId] || {};
     const strategy = providerOverride.fallbackStrategy || settings.fallbackStrategy || "fill-first";
     const earliestExpiryFirst = providerOverride.earliestExpiryFirst === true;
+    // #Loomy-daily-first: burn each account's daily gift (use-it-or-lose-it)
+    // before touching permanent points. Rank: highest daily-grant remaining
+    // first; drained-daily accounts fall to the tail ordered by permanent
+    // balance ascending. Schedulable on any provider whose usage exposes the
+    // daily/permanent pair (Loomy today). 声明必须在 433 行的背景刷新门之前
+    // ——const TDZ 曾把它炸成 ReferenceError（CI regression 8+7 抓到）。
+    const dailyGrantFirst = providerOverride.dailyGrantFirst === true;
 
     // Trigger non-blocking background quota checks if earliest-expiry is active and any account is missing/stale.
     // Skipped during an active channel breaker: the channel is being rejected wholesale (e.g. 11128),
@@ -421,6 +436,8 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     // If earliestExpiryFirst is enabled, sort available connections so that the account
     // with the nearest future package expiration date is selected first.
     let orderedConnections = availableConnections;
+    // 本地无 antigravity family 分池，poolConnections = availableConnections（relay 段引用）
+    const poolConnections = availableConnections;
     if (earliestExpiryFirst && availableConnections.length > 1) {
       const now = Date.now();
       orderedConnections = [...availableConnections].sort((a, b) => {
@@ -436,6 +453,26 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
         }
         return (a.priority || 999) - (b.priority || 999);
       });
+    } else if (dailyGrantFirst && poolConnections.length > 1) {
+      // Daily grant first (Loomy): use-it-or-lose-it 5000/day burns before any
+      // permanent point. Accounts with a live daily remaining rank by it
+      // descending; drained-daily accounts tail by permanent ascending.
+      // Accounts without the daily/permanent pair keep manual priority order
+      // between the two groups.
+      orderedConnections = [...poolConnections].sort((a, b) => {
+        const da = typeof a.dailyGrantRemaining === "number" ? a.dailyGrantRemaining : null;
+        const db = typeof b.dailyGrantRemaining === "number" ? b.dailyGrantRemaining : null;
+        const hasA = da !== null && da > 0;
+        const hasB = db !== null && db > 0;
+        // Group 1: live daily grant (descending — biggest gift first)
+        if (hasA && hasB && da !== db) return db - da;
+        if (hasA !== hasB) return hasA ? -1 : 1;
+        // Group 2: drained daily (or unknown) — permanent ascending (odd change first)
+        const pa = typeof a.permanentBalance === "number" ? a.permanentBalance : null;
+        const pb = typeof b.permanentBalance === "number" ? b.permanentBalance : null;
+        if (pa !== null && pb !== null && pa !== pb) return pa - pb;
+        return (a.priority || 999) - (b.priority || 999);
+      });
     }
 
     // Daily-grant relay (2026-11-12, 用户拍板「单账号烧穿」)：dailyGrantFirst 的
@@ -449,6 +486,10 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     const dailyRelayActive = dailyGrantFirst && poolConnections.length > 1;
 
     let connection;
+    // Set once a strategy branch has already emitted its own quota line, so the
+    // closing summary stays a summary for branches that log nothing (upstream
+    // #Loomy-daily-first 同源；本地无 famPatch 分池，仅 relay 分支使用).
+    let quotaLogged = false;
     // Pin to preferred connection if specified and available
     if (preferredConnectionId) {
       connection = orderedConnections.find((c) => c.id === preferredConnectionId);
@@ -471,6 +512,9 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
       if (relay.stepped) {
         log.info("AUTH", `${provider} | relay handoff → ${connection.id?.slice(0, 8)} (${connection.name || connection.email || "unnamed"}) | remaining=${connection.earliestPackageRemaining ?? "?"}%`);
       }
+      // Persist the carrier stamp — relay derives "who is carrying" from
+      // lastUsedAt, the same field round-robin maintains.
+      await updateProviderConnection(connection.id, { lastUsedAt: new Date().toISOString() });
     } else if (dailyRelayActive) {
       // Single-point daily-grant relay: keep the current carrier until its daily
       // gift is burned to 0 (see dailyRelayActive comment above), then step
