@@ -284,8 +284,13 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     // clears the breaker, after which this resumes on its own.
     const channelBlockLeftMs = channelBlockRemainingMs(settings.channelBlocks?.[providerId]);
     if (channelBlockLeftMs > 0) {
-      log.debug("AUTH", `${providerId} | channel blocked (${Math.ceil(channelBlockLeftMs / 1000)}s left) — skipping quota refresh`);
-    } else if (earliestExpiryFirst && availableConnections.length > 1) {
+      // info, not debug: this is the one path that silently skips the refresh,
+      // and a stale family column on the row is exactly what it causes.
+      log.info("AUTH", `${providerId} | channel blocked (${Math.ceil(channelBlockLeftMs / 1000)}s left) — skipping quota refresh`);
+    } else if ((earliestExpiryFirst || dailyGrantFirst) && availableConnections.length > 1) {
+      // 两个快照驱动型调度都要新鲜的配额数据：新登录的账号没有持久化的
+      // dailyGrantRemaining/earliestPackageExpiry，不触发背景刷新就永远
+      // 落在 priority 组（#Loomy-daily-first 实测：新号 5000/5000 不参与排序）。
       triggerBackgroundQuotaRefresh(availableConnections);
     }
 
