@@ -2,6 +2,22 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.3 (2026-11-06)
+
+### ✨ Added
+
+- **One-click model import for OpenDesign.** On the OpenDesign (AMR) provider page, click
+  **Fetch OpenDesign Models** next to Add Model to pull in every model the vendor currently
+  serves — including new ones that appear without notice (like `deepseek-v4.1-flash-eco`
+  this time). Imported models start disabled; enable the ones you want.
+
+### 🐛 Fixed
+
+- **The "fetch models" button now works for 5 more providers** (Venice, OpenCode, OpenCode Zen,
+  Kilo Code, TokenRouter). Clicking it used to fail with a 400 every time, because the backend
+  had no model-catalogue entry registered for them. Their official model list now loads as
+  suggestions for you to pick from.
+
 ## v1.9.2 (2026-11-06)
 
 ### 🐛 Fixed

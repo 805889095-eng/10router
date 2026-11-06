@@ -309,6 +309,28 @@ const PROVIDER_MODELS_CONFIG = {
   byteplus: createOpenAIModelsConfig("https://ark.ap-southeast.bytepluses.com/api/coding/v3/models"),
 
   // OpenAI-compatible API key providers
+  // OpenDesign (AMR) 托管网关：/v1/models 由官方在线目录驱动（每个模型带
+  // context_limit / output_budget / cost / 输入模态），也是 registry 里
+  // modelsFetcher 指向的同一个 URL。这里补上条目，详情页的「Fetch OpenDesign
+  // Models」按钮才有后端可打 —— 缺了它会直接 400 "does not support models listing"。
+  "opendesign-amr": createOpenAIModelsConfig("https://amr-link.open-design.ai/v1/models"),
+
+  // 2026-11-06 补齐：下面 5 个 provider 在 registry 里声明了 modelsFetcher，但
+  // PROVIDER_MODELS_CONFIG 没有条目 —— 详情页的模型发现按钮一打就 400
+  // "does not support models listing"。端点均实测：
+  //   venice                 200 {data:[…]}（带 context_length / model_spec.pricing）
+  //   opencode / opencode-zen 200 {object:"list",data:[…]}（带 name / type / description）
+  //   kilocode               200 {data:[…]}（带 name / description）
+  //   tokenrouter            401（无 Key；端点与错误体格式正常，配 Key 即可用）
+  // 有意不补 mimo-free：它的 modelsFetcher.url 是 models.dev/api.json —— 那是按
+  // provider 名索引的聚合目录（{"nano-gpt":{…},"openrouter":{…}}），不是模型列表，
+  // 接进来只会解析出一团 JSON，属于语义不符而不是遗漏。
+  venice: createOpenAIModelsConfig("https://api.venice.ai/api/v1/models"),
+  opencode: createOpenAIModelsConfig("https://opencode.ai/zen/v1/models"),
+  "opencode-zen": createOpenAIModelsConfig("https://opencode.ai/zen/v1/models"),
+  kilocode: createOpenAIModelsConfig("https://api.kilo.ai/api/gateway/models"),
+  tokenrouter: createOpenAIModelsConfig("https://api.tokenrouter.com/v1/models"),
+
   deepseek: createOpenAIModelsConfig("https://api.deepseek.com/models"),
   groq: createOpenAIModelsConfig("https://api.groq.com/openai/v1/models"),
   xai: createOpenAIModelsConfig("https://api.x.ai/v1/models"),

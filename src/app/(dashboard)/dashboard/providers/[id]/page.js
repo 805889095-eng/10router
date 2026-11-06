@@ -470,7 +470,11 @@ export default function ProviderDetailPage() {
   // "Fetch official catalog" import button scope: qoder family (live catalog)
   // and xiaomi-mimo (public /v1/models). mimo-x client previews are filtered
   // server-side in resolveMimoModels, so the import can never shadow them.
-  const supportsCatalogImport = providerId === "qoder" || providerId === "qoder-cn" || providerId === "xiaomi-mimo";
+  // Providers whose dashboard exposes a "Fetch <vendor> Models" import button.
+  // opendesign-amr joins in 2026-11-06: the AMR gateway publishes a /v1/models
+  // catalogue (same URL as its registry modelsFetcher), and the vendor adds
+  // models without notice — deepseek-v4.1-flash-eco landed that way.
+  const supportsCatalogImport = providerId === "qoder" || providerId === "qoder-cn" || providerId === "xiaomi-mimo" || providerId === "opendesign-amr";
   const models = providerId === "cursor" && liveModels.length > 0
     ? liveModels
     : isQoderFamily
@@ -1048,9 +1052,12 @@ export default function ProviderDetailPage() {
     if (importingQoderModels) return;
     const activeConnection = connections.find((conn) => conn.isActive !== false);
     if (!activeConnection) {
-      notify.warning(providerId === "xiaomi-mimo"
-        ? translate("Please add an active MiMo connection first")
-        : translate("Please add an active Qoder connection first"))
+      notify.warning(
+        providerId === "xiaomi-mimo"
+          ? translate("Please add an active MiMo connection first")
+          : providerId === "opendesign-amr"
+            ? translate("Please add an active OpenDesign connection first")
+            : translate("Please add an active Qoder connection first"))
       return;
     }
 
@@ -1124,7 +1131,18 @@ export default function ProviderDetailPage() {
   // OpenAI-compatible /models endpoint. Results stay in the page as suggestions
   // and are added explicitly by the user; they never become a second catalog or
   // override the global capability library.
-  const canRefreshOfficialModels = providerId === "opencode-go" || providerId === "bai" || providerId === "cline";
+  //
+  // 2026-11-06 补齐：venice / opencode / opencode-zen / kilocode / tokenrouter
+  // 在 /api/providers/[id]/models 的 PROVIDER_MODELS_CONFIG 里原本没有条目
+  // （registry 一直声明着 modelsFetcher，后端却没配置，按钮点了直接 400），
+  // 现在一并接上前端入口。这几个都是几十上百个模型的大目录，所以走「刷新建议」
+  // 而不是「批量导入」——批量导入会把自定义模型表塞爆（参见 handleImportQoderModels
+  // 里关于 29 条影子行的注释）。
+  const OFFICIAL_MODELS_REFRESH_PROVIDERS = new Set([
+    "opencode-go", "bai", "cline",
+    "venice", "opencode", "opencode-zen", "kilocode", "tokenrouter",
+  ]);
+  const canRefreshOfficialModels = OFFICIAL_MODELS_REFRESH_PROVIDERS.has(providerId);
   const handleRefreshOfficialModels = async () => {
     if (officialModelsRefreshing) return;
     const connection = connections.find((item) => item.isActive !== false);
@@ -1805,7 +1823,12 @@ export default function ProviderDetailPage() {
             </span>
             {importingQoderModels
               ? translate("Fetching...")
-              : translate(providerId === "xiaomi-mimo" ? "Fetch MiMo Models" : "Fetch Qoder Models")}
+              : translate(
+                  providerId === "xiaomi-mimo"
+                    ? "Fetch MiMo Models"
+                    : providerId === "opendesign-amr"
+                      ? "Fetch OpenDesign Models"
+                      : "Fetch Qoder Models")}
           </button>
         )}
 

@@ -2,6 +2,20 @@
 
 这里展示面向用户的关键更新；完整开发明细见 [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md)。
 
+## v1.9.3 (2026-11-06)
+
+### ✨ 新增
+
+- **OpenDesign 支持一键获取模型**：在「服务商 → OpenDesign (AMR)」页面，点「添加模型」
+  旁边的 **获取 OpenDesign 模型**，即可把官方当前在售的模型一次性拉进来（官方随时会加
+  新模型，比如这次的 `deepseek-v4.1-flash-eco`）。拉进来的模型默认是停用状态，你按需开启。
+
+### 🐛 修复
+
+- **修好了 5 个服务商的「获取模型」按钮**（Venice、OpenCode、OpenCode Zen、Kilo Code、
+  TokenRouter）—— 这些按钮以前点下去必定报错，因为后端没有登记它们的模型目录地址。
+  现在可以正常拉到官方模型列表，并以「建议模型」的形式展示，由你决定加哪些。
+
 ## v1.9.2 (2026-11-06)
 
 ### 🐛 修复

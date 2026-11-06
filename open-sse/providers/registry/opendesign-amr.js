@@ -55,6 +55,9 @@ export default {
   // 顺序与内容对齐 2026-10 实测的 /v1/models 结果。
   models: [
     { id: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash" },
+    // 2026-11-06 官方 /v1/models 新增（modelsFetcher 在线目录是权威来源，
+    // 这条只保证离线/未配 Key 时下拉里也有它）。
+    { id: "deepseek-v4.1-flash-eco", name: "DeepSeek V4.1 Flash Eco" },
     { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash" },
     { id: "deepseek-v4-flash-vision-exp", name: "DeepSeek V4 Flash Vision (Exp)" },
     { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro" },

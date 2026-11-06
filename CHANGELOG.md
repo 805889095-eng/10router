@@ -2,6 +2,43 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.3 (2026-11-06)
+
+### ✨ 新增
+
+- **OpenDesign (AMR) 一键获取模型**。详情页「Add Model」旁边新增 **Fetch OpenDesign Models**
+  按钮：一次点击把官方 `/v1/models` 里尚未收录的模型批量加进可用列表（新模型默认置为
+  **停用**，由用户按需启用）。这与该 provider 已有的 `modelsFetcher` 是两条互补通道 ——
+  `modelsFetcher` 只喂「建议模型」区块，本按钮才真正落库。
+
+  官方 2026-11-06 的目录为 14 个模型，新增 `deepseek-v4.1-flash-eco`（ctx 1048000 /
+  out 128000 / cost low），静态兜底列表已同步补齐。
+
+### 🐛 修复
+
+- **5 个 provider 的模型发现按钮一点就 400**。`venice` / `opencode` / `opencode-zen` /
+  `kilocode` / `tokenrouter` 在 registry 里声明了 `modelsFetcher`，详情页据此渲染出模型
+  发现按钮，但按钮打的 `/api/providers/[id]/models` 只认 route.js 的
+  `PROVIDER_MODELS_CONFIG` —— 这几个 provider 都没有条目，于是「按钮在、点了 400
+  does not support models listing」。已补齐后端条目与前端入口。
+
+  这 5 个走**刷新建议**而非**批量导入**：venice / opencode 都是几十上百个模型的大目录，
+  批量导入会把自定义模型表塞满（参见 `handleImportQoderModels` 注释里记录的 29 条影子行）。
+
+  **有意不补 `mimo-free`**：它的 `modelsFetcher.url` 是 `https://models.dev/api.json`，
+  返回的是按 provider 名索引的聚合字典（`{"nano-gpt":{…},"openrouter":{…}}`）而非模型
+  数组，语义上不属于模型发现，接入只会解析出一团 JSON。
+
+### 🧪 测试
+
+- 新增 `tests/unit/opendesign-amr-catalog.test.js`（5 例）：静态兜底含 eco、id 无重复、
+  `modelsFetcher` 与后端 config 指向同一 URL（防两处漂移）、详情页按钮作用域与文案。
+- 新增 `tests/unit/models-config-coverage.test.js`（5 例）：把事故本身固化为不变量 ——
+  **每个声明 `modelsFetcher` 的 provider 必须有 `PROVIDER_MODELS_CONFIG` 条目**，例外
+  名单仅 `mimo-free` 且测试会验证该例外确实指向 `models.dev`（防止拿例外掩盖漏配）。
+- 回归：`unit/provider` + `unit/models` + `unit/model` 共 31 文件 224 例全过；基线三连
+  全绿（117 providers / 284 alias tokens）；capabilities 审计无破例；`next build` 通过。
+
 ## v1.9.2 (2026-11-06)
 
 ### 🐛 修复
