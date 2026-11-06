@@ -2,6 +2,23 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.2 (2026-11-06)
+
+### 🐛 Fixed
+
+- **Antigravity accounts no longer hammer Google with a doomed onboarding loop.** Personal /
+  free / promo-tier accounts used to replay a failing `onboardUser` call on every token refresh
+  (roughly every 30 minutes — about 48 times a day). That regular automated pattern is a textbook
+  trigger for Google's Term #3 suspensions, **and it happens regardless of how much you actually
+  use the account** — even a never-used spare account keeps knocking. We now use the official
+  shared project directly, so onboarding calls drop to zero.
+
+### 🔧 Improved
+
+- **CodeBuddy request headers now match the official 2.180.0 client exactly**: added the missing
+  `X-Agent-Purpose` identity header and switched request IDs to the official 32-character,
+  hyphen-free format — making the traffic harder to fingerprint as third-party software.
+
 ## v1.9.1 (2026-11-04)
 
 ### 🔧 Improvements

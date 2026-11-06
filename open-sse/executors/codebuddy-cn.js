@@ -75,17 +75,22 @@ export class CodeBuddyExecutor extends DefaultExecutor {
         convId = stableUuidFrom(sessionId || existingConvId || "codebuddy-cn-default");
       }
 
-      const reqUuid = randomUUID();
+      // 请求级 id 必须是 32 位无横线 hex：官方 generateUUUID().replace(/-/g,"") 在全包
+      // 7 处一致（messageId / conversationRequestId / rootRequestId / X-Request-ID）。
+      // X-Conversation-ID 相反——SessionImpl.id = generateUUUID() 不去横线，保持标准 UUID。
+      const reqUuid = randomUUID().replace(/-/g, "");
 
       headers["X-Conversation-ID"] = convId;
       headers["X-Conversation-Request-ID"] = reqUuid;
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
-      // Agent identity headers: @tencent-ai/codebuddy-code 2.180.0 sets all three on
+      // Agent identity headers: @tencent-ai/codebuddy-code 2.180.0 sets all four on
       // every completions call (dist/codebuddy-headless.js):
       //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
       //   X-Agent-Runtime = resolveAgentRuntime() → "local-agent" for the local CLI
       //   X-Agent-Type    = resolveModelCallAgentType() → "main" for main-loop calls
+      //   X-Agent-Purpose = getEffectiveAgentPurpose() → AgentPurpose.Conversation
+      //                     (enum literal "conversation"; subagents use "<prefix>:<name>")
       // Since this channel declares X-IDE-Type: CLI and a CLI user agent, omitting them
       // is an identity contradiction the WAF can flag (a real CLI always sends them).
       // The previous "IDE extensions do not send these" note applied to the IDE-plugin
@@ -93,13 +98,19 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       headers["X-Agent-Intent"] = "craft";
       headers["X-Agent-Runtime"] = "local-agent";
       headers["X-Agent-Type"] = "main";
+      headers["X-Agent-Purpose"] = "conversation";
     } catch {
       const fallbackConvId = randomUUID();
-      const fallbackReqId = randomUUID();
+      const fallbackReqId = randomUUID().replace(/-/g, "");
       headers["X-Conversation-ID"] = fallbackConvId;
       headers["X-Conversation-Request-ID"] = fallbackReqId;
       headers["X-Conversation-Message-ID"] = fallbackReqId;
       headers["X-Request-ID"] = fallbackReqId;
+      // 降级路径也必须保持同一套 CLI 身份头，否则降级时头集合自相矛盾。
+      headers["X-Agent-Intent"] = "craft";
+      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Type"] = "main";
+      headers["X-Agent-Purpose"] = "conversation";
     }
 
     return headers;

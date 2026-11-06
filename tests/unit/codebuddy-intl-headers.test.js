@@ -2,7 +2,11 @@ import { describe, it, expect } from "vitest";
 import { CodeBuddyIntlExecutor } from "../../open-sse/executors/codebuddy-intl.js";
 import { CodeBuddyExecutor } from "../../open-sse/executors/codebuddy-cn.js";
 
+// X-Conversation-ID 是会话级 id：官方 SessionImpl.id = generateUUUID()，保留横线。
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// 请求级 id（message / x-request / conversation-request）官方一律 generateUUUID().replace(/-/g,"")，
+// 全包 7 处一致 —— 32 位无横线 hex，不带连字符。
+const HEX32_RE = /^[0-9a-f]{32}$/i;
 
 describe("CodeBuddy channel verification headers & anti-fingerprint protection", () => {
   it.each([
@@ -19,17 +23,20 @@ describe("CodeBuddy channel verification headers & anti-fingerprint protection",
     );
 
     expect(headers["X-Conversation-ID"]).toMatch(UUID_RE);
-    expect(headers["X-Conversation-Request-ID"]).toMatch(UUID_RE);
-    expect(headers["X-Conversation-Message-ID"]).toMatch(UUID_RE);
+    expect(headers["X-Conversation-Request-ID"]).toMatch(HEX32_RE);
+    expect(headers["X-Conversation-Message-ID"]).toMatch(HEX32_RE);
     expect(headers["X-Request-ID"]).toBe(headers["X-Conversation-Message-ID"]);
 
-    // Agent identity: the real @tencent-ai/codebuddy-code 2.179.2 CLI sets all three
-    // on every completions call (extracted from dist/codebuddy-headless.js). Both
-    // channels now declare the CLI identity (X-IDE-Type: CLI), so both must send them —
-    // omitting them is an identity contradiction the WorkBuddy WAF can fingerprint.
+    // Agent identity: the real @tencent-ai/codebuddy-code 2.180.0 CLI sets all four
+    // on every completions call (extracted from dist/codebuddy-headless.js):
+    // buildConversationHeaders() assigns Intent/Type/Runtime/Purpose. Both channels
+    // declare the CLI identity (X-IDE-Type: CLI), so both must send them — omitting
+    // any is an identity contradiction the WorkBuddy WAF can fingerprint.
     expect(headers["X-Agent-Intent"]).toBe("craft");
     expect(headers["X-Agent-Runtime"]).toBe("local-agent");
     expect(headers["X-Agent-Type"]).toBe("main");
+    // Enum AgentPurpose.Conversation — the main-loop value; subagents use "<prefix>:<name>".
+    expect(headers["X-Agent-Purpose"]).toBe("conversation");
   });
 
   it("maintains session continuity with stable conversation ID and unique request IDs", () => {

@@ -88,29 +88,39 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
         convId = stableUuidFrom(sessionId || existingConvId || "codebuddy-intl-default");
       }
 
-      const reqUuid = randomUUID();
+      // 请求级 id 必须是 32 位无横线 hex：官方 generateUUUID().replace(/-/g,"") 在全包
+      // 7 处一致（messageId / conversationRequestId / rootRequestId / X-Request-ID）。
+      // X-Conversation-ID 相反——SessionImpl.id = generateUUUID() 不去横线，保持标准 UUID。
+      const reqUuid = randomUUID().replace(/-/g, "");
 
       headers["X-Conversation-ID"] = convId;
       headers["X-Conversation-Request-ID"] = reqUuid;
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
       // Agent identity headers: the channel now declares X-IDE-Type: CLI (see registry),
-      // and @tencent-ai/codebuddy-code 2.180.0 sets all three on every completions call:
+      // and @tencent-ai/codebuddy-code 2.180.0 sets all four on every completions call:
       //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
       //   X-Agent-Runtime = "local-agent" (local CLI runtime)
       //   X-Agent-Type    = "main" (main-loop model call)
+      //   X-Agent-Purpose = "conversation" (AgentPurpose.Conversation; subagents differ)
       // Omitting them while claiming a CLI identity is itself a fingerprint, so the intl
-      // channel mirrors the verified CN set from v1.6.3.
+      // channel mirrors the verified CN set.
       headers["X-Agent-Intent"] = "craft";
       headers["X-Agent-Runtime"] = "local-agent";
       headers["X-Agent-Type"] = "main";
+      headers["X-Agent-Purpose"] = "conversation";
     } catch {
       const fallbackConvId = randomUUID();
-      const fallbackReqId = randomUUID();
+      const fallbackReqId = randomUUID().replace(/-/g, "");
       headers["X-Conversation-ID"] = fallbackConvId;
       headers["X-Conversation-Request-ID"] = fallbackReqId;
       headers["X-Conversation-Message-ID"] = fallbackReqId;
       headers["X-Request-ID"] = fallbackReqId;
+      // 降级路径也必须保持同一套 CLI 身份头，否则降级时头集合自相矛盾。
+      headers["X-Agent-Intent"] = "craft";
+      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Type"] = "main";
+      headers["X-Agent-Purpose"] = "conversation";
     }
 
     return headers;

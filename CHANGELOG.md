@@ -2,6 +2,62 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.2 (2026-11-06)
+
+### 🐛 修复
+
+- **Antigravity 消费级账号「开户死循环」——每 30 分钟向 Google 发一次注定失败的探测**
+  （上游 `techysy/10router` issue #98）。三处连环 bug，任一处都能让修复失效：
+
+  1. `open-sse/services/projectId.js`：`loadCodeAssist` 拿不到 `cloudaicompanionProject` 时
+     **无条件** fallthrough 到 `onboardUser`，而个人/免费/促销档（standard-tier、Jio 等捆绑 Pro）
+     账号的 `onboardUser` 恒返回 `done:true` 且无 `project_id`（Google 只会分共享项目）。
+     于是每轮 token 刷新（~30 分钟）都重放一次无效开户。现已在 `if (projectId) return projectId;`
+     之后对 `provider === "antigravity"` 直接返回官方消费级共享哨兵 `aicode-consumers`，跳过
+     开户；`fetchAvailableModels` / `retrieveUserQuotaSummary` / 聊天链路的 project 字段用它
+     全部正常工作。
+  2. `src/sse/services/tokenRefresh.js`：调用 `getProjectIdForConnection(connectionId, accessToken)`
+     **漏传第三参 `provider`**，兜成默认 `"gemini-cli"` → 既走错端点与请求头（用上
+     `X-Goog-Api-Client` / `Client-Metadata` 那套真 IDE 从不发的头），又使上面的 antigravity
+     短路分支永不触发。已补传。
+  3. `open-sse/services/projectId.js`：`Number(process.env.ONBOARD_MAX_ATTEMPTS) || 2` —— 设 `0`
+     被 `||` 兜回 2，无法真正关闭开户。改为 `Number.isFinite` 判定。
+
+  **为什么这条重要**：NAS 生产日志实证，本机每天产生 **46~48 次** `Onboarding user with tier`
+  （主日志累计 2344 次、`onboardUser` 4688 次），与「每 30 分钟一次」严丝合缝。该频率**只与
+  时间有关、与请求量无关**，正是 Google Term #3 封禁（automation abuse）的典型特征 —— 报告者
+  那个「7 天内真实请求 0 次的纯后备账号」照样被封。修复后 antigravity 走短路，开户调用归零。
+
+### 🔧 改进
+
+- **CodeBuddy 请求头指纹对齐官方 2.180.0**（`codebuddy-cn` / `codebuddy-intl` 两渠道一同修正）。
+  逆向 `dist/codebuddy-headless.js` 逐项对拍后，修正两处与官方不一致的地方：
+
+  - **补上 `X-Agent-Purpose: conversation`**。官方 `buildConversationHeaders()` 每次补全调用
+    都带这个头，值取自枚举 `AgentPurpose.Conversation = "conversation"`（子代理/压缩才用
+    `"<prefix>:<name>"`）。此前只发了 Intent/Runtime/Type 三个，少一个即身份自相矛盾。
+  - **请求级 id 去掉连字符**。官方全包 7 处一律 `generateUUUID().replace(/-/g,"")`，即
+    **32 位无横线 hex**；而 `X-Conversation-ID` 相反 —— `SessionImpl.id = generateUUUID()`
+    保留横线。此前三个请求级 id 都发标准 36 位 UUID，属于格式指纹。
+  - 同时补齐 `buildHeaders` 降级路径（catch 分支）的四个 Agent 身份头与 id 格式，避免降级时
+    头集合自相矛盾。
+
+  另外逐项核对了官方常量表里其余 12 个头（`X-Session-ID`、`X-Product-Version`、
+  `X-Client-Version/Platform/Product`、`X-User-Id`、`X-Model-ID`、`X-Data-Tag`、`X-Compaction`、
+  `X-Context-Compacted`、`X-Root-Request-ID`、`X-Parent-Conversation-ID`、`X-Private-Data`）：
+  **官方赋值点均为 0，或仅在压缩 / fork / 遥测 / MCP 场景条件触发**，CLI 聊天请求根本不发 ——
+  因此**有意不对齐**，多发一个官方不发的头本身就是新指纹。
+
+### 🧪 测试
+
+- 新增 `tests/unit/antigravity-projectid-sentinel.test.js`（3 例）：消费级账号短路返回哨兵且
+  零 `onboardUser` 调用；已有独立项目的账号不受影响；`ONBOARD_MAX_ATTEMPTS=0` 时不再发起
+  开户请求。
+- 更新 `tests/unit/codebuddy-intl-headers.test.js`：会话 id 断言标准 UUID、三个请求级 id 断言
+  32 位无横线、新增 `X-Agent-Purpose` 断言。
+- 全量回归：`unit/codebuddy*` + `unit/antigravity*` 共 37 个文件 296 例
+  （290 passed / 6 skipped）；基线三连全绿（117 providers / 284 alias tokens）。
+
 ## v1.9.1 (2026-11-04)
 
 ### 🔧 改进
