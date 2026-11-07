@@ -2,24 +2,56 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.5 (2026-11-07)
+
+### 🐛 修复
+
+- **`deepseek-v4.1-flash-eco` 的能力标记全错，图片被静默丢弃（v1.9.4 引入）**。
+  v1.9.4 把 eco 写成 `vision: false`，依据是 OpenDesign 网关 `/v1/models` 里
+  `input_modalities: ["text"]`。**该字段只是转售商的声明，不是能力事实** ——
+  这是拿元数据当验证结论的典型错误。
+
+  2026-11-07 端到端实测（真实打 `POST /v1/chat/completions`）：
+
+  | 项目 | v1.9.4 写的 | 实测结论 |
+  |---|---|---|
+  | `vision` | `false` | **`true`** —— 两张自制图均精确读出（`CODE 7391` 红蓝绿块、`ZEBRA-4827` 紫橙块）；`prompt_tokens` 51（纯文本）→ 251（带图），多出的 200 即图像编码 |
+  | `maxOutput` | `128000` | **`384000`** —— 二分实测：`max_tokens=393216` 通过，`396000` 起返回 HTTP 400 |
+  | `contextWindow` | `1000000` | `1000000`（与同族一致，比网关 `context_limit` 1048000 保守，不影响可用性） |
+
+  代价是双重的：`vision: false` 会让 `translator/concerns/modality.js` 的
+  `stripUnsupportedModalities()` 把 image 块整个删掉、换成一句占位文字后照常返回 200
+  —— 客户端以为图发出去了，模型根本没看到；而 `maxOutput: 128000` 会把 13 万～39 万
+  区间的合法 `max_tokens` 白白砍掉。
+
+  `output_budget: 128000` 这个网关元数据同样不可信：同族的 `deepseek-v4.1-flash`
+  在同一个字段上也报 128000，实测却能收 400000 以上。**两个字段都是报价/展示用途。**
+
+- **`tests/unit/deepseek-v4-capabilities` 的 eco 断言由「纯文本 + 128K」改为
+  「多模态 + 384K」**，并保留实测数据作为注释，防止后人对着网关元数据"修"回去。
+
+### 🔧 依赖
+
+- **CodeBuddy CLI 版本跟进 2.181.0**（`@tencent-ai/codebuddy-code`，2026-11-06 发布）。
+  该版 CHANGELOG 无任何 UA / 请求头 / 设备身份改动（新增的是插件评估、MCP 命名规则等
+  本地能力），故只改 `open-sse/shared/codebuddyIdentity.js` 的 `CODEBUDDY_CLI_VERSION`
+  单点常量，`User-Agent` 与 `X-IDE-Version` 均由它派生，头集合无需调整。
+
 ## v1.9.4 (2026-11-06)
 
 ### 🐛 修复
 
-- **v1.9.3 引入的回归：`deepseek-v4.1-flash-eco` 被当成多模态**。v1.9.3 把 eco 加进
+- **v1.9.3 引入的回归：`deepseek-v4.1-flash-eco` 被踢出多模态集合**。v1.9.3 把 eco 加进
   opendesign-amr 的兜底列表后，`deepseek-v4-capabilities.test.js` 的 fixture 用
-  `/v4\.1-flash/` 匹配同族模型并统一要求 `vision: true` —— eco 撞上该正则即失败
-  （官方对其标注 `input_modalities: ["text"]`，是纯文本变体）。已把 eco 从多模态集合
-  拆出，并为它加专门断言。
+  `/v4\.1-flash/` 匹配同族模型并统一要求 `vision: true` —— eco 当时被当成纯文本、排除在
+  该集合外，导致断言失败。
 
-- **顺带修掉一个更严重的隐患：eco 的输出上限被放行到 384000**。eco 此前没有 canonical
-  能力行，落到 `*deepseek-v4*` 通配，该通配给的是 `maxOutput: 384000`；而官方
-  `output_budget` 只有 **128000**（同族的三分之一）。也就是说客户端设一个上游必然拒绝的
-  `max_tokens` 时，10Router 会照单放行。现已补 canonical 行：`vision: false`、
-  `maxOutput: 128000`、`contextWindow: 1000000`。
+  当时的"修法"是顺着错误前提走：给它单独写一行 `vision: false` + `maxOutput: 128000`，
+  依据是 OpenDesign 网关 `/v1/models` 里 `input_modalities: ["text"]` 与
+  `output_budget: 128000`。**这个前提是错的**，详见 v1.9.5。
 
   > v1.9.3 的六条构建流水线全部成功，但 `Tests` 流水线的回归门禁拦下了上述第一项，
-  > 故该版本的制品不含本修复 —— 请使用 v1.9.4。
+  > 故该版本的制品不含本修复 —— 请使用 v1.9.4 或更高版本。
 
 ### 🧪 测试
 

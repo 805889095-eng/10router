@@ -12,11 +12,16 @@ const OFFERED = REGISTRY.flatMap((entry) =>
 );
 
 const VISION_EXP = OFFERED.filter((m) => /vision/i.test(m.id));
-// V4.1-Flash is multimodal per its model card and models.dev — but NOT its
-// `-eco` sibling: OpenDesign AMR publishes input_modalities ["text"] for it, so a
-// bare /v4\.1-flash/ filter would wrongly demand vision on a text-only model.
-const MULTIMODAL = OFFERED.filter((m) => /v4\.1-flash/i.test(m.id) && !/-eco$/i.test(m.id));
-const TEXT_ONLY = OFFERED.filter((m) => !/vision|v4\.1-flash/i.test(m.id) || /-eco$/i.test(m.id));
+// V4.1-Flash is multimodal, and its `-eco` economy tier is the SAME underlying
+// model — verified end-to-end against the live gateway on 2026-11-07: eco read
+// `CODE 7391` off one image and `ZEBRA-4827` off another, and prompt_tokens
+// jumped 51 -> 251 when an image was attached. OpenDesign AMR's /v1/models
+// advertises input_modalities ["text"] for eco, but that is a *declaration*
+// field on a resold BytePlus id, not a capability. Trusting it once cost us a
+// `vision: false` row that silently stripped every image before dispatch, so
+// eco is deliberately kept in MULTIMODAL rather than special-cased out.
+const MULTIMODAL = OFFERED.filter((m) => /v4\.1-flash/i.test(m.id));
+const TEXT_ONLY = OFFERED.filter((m) => !/vision|v4\.1-flash/i.test(m.id));
 
 describe("DeepSeek V4 capability resolution", () => {
   it("offers both a vision and a text variant (sanity check on the fixture)", () => {
@@ -67,19 +72,28 @@ describe("DeepSeek V4 capability resolution", () => {
     }
   });
 
-  it("keeps the V4.1-Flash -eco variant text-only with its 128K output ceiling", () => {
-    // OpenDesign AMR serves deepseek-v4.1-flash-eco: input_modalities ["text"] and
-    // output_budget 128000 — one third of the multimodal sibling's 384000. Without
-    // a canonical row it fell through to `*deepseek-v4*`, which greens-lights a
-    // max_tokens the upstream would reject.
+  it("keeps the V4.1-Flash -eco variant multimodal with the full 384K output ceiling", () => {
+    // OpenDesign AMR serves deepseek-v4.1-flash-eco as an economy tier of the
+    // SAME underlying model, so it inherits everything the sibling has. Both
+    // halves of this were measured against the live gateway on 2026-11-07:
+    //   · vision — two different generated images, both read correctly
+    //     (`CODE 7391` red/blue/green blocks; `ZEBRA-4827` purple/orange blocks),
+    //     and prompt_tokens went 51 (text only) -> 251 (with image).
+    //   · maxOutput — 393216 accepted, 396000 returns 400. That is 384K, not 128K.
+    // The gateway's own metadata (`input_modalities: ["text"]`,
+    // `output_budget: 128000`) is *pricing/declaration* data and understates the
+    // real limits; trusting it previously produced a vision:false row that made
+    // stripUnsupportedModalities delete every image before dispatch, plus a 128K
+    // ceiling that silently truncated legitimate max_tokens. Do not "restore"
+    // 128000 here on the strength of that metadata alone.
     const eco = OFFERED.filter((m) => /-eco$/i.test(m.id));
     expect(eco.length).toBeGreaterThan(0);
     for (const { provider, id } of eco) {
       expect(`${provider}/${id}`).toBeTruthy();
       expect(getCapabilitiesForModel(provider, id)).toMatchObject({
-        vision: false,
+        vision: true,
         contextWindow: 1000000,
-        maxOutput: 128000,
+        maxOutput: 384000,
       });
     }
   });

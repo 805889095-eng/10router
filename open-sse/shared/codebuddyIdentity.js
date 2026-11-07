@@ -6,7 +6,7 @@
 // of them always got missed. A stale UA is itself a bot fingerprint (2.108.1 was
 // once 68 releases behind).
 //
-// Verified against `@tencent-ai/codebuddy-code` 2.180.0 — the shipped bundle at
+// Verified against `@tencent-ai/codebuddy-code` 2.181.0 — the shipped bundle at
 // dist/codebuddy-headless.js. Notes from that extraction:
 //   - The official 2.x CLI does NOT emit a literal `CLI/x.y.z CodeBuddy/x.y.z`
 //     User-Agent. It builds one dynamically (CLI/TUI/IDE tokens are present in the
@@ -21,7 +21,7 @@
 //     sandbox — no auth/identity/device lines), so a version bump is the whole change.
 //   - `x-codebuddy-request: 1` must stay absent: the CLI only emits it on its LOCAL
 //     daemon endpoints, so forwarding it upstream marks the request as non-official.
-export const CODEBUDDY_CLI_VERSION = "2.180.0";
+export const CODEBUDDY_CLI_VERSION = "2.181.0";
 
 /** The UA both channels send. */
 export const CODEBUDDY_USER_AGENT = `CLI/${CODEBUDDY_CLI_VERSION} CodeBuddy/${CODEBUDDY_CLI_VERSION}`;

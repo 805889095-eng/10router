@@ -2,18 +2,35 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.5 (2026-11-07)
+
+### 🐛 Fixed
+
+- **Images sent to the budget variant of DeepSeek V4.1 Flash
+  (`deepseek-v4.1-flash-eco`) were being silently dropped.** The previous release treated it
+  as a text-only model, so image blocks were deleted before dispatch and replaced with a
+  placeholder while the request still returned success — it looked like the model simply
+  could not read images. **It can.** End-to-end testing read both a three-colour-block image
+  and a second, unrelated one correctly.
+- **Its maximum output length was also understated**: the previous release allowed only
+  128,000 tokens, while the model actually accepts up to 393,216. Requests in the
+  128K–393K range are no longer needlessly clamped.
+- **CodeBuddy CLI bumped to 2.181.0** (released 2026-11-06). Tencent changed no request
+  headers in that release, so only the version constant moved.
+
+> The previous release (v1.9.4) does not include these fixes; please install v1.9.5.
+
 ## v1.9.4 (2026-11-06)
 
 ### 🐛 Fixed
 
-- **Fixes a problem introduced in v1.9.3**: the budget variant of DeepSeek V4.1 Flash
-  (`deepseek-v4.1-flash-eco`) was wrongly treated as accepting image input. It is a
-  text-only model.
-- **Also tightens a more practical issue**: that variant's maximum output length was being
-  allowed up to 384,000 when the vendor grants only 128,000 — a client asking for more would
-  have been rejected upstream. Now clamped to the official value.
+- **Fixes a regression introduced in v1.9.3**: the budget variant of DeepSeek V4.1 Flash
+  (`deepseek-v4.1-flash-eco`) was excluded from the multimodal set, failing the assertion.
+  This release marked it text-only based on the judgement at the time — **that judgement was
+  disproved by measurement, see v1.9.5**.
 
-> The v1.9.3 build does not include these fixes; please use v1.9.4.
+> The v1.9.3 build does not include these fixes. **v1.9.4 itself carries the wrong eco
+> capability flags; install v1.9.5 instead.**
 
 ## v1.9.3 (2026-11-06)
 
