@@ -37,6 +37,11 @@ import { getScheduleSlotLabels } from "@/shared/services/quotaPingSchedule";
 
 const ONE_BY_ONE_DELAY_MS = 1000;
 
+// 「每日赠送积分优先」只在 usage 暴露 daily/permanent 配对的供应商上有意义
+// （loomy 今天，见 auth.js #Loomy-daily-first 与 extractDailyGrantAndPermanent）。
+// 其他供应商的下拉一律不出现该选项；历史误存的非 loomy override 由 fetchData 兜底忽略。
+const DAILY_GRANT_PROVIDERS = new Set(["loomy"]);
+
 const AUTO_PING_SETTINGS_KEYS = {
   claude: "claudeAutoPing",
   codex: "codexAutoPing",
@@ -2284,6 +2289,17 @@ export default function ProviderDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* 算法说明独立成行（PURE_BALANCE + daily-grant 时）：放工具栏行内会把
+              整行布局挤乱（长文案强制换行、左右控件错位）。 */}
+          {balanceStrategy === "daily-grant" &&
+            DAILY_GRANT_PROVIDERS.has(providerId) &&
+            getProviderQuotaCategory(providerId) === PROVIDER_QUOTA_TYPES.PURE_BALANCE && (
+            <div className="-mt-3 mb-3 flex items-start gap-1.5 text-xs leading-relaxed text-text-muted">
+              <span className="material-symbols-outlined text-[14px] leading-5">info</span>
+              <p className="min-w-0">{translate("Daily Grant First Hint")}</p>
+            </div>
+          )}
 
           {connections.length === 0 ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
