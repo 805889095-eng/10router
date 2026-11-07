@@ -12,6 +12,7 @@ User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889
 ## v1.9.6 (2026-11-09)
 
 ### ✨ New
+- **Trae split into China / International providers**: Trae CN (trae.cn) and international (trae.ai) accounts never interoperate — they are now two separate provider cards ("Trae" for international, "Trae (China)" for domestic), each with its own model catalog and sign-in entry. The site picker in the login dialog is gone, existing connections migrate with no action, and the CN data plane now points at the current official gateway.
 
 - **New ninth theme "Jelly"**: an iOS-style jelly-glass skin — bright indigo primary, a
   multi-hue fluid light background, and thick translucent cards (top highlight band, inner
