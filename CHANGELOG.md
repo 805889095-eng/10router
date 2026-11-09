@@ -2,6 +2,31 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.6 (2026-11-09)
+
+### ✨ 新增功能
+
+- **第九套主题 `jelly`（iOS 果冻透明风）**，设计语言取自落地页「Aura Glass」。
+  - `src/app/globals.css` 新增约 895 行 `.jelly` 皮肤块：品牌色取 iOS 靛蓝
+    （`--color-brand-500: #4b4fe8`，白字对比 5.86:1，达 AA），表面为半透明白
+    （`--color-surface: rgba(255,255,255,0.52)`），底纸 `#eef1fb` 与落地页 body 同色，
+    让环境光从卡片底下透上来；卡片带顶部白高光带 / 底部内阴影 / 四边白描边 / 多层染色柔影，
+    并按 `rounded-*` 档位统一放大圆角（14 / 18 / 22 / 28px）。
+  - **与 `glass` 的分界**：`glass` 是哑光磨砂靛蓝（低饱和、卡片近实色），`jelly` 是果冻胶质
+    —— 表面有明确的受光渐变与弧面体积感，饱和度更高。两者同属浅色家族（不挂 `.dark`，
+    `color-scheme: light`），类互斥由 `applyTheme()` 保证。
+
+### 🔧 改进
+
+- `src/store/themeStore.js`：`THEME_CYCLE` 在 `candy` 之后插入 `jelly`，
+  `applyTheme()` 增加 `root.classList.toggle("jelly", …)`。
+- `src/app/layout.js`：首屏内联脚本的白名单、`documentElement` 类切换补上 `jelly`（防 FOUC），
+  `theme-color` 元数据同步为 `#EEF1FB`。
+- `src/shared/components/ThemeToggle.js`：`MODE_META` 增加 `jelly`（图标 `bubble_chart`，
+  `candy` 的 `next` 改为 `jelly`），循环顺序注释同步更新。
+- `(dashboard)/dashboard/profile/page.js`：设置页主题数组与图标表加入 `jelly`。
+- 用户版更新日志 `public/i18n/changelog/{zh-CN,zh-TW,en}.md` 三语同步。
+
 ## v1.9.5 (2026-11-07)
 
 ### 🐛 修复

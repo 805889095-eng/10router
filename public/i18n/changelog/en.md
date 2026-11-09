@@ -2,6 +2,23 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.6 (2026-11-09)
+
+### ✨ New
+
+- **New ninth theme "Jelly"**: an iOS-style jelly-glass skin — bright indigo primary, a
+  multi-hue fluid light background, and thick translucent cards (top highlight band, inner
+  bottom shadow, white hairline border, layered tinted shadows). The difference from "Glass"
+  is texture: Glass is a matte frosted finish with near-solid cards, while Jelly has an
+  explicit light gradient and arc volume at higher saturation — it reads like an actual jelly block.
+  The toggle order is now: system → light → dark → brutal → grass → glass → dawn → candy → jelly → system.
+
+### 🔧 Improved
+
+- The settings page theme grid gains "Jelly" (bubble icon); all nine themes sit in the same selector.
+- No more light flash before a reload settles on Jelly: the first-paint inline script already
+  recognises it, and the browser theme-color follows along.
+
 ## v1.9.5 (2026-11-07)
 
 ### 🐛 Fixed
