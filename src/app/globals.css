@@ -1366,3 +1366,898 @@ button:disabled,
   border-top: 1px solid var(--color-border);
   margin: 1.5rem 0;
 }
+
+
+/* ============================================================
+   Jelly 主题（第九主题 · iOS 果冻透明风）
+   取自落地页「Aura Glass」的设计语言：明亮靛蓝主色 + 多彩流体柔光底 +
+   厚玻璃卡片（顶白高光带 / 底内阴影 / 四边白描边 / 多层染色柔影）。
+   与 glass 的区别：glass 是哑光磨砂靛蓝（低饱和、卡片近实色），
+   jelly 是**果冻胶质**——表面有明确的受光渐变和弧面体积感，饱和度更高。
+   浅色家族：不挂 .dark，color-scheme: light，applyTheme 保证类互斥。
+   ============================================================ */
+.jelly {
+  /* Brand —— iOS 靛蓝。500 号位取 #4b4fe8（白字 5.86:1，达 AA）；
+     300/400 用于高光点缀，不承载白字。 */
+  --color-brand-50: #eef1ff;
+  --color-brand-100: #e0e5ff;
+  --color-brand-200: #c7cfff;
+  --color-brand-300: #a3aeff;
+  --color-brand-400: #7d88ff;
+  --color-brand-500: #4b4fe8;
+  --color-brand-600: #3f41cf;
+  --color-brand-700: #3436ac;
+  --color-brand-800: #2a2c8a;
+  --color-brand-900: #202168;
+
+  --color-primary: #4b4fe8;
+  --color-primary-hover: #3f41cf;
+
+  /* Surfaces —— 半透明白，环境光从卡片底下透上来才是「透明」
+     底纸 #eef1fb 与落地页 body 同色 */
+  --color-bg: #eef1fb;
+  --color-bg-alt: #e7ecfa;
+  --color-surface: rgba(255, 255, 255, 0.52);
+  --color-surface-2: rgba(255, 255, 255, 0.34);
+  --color-surface-3: rgba(190, 231, 204, 0.55);
+  --color-sidebar: rgba(255, 255, 255, 0.58);
+
+  /* Borders —— 靛蓝细线（纯白在浅底上会消失，输入框就瞎了） */
+  --color-border: rgba(91, 107, 255, 0.26);
+  --color-border-subtle: rgba(91, 107, 255, 0.14);
+
+  /* Text —— 落地页 ink #1d1d2b。subtle 不要用落地页的 #7a7a94（3.69:1 不过），
+     压深到 #5a5b78（底纸上 5.81:1）才达 AA */
+  --color-text: #1d1d2b;
+  --color-text-main: #1d1d2b;
+  --color-text-muted: #4b4b63;
+  --color-text-subtle: #5a5b78;
+
+  /* Status —— mint/green 在浅底上太淡（#0f9f6e 仅 3.19:1），统一压深 */
+  --color-danger: #cf222e;
+  --color-success: #0a7a52;
+  --color-warning: #a04a08;
+  --color-info: #2f5fd0;
+
+  /* Radius —— 大圆角＝果冻的软 */
+  --radius-brand: 16px;
+  --radius-brand-lg: 26px;
+
+  /* Shadows —— 核心：四边内白描边（玻璃边缘）+ 顶内高光 + 底内阴影（弧面）
+     + 外层多层靛蓝柔影（落地页 .glass 的九层阴影精简版，去掉会掉帧的量级） */
+  --shadow-soft:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+    inset 0 2px 1.5px rgba(255, 255, 255, 0.96),
+    inset 0 -1px 1.5px rgba(20, 78, 58, 0.10),
+    0 4px 10px -6px rgba(20, 78, 58, 0.12),
+    0 12px 26px -16px rgba(91, 107, 255, 0.34);
+  --shadow-warm:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.78),
+    inset 0 2px 1.5px rgba(255, 255, 255, 0.98),
+    inset 0 -1px 1.5px rgba(20, 78, 58, 0.12),
+    0 10px 24px -12px rgba(75, 79, 232, 0.52),
+    0 20px 44px -26px rgba(163, 75, 255, 0.30);
+  --shadow-elevated:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.80),
+    inset 0 2px 1.5px rgba(255, 255, 255, 0.98),
+    inset 0 -2px 1.5px rgba(20, 78, 58, 0.13),
+    inset 0 -8px 18px rgba(20, 78, 58, 0.07),
+    0 22px 48px -26px rgba(75, 79, 232, 0.40),
+    0 34px 70px -40px rgba(163, 75, 255, 0.28);
+  --shadow-elev:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.82),
+    inset 0 2px 1.5px rgba(255, 255, 255, 0.99),
+    inset 0 -2px 1.5px rgba(20, 78, 58, 0.12),
+    inset 0 -8px 18px rgba(20, 78, 58, 0.06),
+    0 1px 2px rgba(20, 78, 58, 0.06),
+    0 26px 60px -30px rgba(75, 79, 232, 0.44);
+  --shadow-focus: 0 0 0 3px rgba(91, 107, 255, 0.26);
+
+  color-scheme: light;
+}
+
+/* ---- 环境光：落地页那五团荧光（靛蓝 / 玫粉 / 天青 / 紫 / 暖黄）----
+   光斑必须小而饱和（700–900px），铺到 1400px 会被稀释成白，
+   卡片透过去还是白 —— 这是「调了透明度仍然像实色卡」的真实原因。 */
+.jelly body {
+  background-color: #eef1fb;
+  background-image:
+    radial-gradient(760px 640px at 8% 4%, rgba(91, 107, 255, 0.62) 0%, rgba(91, 107, 255, 0) 64%),
+    radial-gradient(700px 580px at 92% 2%, rgba(255, 99, 164, 0.52) 0%, rgba(255, 99, 164, 0) 62%),
+    radial-gradient(720px 600px at 86% 58%, rgba(58, 197, 255, 0.50) 0%, rgba(58, 197, 255, 0) 62%),
+    radial-gradient(760px 640px at 14% 92%, rgba(163, 75, 255, 0.44) 0%, rgba(163, 75, 255, 0) 64%),
+    radial-gradient(620px 520px at 52% 42%, rgba(255, 196, 86, 0.30) 0%, rgba(255, 196, 86, 0) 62%),
+    linear-gradient(160deg, #f2f4ff 0%, #eef0fb 55%, #f5f0fb 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* 实色 bg-bg 容器会整块盖掉环境光，放行让它透上来。
+   [class~="bg-bg"] 只匹配独立 token，不会误伤 bg-bg-alt。
+
+   ⚠️ 必须排除带 border 的：设置页那些「Database Location / Display language /
+   Regional currency」行是 `p-3 rounded-lg bg-bg border border-border`，
+   一刀切透明会把它们变成只剩一根边框的空框（实测 bg 全变 rgba(0,0,0,0)）。
+   这些行是有内容的容器，要走下面的 .jelly-surface 果冻化。 */
+.jelly [class~="bg-bg"]:not([class~="border"]) {
+  background-color: transparent;
+}
+
+/* 卡片 = 带 border 的 bg-surface（表格行/按钮也是 bg-surface，不能批量上）。
+   表面用 145deg 的受光渐变：左上亮 → 右下反光，这是「弧面体积感」的来源，
+   比单纯调不透明度有效得多。 */
+.jelly [class~="bg-surface"][class~="border"] {
+  /* 顶白 → 底靛蓝，**不是**白叠白的渐变。
+     实测：白 0.62→白 0.18 的渐变，行内亮度只从 254 掉到 249（5 级），
+     因为卡片底本来已经是 0.52 白，再叠白就等于在白色上画白色，反差被压缩没了。
+     改成底部叠一层淡靛蓝(#e9edfb)，顶 252 → 底 226，落差 26 级，弧面才看得出来。 */
+  /* 三段式：顶纯白高光带(0-6%) → 靛蓝行体(6-88%) → 底部深靛蓝暗边。
+     关键不是「整面从白渐变到蓝」（那在浅底上只有 5-8 级落差，等于平），
+     而是**边缘**：一条 255 的白亮边 + 一条 ~216 的暗边，跨度 40 级，
+     这才是玻璃折射在扁平面上的真实表现。行体本身接近卡片色，保持透明感。 */
+  background-image: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.99) 0%,
+    rgba(255, 255, 255, 0.99) 5%,
+    rgba(222, 243, 227, 0.54) 20%,
+    rgba(222, 243, 227, 0.54) 86%,
+    rgba(186, 218, 197, 0.78) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow:
+    inset 0 2px 1.5px rgba(255, 255, 255, 1),
+    inset 2px 0 1.5px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 1.5px rgba(20, 78, 58, 0.13),
+    inset 0 -8px 18px rgba(20, 78, 58, 0.07),
+    0 4px 10px -6px rgba(20, 78, 58, 0.12),
+    0 18px 38px -24px rgba(75, 79, 232, 0.42),
+    0 30px 64px -40px rgba(163, 75, 255, 0.26);
+}
+
+/* 表格行 / 列表项这类 bg-surface 也跟着果冻化，否则卡片里嵌着一条条纯白 */
+.jelly [class~="bg-surface"]:not([class~="border"]) {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.46) 0%,
+    rgba(255, 255, 255, 0.26) 100%
+  );
+}
+
+/* 白底浮层（tooltip / 下拉 / 弹窗）染成冷白，纯白在靛蓝底上像贴了张纸 */
+.jelly [class~="bg-white"]:not([class~="rounded-full"]) {
+  background-color: #fbfcff;
+}
+
+
+/* 大圆角：果冻的软一半在这里 */
+.jelly [class~="rounded-lg"] { border-radius: 14px; }
+.jelly [class~="rounded-xl"] { border-radius: 18px; }
+.jelly [class~="rounded-2xl"] { border-radius: 22px; }
+.jelly [class~="rounded-3xl"] { border-radius: 28px; }
+
+/* 组件里写死像素的圆角（Card 用 rounded-[14px] 这类任意值，模板类改不到） */
+.jelly [class~="rounded-[8px]"],
+.jelly [class~="rounded-[10px]"] { border-radius: 14px; }
+.jelly [class~="rounded-[12px]"],
+.jelly [class~="rounded-[14px]"] { border-radius: 20px; }
+.jelly [class~="rounded-[16px]"],
+.jelly [class~="rounded-[18px]"] { border-radius: 24px; }
+
+/* 写死的 shadow-sm/md/lg 不走变量，在靛蓝底上会留冷灰影，逐档染蓝 */
+.jelly [class~="shadow-sm"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 2px 6px -4px rgba(20, 78, 58, 0.22);
+}
+.jelly [class~="shadow-md"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 8px 18px -8px rgba(75, 79, 232, 0.34);
+}
+.jelly [class~="shadow-lg"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 18px 34px -18px rgba(75, 79, 232, 0.38);
+}
+.jelly [class~="shadow-xl"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 26px 48px -24px rgba(75, 79, 232, 0.40);
+}
+
+/* 真模糊只给少数类：全站 bg-surface 批量 blur 在 NAS 上会掉帧 */
+.jelly :is(.card-soft, .card-elev, .bg-vibrancy) {
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+.jelly .bg-vibrancy {
+  background-color: rgba(255, 255, 255, 0.40);
+}
+
+/* 侧栏：上亮下深的玻璃渐变，跟主区拉开一档。
+   必须写在 .bg-vibrancy 之后 —— aside 带 bg-vibrancy 类，同特异性下后定义者胜，
+   写在前面会被 background 简写整条覆盖（实测 backgroundImage 变 none）。 */
+.jelly aside {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(222, 246, 231, 0.58) 100%
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* 选中态 / 输入框 */
+.jelly ::selection {
+  background-color: rgba(91, 107, 255, 0.24);
+  color: #1d1d2b;
+}
+
+.jelly input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.jelly textarea,
+.jelly select {
+  background-color: rgba(255, 255, 255, 0.62);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px rgba(20, 78, 58, 0.06);
+}
+
+.jelly select {
+  color-scheme: light;
+}
+
+.jelly select option {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+}
+
+/* 主按钮：果冻胶囊 —— 顶部高光带 + 底部内阴影 + 靛蓝柔影，按压回弹。
+   直接借 candy 已验证的果冻语言，只换色，避免再造一套。 */
+/* Usage 底部标签组的选中项（bg-primary + shadow-sm）也做成小果冻 */
+.jelly button[class~="bg-primary"][class~="text-white"] {
+  border-radius: 999px;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.34) 0px,
+    rgba(255, 255, 255, 0.34) 1px,
+    rgba(255, 255, 255, 0) 2px,
+    rgba(255, 255, 255, 0) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -2px 5px rgba(42, 44, 138, 0.40),
+    0 3px 8px -4px rgba(75, 79, 232, 0.50);
+}
+
+.jelly button[class~="bg-brand-500"]:not([role="switch"]):not(:disabled),
+.jelly a[class~="bg-brand-500"]:not(:disabled),
+.jelly button[class~="bg-primary"]:not([role="switch"]):not(:disabled),
+.jelly a[class~="bg-primary"]:not(:disabled) {
+  border-radius: 999px;
+  background-color: #4b4fe8;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.40) 0%,
+      rgba(255, 255, 255, 0.10) 42%,
+      rgba(255, 255, 255, 0) 43%
+    ),
+    linear-gradient(180deg, #6266f0 0%, #4b4fe8 52%, #3f41cf 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 6px rgba(42, 44, 138, 0.42),
+    0 6px 14px -5px rgba(75, 79, 232, 0.55),
+    0 2px 4px -1px rgba(75, 79, 232, 0.30);
+  transition: transform 0.13s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.jelly button[class~="bg-brand-500"]:not([role="switch"]):not(:disabled):hover,
+.jelly a[class~="bg-brand-500"]:not(:disabled):hover,
+.jelly button[class~="bg-primary"]:not([role="switch"]):not(:disabled):hover,
+.jelly a[class~="bg-primary"]:not(:disabled):hover {
+  transform: translateY(-1.5px);
+  filter: saturate(1.12) brightness(1.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(42, 44, 138, 0.42),
+    0 9px 20px -5px rgba(75, 79, 232, 0.62),
+    0 2px 4px -1px rgba(75, 79, 232, 0.30);
+}
+
+.jelly button[class~="bg-brand-500"]:not([role="switch"]):not(:disabled):active,
+.jelly a[class~="bg-brand-500"]:not(:disabled):active,
+.jelly button[class~="bg-primary"]:not([role="switch"]):not(:disabled):active,
+.jelly a[class~="bg-primary"]:not(:disabled):active {
+  transform: translateY(1px) scale(0.965);
+  filter: brightness(0.92) saturate(1.05);
+  box-shadow:
+    inset 0 2px 5px rgba(42, 44, 138, 0.50),
+    0 1px 2px rgba(75, 79, 232, 0.35);
+}
+
+.jelly button[class~="bg-brand-500"]:not([role="switch"]):disabled,
+.jelly button[class~="bg-primary"]:not([role="switch"]):disabled {
+  border-radius: 999px;
+  background-image: none;
+  background-color: var(--color-surface-3);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+/* ---- 侧栏菜单行：每一行都是独立果冻胶囊 ----
+   DOM 侧栏是 <aside><nav> 里一串 <Link>/<button>，原本只有 px-3 py-1 rounded-lg
+   配一个扁平的 bg-primary/10，看起来像「整块玻璃板上贴的贴纸」。
+   这里把每一行做成独立的小果冻：顶白高光 + 四边白描边 + 底部内阴影 + 靛蓝柔影。
+   全部用 inset 描边而不是 border —— border 会改变盒子高度，40 行的菜单会整体跳动。 */
+.jelly aside nav a,
+.jelly aside nav button {
+  position: relative;
+  border-radius: 12px;
+  /* 行内边距 py-1(4px) → 5px。实测：抬到 7px 时行高 28→34px，17 行多出 120px，
+     800px 高的窗口（笔记本常态）会因此从「不需要滚动」变成「出现滚动条」。
+     5px 是能看出胶囊呼吸、又不额外引发滚动的上限。 */
+  padding-top: 5px;
+  padding-bottom: 5px;
+  /* 同卡片：靠**边缘**做立体。顶部 1.5px 纯白亮边 + 底部 1px 深靛蓝暗边，
+     中间保持近乎透明的靛蓝行体。侧栏行很扁（30px），整面渐变看不出弧面。 */
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0px,
+    rgba(255, 255, 255, 0.98) 1.5px,
+    rgba(222, 243, 227, 0.52) 6px,
+    rgba(222, 243, 227, 0.52) calc(100% - 2px),
+    rgba(190, 220, 200, 0.72) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.07),
+    0 2px 6px -4px rgba(75, 79, 232, 0.30);
+  transition:
+    transform 0.13s ease,
+    box-shadow 0.18s ease,
+    background-image 0.18s ease,
+    color 0.15s ease;
+}
+
+/* 行间距：space-y-0.5 只有 2px，果冻块会粘成一片 */
+.jelly aside nav > a + a,
+.jelly aside nav > a + button,
+.jelly aside nav > button + a,
+.jelly aside nav > button + button,
+.jelly aside nav > div > div > a,
+.jelly aside nav > div > div > button {
+  margin-top: 3px;
+}
+
+/* 悬停：提亮 + 上浮 1px，像指尖按上去之前的弹性回弹 */
+.jelly aside nav a:hover,
+.jelly aside nav button:hover {
+  transform: translateY(-1px);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.74) 0%,
+    rgba(255, 255, 255, 0.38) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.80),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.08),
+    0 6px 14px -6px rgba(75, 79, 232, 0.42);
+}
+
+/* 按下：反向塌陷，内阴影接管 —— 这是「果冻被压扁」的那一下 */
+.jelly aside nav a:active,
+.jelly aside nav button:active {
+  transform: translateY(1px) scale(0.985);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 2px 4px rgba(20, 78, 58, 0.16);
+}
+
+/* 选中行：实心靛蓝果冻（跟主按钮同一套语言），白字。
+   原样式是 bg-primary/10 + text-primary，扁平的淡紫底；
+   这里换成一整颗立起来的靛蓝胶囊，选中状态一眼可见。 */
+.jelly aside nav a[class~="text-primary"],
+.jelly aside nav button[class~="text-primary"] {
+  color: #ffffff;
+  /* 顶停 #5c60eb 而不是更亮的 #6b6ff2 —— 后者配白字只有 4.05:1 不达 AA，
+     实测选中行渐变顶端是最浅处，文字正好压在那里 */
+  background-image: linear-gradient(
+    180deg,
+    #5c60eb 0%,
+    #4b4fe8 55%,
+    #4344d8 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50),
+    inset 0 -2px 6px rgba(42, 44, 138, 0.42),
+    0 7px 16px -6px rgba(75, 79, 232, 0.58),
+    0 2px 4px -1px rgba(75, 79, 232, 0.30);
+}
+
+/* 选中行里的图标与文字也要白：子元素自带 text-primary，会盖掉父级 color */
+.jelly aside nav a[class~="text-primary"] .material-symbols-outlined,
+.jelly aside nav a[class~="text-primary"] > span,
+.jelly aside nav button[class~="text-primary"] .material-symbols-outlined,
+.jelly aside nav button[class~="text-primary"] > span {
+  color: #ffffff;
+}
+
+.jelly aside nav a[class~="text-primary"]:hover,
+.jelly aside nav button[class~="text-primary"]:hover {
+  transform: translateY(-1px);
+  background-image: linear-gradient(
+    180deg,
+    #6266ee 0%,
+    #5559ec 55%,
+    #4a4bdd 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -2px 6px rgba(42, 44, 138, 0.42),
+    0 9px 20px -6px rgba(75, 79, 232, 0.66);
+}
+
+/* 选中行的 NEW 徽章保持绿色系，别被上面的白色规则吞掉 */
+.jelly aside nav a[class~="text-primary"] span[class*="text-green"],
+.jelly aside nav button[class~="text-primary"] span[class*="text-green"] {
+  color: #7ff0b0;
+}
+
+/* 侧栏顶部 logo 方块也做成一颗果冻 */
+.jelly aside [class*="from-brand-500"] {
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 5px rgba(42, 44, 138, 0.40),
+    0 6px 14px -5px rgba(75, 79, 232, 0.60);
+}
+
+/* SYSTEM / COMMUNITY 小标题：压深一点，跟胶囊行区分开 */
+.jelly aside nav > div > p:first-child {
+  letter-spacing: 0.14em;
+  color: rgba(90, 91, 120, 0.86);
+}
+
+/* 滚动条也染蓝，默认灰条在靛蓝底上很脏 */
+.jelly aside nav::-webkit-scrollbar-thumb {
+  background-color: rgba(91, 107, 255, 0.26);
+  border-radius: 999px;
+}
+.jelly aside nav::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(91, 107, 255, 0.40);
+}
+
+/* ============================================================
+   果冻表面统一层 —— 全站「所有装文字的框」
+   ------------------------------------------------------------
+   前面只处理了侧栏行和主卡片。实测全站还有一批有文字但没被果冻化的容器：
+     108 个 bg-surface+border   → 已处理（主卡片）
+       7 个 bg-bg+border        → 设置页内嵌行（之前被一刀切透明，变成空框）
+      12 个 bg-surface-2        → 次级按钮 / 输入框
+      52 个 *-500/10            → 彩色图标底、状态徽章
+       6 个 input / 1 select   → 表单控件
+       8 个 tbody tr + 2 table → 表格
+   统一用同一套「四层果冻」语言，只按尺寸区分强度：
+     大块（卡片）→ 强高光强投影；小块（徽章/图标）→ 弱高光弱投影。
+   ============================================================ */
+
+/* ---- 1. 内嵌行（设置页那些 bg-bg + border 的条）----
+   与主卡片区分：卡片是 145deg 受光，行是 180deg 竖向微渐变 ——
+   行很扁（58-70px），斜向受光在扁盒子上看不出体积，只在两端出现脏边。 */
+.jelly [class~="bg-bg"][class~="border"],
+.jelly [class~="bg-bg-alt"][class~="border"] {
+  /* 覆盖 Usage 页底部 Tokens/Cost/Model Type 标签组（bg-bg-alt + border） */
+  /* ⚠️ background-color 必须是 transparent。之前设成白 0.40，导致
+     background-image 的颜色是叠在「白 0.4 覆盖的卡片」上，而不是叠在卡片上，
+     实测行体亮度被抬到 241（几近纯白）→ 整行看着还是平的。
+     去掉底色后，渐变直接压在卡片上，行体落到 226，白顶 255，落差 29 级。 */
+  background-color: transparent;
+  /* 同卡片：顶纯白高光 → 底淡靛蓝，靠色相变化制造弧面（白叠白无效） */
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 0px,
+    rgba(255, 255, 255, 1) 2px,
+    rgba(222, 243, 227, 0.54) 9px,
+    rgba(222, 243, 227, 0.54) calc(100% - 3px),
+    rgba(186, 218, 197, 0.78) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.07),
+    0 3px 8px -5px rgba(75, 79, 232, 0.28);
+}
+
+/* ---- 2. 次级按钮 / 输入框（bg-surface-2）----
+   注意排除 rounded-full 的开关轨道：那是控件本体，加渐变会让滑块看起来歪。 */
+.jelly [class~="bg-surface-2"]:not([class~="rounded-full"]) {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 0px,
+    rgba(222, 243, 227, 0.54) 2px,
+    rgba(222, 243, 227, 0.54) calc(100% - 2px),
+    rgba(191, 221, 201, 0.76) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.06),
+    0 2px 6px -4px rgba(75, 79, 232, 0.26);
+}
+
+.jelly [class~="bg-surface-2"]:not([class~="rounded-full"]):hover {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.50) 100%
+  );
+}
+
+/* ---- 3. 表单控件（输入框 / 下拉 / 文本域）----
+   已有底色规则，这里补果冻的描边与内阴影，让它从卡片上「浮起一层」。 */
+.jelly input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.jelly textarea,
+.jelly select {
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0px,
+    #ffffff 1px,
+    rgba(246, 253, 248, 0.98) 2px,
+    rgba(238, 250, 241, 0.96) calc(100% - 2px),
+    rgba(222, 242, 226, 0.98) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.70),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 2px rgba(20, 78, 58, 0.06),
+    0 2px 6px -4px rgba(75, 79, 232, 0.24);
+}
+
+.jelly input:focus:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.jelly textarea:focus,
+.jelly select:focus {
+  border-color: rgba(91, 107, 255, 0.52);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.80),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 0 0 3px rgba(91, 107, 255, 0.20),
+    0 3px 8px -4px rgba(75, 79, 232, 0.30);
+}
+
+/* ---- 4. 表格：表体行做果冻条，表头保持透明当分隔 ----
+   tr 上直接加背景会盖住 border-collapse 的边框，所以只给底色和圆角，
+   阴影放到 td 上（tr 的 box-shadow 在 border-collapse 下不可靠）。 */
+.jelly table tbody tr {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0px,
+    rgba(255, 255, 255, 0.92) 1px,
+    rgba(234, 238, 252, 0.36) 2px,
+    rgba(234, 238, 252, 0.36) 100%
+  );
+  transition: background-image 0.18s ease;
+}
+
+.jelly table tbody tr:hover {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.42) 100%
+  );
+}
+
+.jelly table tbody td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.jelly table tbody td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* ---- 5. 彩色图标底座 / 状态徽章（*-500/10 那类）----
+   原样是「一块淡淡的有色玻璃」，加同色内高光后会像一小颗有色果冻。
+   用 color-mix 就近取它自己的主色，不写死 20 套规则。 */
+.jelly [class*="-500/10"],
+.jelly [class*="bg-primary/10"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.60),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.05),
+    0 1px 3px -2px rgba(20, 78, 58, 0.18);
+}
+
+/* 小徽章（NEW / 状态胶囊）别加外投影，否则一行里会出现一圈脏影 */
+.jelly span[class*="-500/10"],
+.jelly span[class*="bg-primary/10"] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* ---- 5b. 胶囊徽章（Badge：span + bg-surface-2 + rounded-full）----
+   第 2 条规则排除了 rounded-full，是为了不染色开关轨道（开关用的是
+   bg-surface-3 / bg-brand-500，本来就不冲突）；但 Badge 的 default 变体
+   正好是 bg-surface-2 + rounded-full，会被一起漏掉。
+   徽章只有 10-18px 高，套三段式会糊，所以只给单层浅绿 + 顶部 1px 白边。 */
+.jelly span[class~="bg-surface-2"][class~="rounded-full"] {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0px,
+    rgba(255, 255, 255, 0.92) 1px,
+    rgba(219, 241, 224, 0.62) 2px,
+    rgba(203, 230, 211, 0.72) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+}
+
+/* ---- 5c. bg-surface 的透明度变体（bg-surface/30 /40 /50 /95）----
+   第 1 条主卡片规则用的是 [class~="bg-surface"] 精确匹配，
+   而 Tailwind 的 bg-surface/50 在 class 属性里是另一个 token，
+   精确匹配抓不到 → MITM 页那几块说明框一直是原色。用子串匹配兜住。 */
+.jelly [class*="bg-surface/"]:not([class~="rounded-full"]) {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.94) 0px,
+    rgba(255, 255, 255, 0.94) 1px,
+    rgba(220, 242, 226, 0.60) 2px,
+    rgba(204, 231, 212, 0.70) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.06);
+}
+
+/* ---- 6. 分段控件 / Tab 组（bg-surface-2 的容器 + 内部 bg-surface 的选中项）----
+   Usage 页的 Today/24h/7D 那种。容器本身已是果冻，选中项要额外凸起。 */
+.jelly [class~="bg-surface-2"] > button[class~="bg-surface"],
+.jelly [class~="bg-surface-2"] > a[class~="bg-surface"] {
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0px,
+    #ffffff 1px,
+    rgba(240, 252, 243, 0.94) 2px,
+    rgba(220, 242, 224, 0.90) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.90),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 3px 8px -4px rgba(75, 79, 232, 0.34);
+}
+
+/* ---- 7. 顶栏 / 页头按钮（Announcements / Donate / 语言 / 网格）----
+   它们是 rounded-full + hover:bg-surface-2，默认无底色。
+   给一层极淡的果冻壳，让顶栏不再是一排"裸文字"。 */
+.jelly header button[class*="rounded-full"][class*="hover:bg-surface-2"],
+.jelly header a[class*="rounded-full"][class*="hover:bg-surface-2"] {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0px,
+    rgba(255, 255, 255, 0.98) 1px,
+    rgba(225, 245, 230, 0.52) 2px,
+    rgba(225, 245, 230, 0.52) calc(100% - 2px),
+    rgba(192, 222, 202, 0.68) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  transition: transform 0.13s ease, box-shadow 0.18s ease, background-image 0.18s ease;
+}
+
+.jelly header button[class*="rounded-full"][class*="hover:bg-surface-2"]:hover,
+.jelly header a[class*="rounded-full"][class*="hover:bg-surface-2"]:hover {
+  transform: translateY(-1px);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.74) 0%,
+    rgba(255, 255, 255, 0.40) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 5px 12px -6px rgba(75, 79, 232, 0.40);
+}
+
+/* ---- 8. 提示条（红/琥珀/绿/蓝的告警条）----
+   原样是纯平色块 + 细边框，在一堆果冻里像贴纸。
+   做法：用半透明白叠在**它自己的语义色**上做顶亮底暗，颜色仍是红/琥珀/绿，
+   但获得了和其他果冻一致的弧面。不改色相 —— 警告必须一眼是红的。 */
+.jelly [class*="bg-red-500/10"],
+.jelly [class*="bg-amber-500/10"],
+.jelly [class*="bg-green-500/10"],
+.jelly [class*="bg-blue-500/10"] {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.68) 0px,
+    rgba(255, 255, 255, 0.68) 1px,
+    rgba(255, 255, 255, 0.10) 2px,
+    rgba(255, 255, 255, 0.10) calc(100% - 2px),
+    rgba(20, 78, 58, 0.06) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.07),
+    0 2px 6px -4px rgba(20, 78, 58, 0.20);
+}
+
+/* 顶部那条通栏警告是 border-b 的直角条，加圆角会露出背景断口，所以只给高光不给圆角 */
+.jelly [class*="bg-red-500/10"][class*="border-b"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -1px 0 rgba(207, 34, 46, 0.10);
+}
+
+/* ---- 9. 纯白浮层（tooltip / 下拉 / 弹窗）----
+   之前的 #fbfcff 是死白，在果冻层里像纸片；换成带渐变的玻璃白。 */
+.jelly [class~="bg-white"]:not([class~="rounded-full"]):not([class*="size-"]) {
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0px,
+    #ffffff 1px,
+    #f6fdf7 2px,
+    #e2f6e6 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.90),
+    0 10px 24px -12px rgba(75, 79, 232, 0.34);
+}
+
+/* ---- 10. 图表 / 画布容器（Usage 的关系图、柱状图底板）----
+   这些是 h-[320px] 的大空盒，只有 border 和极淡 bg-alt/30。
+   在一堆果冻里像一块凹陷的黑洞，给它们一个「玻璃槽」的表面。 */
+.jelly [class*="bg-bg-alt/30"],
+.jelly [class*="bg-bg-alt/40"],
+.jelly [class*="bg-bg-alt/50"] {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.52) 0px,
+    rgba(255, 255, 255, 0.52) 1px,
+    rgba(224, 245, 229, 0.36) 2px,
+    rgba(224, 245, 229, 0.36) calc(100% - 2px),
+    rgba(196, 224, 205, 0.48) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.70);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.06),
+    0 2px 8px -5px rgba(75, 79, 232, 0.26);
+}
+
+/* 图表内的网格线别太重，果冻底上会显脏 */
+.jelly svg line,
+.jelly svg path[stroke*="stroke"] {
+  stroke-opacity: 0.55;
+}
+
+/* ---- 11. 小图标按钮（复制 / 删除 / 展开 / 缩放）----
+   p-1 / p-2 + rounded / rounded-lg，默认完全透明，鼠标移上去才有底色。
+   给它们一颗极小的果冻，静态时也有存在感，但别抢主按钮的戏。 */
+.jelly button[class*="rounded"][class*="hover:bg-black/5"],
+.jelly button[class*="rounded"][class*="hover:bg-white/5"],
+.jelly button[class*="rounded"][class*="hover:bg-surface-2"]:not([class*="rounded-full"]) {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.66) 0px,
+    rgba(255, 255, 255, 0.66) 1px,
+    rgba(231, 247, 233, 0.36) 2px,
+    rgba(231, 247, 233, 0.36) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+  transition: transform 0.13s ease, box-shadow 0.18s ease, background-image 0.18s ease;
+}
+
+.jelly button[class*="rounded"][class*="hover:bg-black/5"]:hover,
+.jelly button[class*="rounded"][class*="hover:bg-white/5"]:hover {
+  transform: translateY(-1px);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0px,
+    rgba(255, 255, 255, 0.92) 1px,
+    rgba(221, 244, 225, 0.50) 2px,
+    rgba(221, 244, 225, 0.50) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 4px 10px -5px rgba(75, 79, 232, 0.36);
+}
+
+/* ---- 12. 文字链接（Open Settings / Test All 之类）----
+   虚线底线改成半透明靛蓝，避免在果冻层上出现一根硬线。 */
+.jelly a[class*="underline"] {
+  text-decoration-color: rgba(91, 107, 255, 0.40);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease, color 0.15s ease;
+}
+
+.jelly a[class*="underline"]:hover {
+  text-decoration-color: rgba(91, 107, 255, 0.85);
+}
+
+/* ---- 14. 分隔线：纯灰线在果冻层上太硬，换成半透明靛蓝 ---- */
+.jelly [class~="border-t"][class~="border-border"],
+.jelly [class~="border-t"][class*="border-border/"],
+.jelly [class~="border-b"][class~="border-border-subtle"] {
+  border-top-color: rgba(91, 107, 255, 0.16);
+  border-bottom-color: rgba(91, 107, 255, 0.14);
+}
+
+/* ---- 15. 虚线占位框 / 「展开全部」按钮 ----
+   Providers 页有个 `border border-dashed` 的空状态提示框，和一个
+   `border-dashed border-primary/40` 的 Show all 按钮。虚线框加实心果冻会
+   显得像"被填满的空状态"，所以只给它一层极淡的玻璃面 + 保留虚线性质。 */
+.jelly [class*="border-dashed"] {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.52) 0px,
+    rgba(255, 255, 255, 0.52) 1px,
+    rgba(231, 247, 233, 0.28) 2px,
+    rgba(231, 247, 233, 0.28) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -1px 1px rgba(20, 78, 58, 0.04);
+}
+
+/* ---- 16. 主题选择器的分段容器（设置页 9 个主题那排）----
+   DOM 是 `grid ... p-1 rounded-lg bg-black/5`。bg-black/5 在靛蓝底上会变成
+   一块灰脏的槽，换成玻璃槽（与 Usage 的 Today/24h 分段控件同一语言）。 */
+.jelly [class~="bg-black/5"] {
+  background-color: rgba(255, 255, 255, 0.30);
+  background-image: linear-gradient(
+    180deg,
+    rgba(221, 244, 225, 0.48) 0px,
+    rgba(221, 244, 225, 0.48) 1px,
+    rgba(255, 255, 255, 0.20) 2px,
+    rgba(255, 255, 255, 0.20) 100%
+  );
+  box-shadow:
+    inset 0 1px 2px rgba(20, 78, 58, 0.10),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.48),
+    0 1px 0 rgba(255, 255, 255, 0.70);
+}
+
+/* 槽里的选中项（bg-white）要"凸"出来，跟侧栏选中行同一逻辑但更轻 */
+.jelly [class~="bg-black/5"] > button[class~="bg-white"] {
+  border-radius: 12px;
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0px,
+    #ffffff 1px,
+    rgba(240, 252, 243, 0.96) 2px,
+    rgba(220, 242, 224, 0.92) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.94),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 3px 8px -4px rgba(75, 79, 232, 0.40),
+    0 1px 2px -1px rgba(75, 79, 232, 0.24);
+}
+
+/* ---- 17. Usage 关系图里的节点胶囊 ----
+   `rounded-xl border-... px-5 py-3` 的节点，原本只有边框+淡底。 */
+.jelly [class*="rounded-xl"][class*="border-"][class*="px-5"] {
+  background-image: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.90) 0px,
+    rgba(255, 255, 255, 0.90) 1.5px,
+    rgba(240, 252, 243, 0.74) 3px,
+    rgba(240, 252, 243, 0.74) calc(100% - 3px),
+    rgba(198, 226, 207, 0.82) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 6px 16px -8px rgba(75, 79, 232, 0.40),
+    0 2px 4px -2px rgba(75, 79, 232, 0.20);
+}

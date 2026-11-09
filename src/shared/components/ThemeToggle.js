@@ -3,13 +3,15 @@
 import { useTheme } from "@/shared/hooks/useTheme";
 import { cn } from "@/shared/utils/cn";
 
-// Toggle order: system → light → dark → brutal → grass → glass → dawn → candy
+// Toggle order: system → light → dark → brutal → grass → glass → dawn → candy → jelly
 // (the store's toggleTheme).
 // "system" tracks the OS day/night so Windows personalization / macOS
 // appearance / the fnOS browser drive the theme with no manual switching;
 // "brutal" is the neo-brutalist skin, "grass" the meadow-green one,
 // "glass" the frosted-indigo one, "dawn" its warm amber-rose sibling and
-// "candy" the pastel sweet-shop skin (cream paper, orchid pink, big radii).
+// "candy" the pastel sweet-shop skin (cream paper, orchid pink, big radii) and
+// "jelly" the iOS jelly-glass skin (indigo ink, fluid multi-hue light, thick
+// translucent cards with top highlight + arc shading — NOT the flat matte of glass).
 const MODE_META = {
   system: { icon: "routine", label: "Theme: system", next: "light" },
   light: { icon: "light_mode", label: "Theme: light", next: "dark" },
@@ -18,7 +20,8 @@ const MODE_META = {
   grass: { icon: "grass", label: "Theme: grass", next: "glass" },
   glass: { icon: "blur_on", label: "Theme: glass", next: "dawn" },
   dawn: { icon: "wb_twilight", label: "Theme: dawn", next: "candy" },
-  candy: { icon: "cake", label: "Theme: candy", next: "system" },
+  candy: { icon: "cake", label: "Theme: candy", next: "jelly" },
+  jelly: { icon: "bubble_chart", label: "Theme: jelly", next: "system" },
 };
 
 export default function ThemeToggle({ className, variant = "default" }) {

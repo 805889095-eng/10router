@@ -1059,7 +1059,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5 w-full sm:w-auto">
-              {["light", "dark", "brutal", "grass", "glass", "dawn", "candy", "system"].map((option) => (
+              {["light", "dark", "brutal", "grass", "glass", "dawn", "candy", "jelly", "system"].map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -1080,6 +1080,7 @@ export default function ProfilePage() {
                       glass: "blur_on",
                       dawn: "wb_twilight",
                       candy: "cake",
+                      jelly: "bubble_chart",
                       system: "contrast",
                     }[option] || "contrast"}
                   </span>
