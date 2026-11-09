@@ -13,6 +13,8 @@ RUN apk --no-cache upgrade && apk --no-cache add python3 make g++ linux-headers
 # freshly-floated resolution while amd64 sailed through (deps were identical to
 # v1.3.5's source; only the registry moved).
 COPY package.json package-lock.json ./
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
+ARG NPM_CONFIG_REPLACE_REGISTRY_HOST=always
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --no-audit --no-fund
 
