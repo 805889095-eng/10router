@@ -153,7 +153,7 @@ export const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/v1/messages";
 export const OPENAI_COMPAT_BASE = "https://api.openai.com/v1";
 export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 
-// Official Antigravity Hub Desktop 2.24.0 fingerprint captured from macOS arm64.
+// Official Antigravity Hub Desktop 2.29.0 fingerprint captured from macOS arm64.
 // Product line renamed IDE → Hub at 2.24.0, so the UA path segment changes too.
 // Keep this static even when 10Router runs on Linux: the provider profile is
 // intentionally matching the Hub client, not the server host.
@@ -166,7 +166,7 @@ export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 // So the argon 404 is the ACCOUNT lacking the model entitlement, not the client
 // version — upgrading this constant does not grant argon access. The registry
 // still lists the argon tiers for accounts that do have it.
-export const ANTIGRAVITY_IDE_VERSION = "2.24.0";
+export const ANTIGRAVITY_IDE_VERSION = "2.29.0";
 export const ANTIGRAVITY_IDE_BASE_URL = "https://daily-cloudcode-pa.googleapis.com";
 export const ANTIGRAVITY_IDE_USER_AGENT = `antigravity/hub/${ANTIGRAVITY_IDE_VERSION} darwin/arm64`;
 
