@@ -2,6 +2,13 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.7 (2026-11-10)
+
+### 🔧 Improved
+
+- **CodeBuddy CLI bumped to 2.182.0** (released 2026-11-09). Tencent changed no request
+  headers in that release, so only the version constant moved — no behaviour change.
+
 ## v1.9.6 (2026-11-09)
 
 ### ✨ New

@@ -2,6 +2,18 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.7 (2026-11-10)
+
+### 🔧 依赖
+
+- **CodeBuddy CLI 版本跟进 2.182.0**（`@tencent-ai/codebuddy-code`，2026-11-09 发布）。
+  该版 CHANGELOG 无任何 UA / 请求头 / 设备身份改动（新增的是会话目标宿主控制、TUI 底栏
+  状态项粒度配置、`/new` 命令、桌面端 osascript 审批执行等本地能力），故只改
+  `open-sse/shared/codebuddyIdentity.js` 的 `CODEBUDDY_CLI_VERSION` 单点常量，
+  `User-Agent` 与 `X-IDE-Version` 均由它派生，头集合无需调整。
+- 同步两处硬编码副本：`tests/__baseline__/providers-baseline.json`（6 处）与
+  `tests/translator/__snapshots__/golden-url-header.test.js.snap`（18 处），共 5 个文件 28 处。
+
 ## v1.9.6 (2026-11-09)
 
 ### ✨ 新增功能
