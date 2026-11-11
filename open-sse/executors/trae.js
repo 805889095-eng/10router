@@ -114,34 +114,10 @@ export function canonicalTraeModel(model) {
   return CANONICAL_TRAE_MODELS[key] || model;
 }
 
-// 4001 config-empty 降级链（#109）：上游 chat_v3 的 ConfigName 目录是社区人工
-// 校对的静态表（issue #99 备注），新模型可能还没进表（实测 GLM-5.3-FlashX 4001）。
-// 机械截段不行 —— tier 名是完整段（FlashX ≠ Flash + X），降级目标需显式声明：
-//   FlashX → Flash → 基型；Pro-Official → Pro；2.1-Turbo → 2.1-Pro（同族降档）
-// 表里没有的模型名返回 null（外层放弃降级，报原文错误）。命中即返回规范
-// ConfigName，重试同一 base；降级在日志标注（回复可能不是请求指定的模型）。
-const TRAE_CONFIG_DEGRADE = {
-  "GLM-5.3-FlashX": "GLM-5.3-Flash",
-  "DeepSeek-V4-Pro-Official": "DeepSeek-V4-Pro",
-  "Doubao-Seed-2.1-Turbo": "Doubao-Seed-2.1-Pro",
-};
-export function degradeTraeConfigName(configName) {
-  const m = String(configName || "").trim();
-  if (!m || m === "auto") return null;
-  const next = TRAE_CONFIG_DEGRADE[m] || null;
-  // 降级目标必须是目录已知名（或可继续降级的中间态）—— 防止降进未知名再 4001。
-  const knownValues = new Set(Object.values(CANONICAL_TRAE_MODELS));
-  return next && (knownValues.has(next) || TRAE_CONFIG_DEGRADE[next]) ? next : null;
-}
-
 // 判定是否为显式要求的 SOLO 沙箱模式
 export function isSoloAgentMode(model = "") {
   const m = String(model).trim().toLowerCase();
-  // 豆包系（doubao-*）：上游 chat 通道对豆包系也回落云端沙箱执行（#109 实测
-  // 日志：agent_type:chat 下 Doubao-Seed-Code 返回 TRAE 沙箱环境自述）。与其
-  // 走错通道拿错形态的回复，不如显式归位 SOLO 沙箱（As-Designed，#58 归档），
-  // 卡面/文档即可如实标注「云端沙箱执行」。
-  return m.includes("solo") || m.includes("work") || m.startsWith("agent-") || m.startsWith("doubao-");
+  return m.includes("solo") || m.includes("work") || m.startsWith("agent-");
 }
 
 // #99 拆线：同一执行器服务两条 registry 条目——
@@ -210,7 +186,8 @@ export default class TraeExecutor extends BaseExecutor {
       return { mode: "work", strategy: "auto", modelName: "" };
     }
     const auto = !m || m === "auto";
-    return { mode: "code", strategy: auto ? "auto" : "manual", modelName: auto ? "" : model };
+    const mapped = canonicalTraeModel(model);
+    return { mode: "code", strategy: auto ? "auto" : "manual", modelName: auto ? "" : mapped };
   }
 
   // common_params is a JSON-encoded string embedded inside initial_message.
@@ -241,10 +218,8 @@ export default class TraeExecutor extends BaseExecutor {
   // 区分直连非沙箱通道（agent_type: "chat", env: "local"）与 SOLO 沙箱通道（solo_agent_remote）：
   // 普通模型调用默认走轻量非沙箱通道，避免在远端分配容器沙箱及并发上限；
   // 只有明确指定 solo/work 任务模式时才启用云端沙箱。
-  async createSessionOnBase(base, headers, query, model, psd, signal, configNameOverride = null) {
-    const { mode, strategy, modelName: resolvedName } = this.resolveMode(model);
-    // 4001 降级链的 ConfigName 覆盖优先于 resolveMode 的映射结果。
-    const modelName = configNameOverride ?? resolvedName;
+  async createSessionOnBase(base, headers, query, model, psd, signal) {
+    const { mode, strategy, modelName } = this.resolveMode(model);
     const useSoloSandbox = isSoloAgentMode(model);
     const body = {
       mode,
@@ -254,11 +229,11 @@ export default class TraeExecutor extends BaseExecutor {
         content: [],
         query,
         model_name: modelName,
-        agent_type: "solo_agent_remote",
+        agent_type: useSoloSandbox ? "solo_agent_remote" : "chat",
         model_selection_strategy: strategy,
         common_params: this.commonParams(psd, mode),
       },
-      env: "remote",
+      env: useSoloSandbox ? "remote" : "local",
       auto_create_project: false,
       origin: "web",
     };
@@ -375,17 +350,17 @@ export default class TraeExecutor extends BaseExecutor {
     }
     const usedBase = session.base || base;
 
-    // Shared per-turn state: plan_item thoughts (cumulative, longest wins).
+    // Shared per-turn state: plan_item thoughts / content (cumulative, longest wins).
     const order = [];
     const thoughts = {};
     let sent = 0;
     let usage = null;
     let errorEvent = null;
     const renderNewText = (data) => {
-      const pid = data.id;
-      if (!pid) return "";
+      const pid = data.id || data.message_id || "default";
       if (!(pid in thoughts)) order.push(pid);
-      const t = data.thought || "";
+      // 提取回复文本：兼顾 SOLO 沙箱的 plan_item.thought 与直连 chat 的 content / delta / text
+      const t = data.thought || data.content || data.delta?.content || data.text || "";
       if (t.length >= (thoughts[pid] || "").length) thoughts[pid] = t;
       const full = order.map((i) => thoughts[i]).join("");
       const piece = full.slice(sent);
@@ -408,8 +383,8 @@ export default class TraeExecutor extends BaseExecutor {
           try {
             await this.streamEvents(usedBase, headers, session.sessionId, session.messageId, (ev, data) => {
               if (ev === "error") { errorEvent = data; return true; }
-              if (ev === "token_usage") usage = data;
-              if (ev === "plan_item") {
+              if (ev === "token_usage" || ev === "notify_usage") usage = data;
+              if (ev === "plan_item" || ev === "delta" || ev === "message" || ev === "content") {
                 let piece = renderNewText(data);
                 if (piece && hasTools) {
                   // #108 ②：文本 delta 过恢复器——正文原样透传，marker 块转
@@ -521,8 +496,8 @@ export default class TraeExecutor extends BaseExecutor {
     try {
       await this.streamEvents(usedBase, headers, session.sessionId, session.messageId, (ev, data) => {
         if (ev === "error") { errorEvent = data; return true; }
-        if (ev === "token_usage") usage = data;
-        if (ev === "plan_item") renderNewText(data);
+        if (ev === "token_usage" || ev === "notify_usage") usage = data;
+        if (ev === "plan_item" || ev === "delta" || ev === "message" || ev === "content") renderNewText(data);
         return ev === "done";
       }, signal);
     } catch (err) {
