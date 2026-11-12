@@ -6,7 +6,7 @@
 // of them always got missed. A stale UA is itself a bot fingerprint (2.108.1 was
 // once 68 releases behind).
 //
-// Verified against `@tencent-ai/codebuddy-code` 2.182.0 — the shipped bundle at
+// Verified against `@tencent-ai/codebuddy-code` 2.183.0 — the shipped bundle at
 // dist/codebuddy-headless.js. Notes from that extraction:
 //   - The official 2.x CLI does NOT emit a literal `CLI/x.y.z CodeBuddy/x.y.z`
 //     User-Agent. It builds one dynamically (CLI/TUI/IDE tokens are present in the
@@ -16,13 +16,13 @@
 //     It has not tripped detection, and it is strictly closer to a real client than
 //     the old IDE-plugin identity (which claimed X-IDE-Type: IDE with a CLI-series
 //     version — a pair no real client can produce).
-//   - Keep the header SET in sync when bumping. 2.182.0 changed no auth/header
-//     behaviour (its changelog is session-goal hosting, TUI status-line config, the
-//     /new command, desktop osascript approvals, memory/streaming fixes — no
-//     auth/identity/device lines), so a version bump is the whole change.
+//   - Keep the header SET in sync when bumping. 2.183.0 changed no auth/header
+//     behaviour (its changelog is Web UI agent-resume toggles, multi-root
+//     workspaces, goal/team fixes, TUI status-line tweaks — no auth/identity/
+//     device lines), so a version bump is the whole change.
 //   - `x-codebuddy-request: 1` must stay absent: the CLI only emits it on its LOCAL
 //     daemon endpoints, so forwarding it upstream marks the request as non-official.
-export const CODEBUDDY_CLI_VERSION = "2.182.0";
+export const CODEBUDDY_CLI_VERSION = "2.183.0";
 
 /** The UA both channels send. */
 export const CODEBUDDY_USER_AGENT = `CLI/${CODEBUDDY_CLI_VERSION} CodeBuddy/${CODEBUDDY_CLI_VERSION}`;

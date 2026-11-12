@@ -84,7 +84,7 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       headers["X-Conversation-Request-ID"] = reqUuid;
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
-      // Agent identity headers: @tencent-ai/codebuddy-code 2.182.0 sets all four on
+      // Agent identity headers: @tencent-ai/codebuddy-code 2.183.0 sets all four on
       // every completions call (dist/codebuddy-headless.js):
       //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
       //   X-Agent-Runtime = resolveAgentRuntime() → "local-agent" for the local CLI
