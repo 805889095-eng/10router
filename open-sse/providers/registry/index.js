@@ -161,6 +161,7 @@ import p155 from "./thx.js";
 import p156 from "./inception.js";
 import p157 from "./opendesign-amr.js";
 import p158 from "./gemini-decision.js";
+import p159 from "./meoo.js";
 
 export default [
   p0,
@@ -325,4 +326,5 @@ export default [
   p156,
   p157,
   p158,
+  p159,
 ];
