@@ -160,6 +160,7 @@ import p154 from "./codiv.js";
 import p155 from "./thx.js";
 import p156 from "./inception.js";
 import p157 from "./opendesign-amr.js";
+import p158 from "./gemini-decision.js";
 
 export default [
   p0,
@@ -323,4 +324,5 @@ export default [
   p155,
   p156,
   p157,
+  p158,
 ];
