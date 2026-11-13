@@ -3,7 +3,6 @@ tests/translator/golden-request.test.js :: GOLDEN request: OpenAI → Kiro full 
 tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
 tests/unit/codex-image-fetch.test.js :: CodexExecutor image handling execute() prefetches images before sending to upstream
 tests/unit/codex-image-fetch.test.js :: CodexExecutor image handling fetches 1MB remote image and inlines it as base64 data URI
-tests/unit/codex-registry-model-routing.test.js :: [suite-level failure]
 tests/unit/combo-autoswitch.test.js :: detectRequiredCapabilities web_search tool -> search
 tests/unit/combo-autoswitch.test.js :: reorderByCapabilities keeps order when no model matches
 tests/unit/db-benchmark.test.js :: [suite-level failure]
