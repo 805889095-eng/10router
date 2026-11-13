@@ -7,8 +7,17 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-11-13T22:05:00+08:00",
+  "updatedAt": "2026-11-13T22:35:00+08:00",
   "items": [
+    {
+      "id": "2026-11-13-200-runtime-crash-fix",
+      "level": "feature",
+      "date": "2026-11-13",
+      "title": "v2.0.0：清掉一批「只在浏览器里炸」的崩溃，配置零迁移",
+      "body": "本版修掉四处运行时未定义符号导致的崩溃（Loomy 页白屏、网页抓取/搜索刷新令牌、Gemini Decision 测试按钮 500），并把这类检查接进了发布流程。没有破坏性变更，连接与数据零迁移。",
+      "titleEn": "v2.0.0: a batch of browser-only crashes fixed, zero migration",
+      "bodyEn": "Four runtime ReferenceError crashes are fixed (blank Loomy page, token refresh on web fetch/search, 500 on the Gemini Decision test button), and this class of defect is now gated in CI. No breaking changes; no connection or data migration."
+    },
     {
       "id": "2026-11-13-loomy-blank-fix",
       "level": "critical",
@@ -89,15 +98,6 @@
       "body": "固定顺序/轮询不看谁更擅长当前任务；Router 由决策模型分析用户 prompt，动态挑最擅长的成员回答——仅一次额外调用，兼顾能力与速度；失败/超时 8s 内自动退回原顺序。",
       "titleEn": "Combo router strategy",
       "bodyEn": "Order/round-robin ignores model strengths. Router analyzes your prompt and picks the best-suited member to answer — one extra call; failures/timeouts fall back to the original order within 8s."
-    },
-    {
-      "id": "2026-10-21-gemini4-argon-gpt61",
-      "date": "2026-10-21",
-      "level": "feature",
-      "title": "Gemini 4 Argon 与 GPT-6.1 Sol 正式收录",
-      "body": "Gemini 4 Argon 全线接入（gemini / vertex / antigravity 官方三线），支持常开推理与 1M 上下文；Codex 接入 GPT-6.1 Sol，采用全新极速 Responses Lite 协议传输。",
-      "titleEn": "Gemini 4 Argon & GPT-6.1 Sol official support",
-      "bodyEn": "Full Gemini 4 Argon support across gemini, vertex, and antigravity with always-on reasoning and 1M context; Codex adds GPT-6.1 Sol over the new Responses Lite transport protocol."
     }
   ]
 }

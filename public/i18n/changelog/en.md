@@ -2,6 +2,30 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.0.0 (2026-11-13)
+
+A release dedicated to runtime-only crashes: several defects that no unit test and no build
+could catch, only a browser executing the offending line. The same class of bug is now gated
+statically in CI. No config, connection, or data migration.
+
+### 🐛 Fixes
+
+- **Loomy provider page no longer goes blank**: the client threw a ReferenceError the moment the
+  page rendered, emptying the whole content area down to the fnOS window's generic error page.
+  Other providers were unaffected.
+- **Web fetch / web search crashed on token refresh**: both paths referenced a variable that does
+  not exist in that scope, so any refresh-token rotation threw. Present since v1.9.7.
+- **Provider "Test" button returned 500 for Gemini Decision channels**: that branch used a module
+  symbol that was never imported.
+- **Background quota-refresh delay helper**: referenced an undefined sensitive-provider set. It has
+  no callers today — a dud defused ahead of time.
+
+### 🔧 Engineering
+
+- **New release gate**: every push now statically scans for symbols that are referenced but never
+  defined. These pass SSR (HTTP 200) and pass the build; they only explode in the browser — which
+  is exactly the batch fixed here.
+
 ## v1.9.9 (2026-11-13)
 
 ### 🐛 Fixes

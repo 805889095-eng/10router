@@ -2,6 +2,39 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.0.0 (2026-11-13)
+
+主版本号跳级说明：本版**没有**破坏性 API / 配置 / 数据变更，连接与数据零迁移。跳 2.0.0
+是因为交付基线变了——一类「服务端 200、构建通过、只在浏览器执行时抛 ReferenceError」
+的缺陷被系统性清掉，并新增静态门禁常驻拦截。此前 1.9.x 属于同一条线上持续打补丁，
+把修复点说成 1.9.10 会让用户误判为又一次小补丁。
+
+### 🐛 修复（全部为运行时未定义符号，由新门禁 `eslint.gate.config.mjs` 抓出）
+
+- **Loomy 供应商页客户端白屏**（回归自 `273f58e4`，v1.9.8）：`balanceStrategy` /
+  `getProviderQuotaCategory` / `PROVIDER_QUOTA_TYPES` 三个上游符号被抄进本地 JSX 门控，
+  本 fork 从未定义。SSR 与 HTTP 200 均正常，客户端 hydrate 立即抛 ReferenceError。
+  已回落到 `dailyGrantFirst && DAILY_GRANT_PROVIDERS.has(providerId)`。修于 `05322193`。
+- **web fetch / web search 令牌刷新回调 ReferenceError**（回归自 `be7d4b88`，v1.9.7）：
+  `onCredentialsRefreshed` 里用 shorthand 传 `provider`，而两个 handler 的局部变量叫
+  `providerId` / `credentialProviderId`（chat / embeddings / imageGeneration 有
+  `const { provider } = modelInfo` 故不受影响）。即令牌轮换的落库路径必炸。
+- **systemone 连接测试 ReferenceError**（回归自 `8c440285`，v1.9.8）：`testUtils.js` 的
+  Gemini Decision 分支用了未 import 的 `AI_PROVIDERS`，供应商页点「测试」即 500。
+- **`quotaRefreshDelayMs()` 引用未定义集合**（回归自 `b16778d2`）：`SENSITIVE_PROVIDERS`
+  未 import。按上游 techysy 的做法从 `backgroundTokenRefresh.js` export 后导入。
+  当前无调用点，属潜在炸点。
+
+### 🔧 工程
+
+- 新增 `eslint.gate.config.mjs`：只启用 `no-undef` 一条规则，`src/**/*.{js,jsx,mjs,cjs}`。
+  主配置继承 `eslint-config-next`，全量 145 条既有 error（`react-hooks/set-state-in-effect`
+  87 条等），无法直接做门禁；这份配置把插件以「已注册、规则全关」方式挂上，专治
+  「服务端渲染正常、客户端才炸」的静默白屏。
+- `.github/workflows/test.yml` 新增 `Undefined-symbol gate` 步骤。反向验证：把 Loomy 那行
+  改回坏写法 → `exit=1` 且精确定位；改回 → `exit=0`。
+- 主配置的 145 条历史欠账未动，留待单独清理。
+
 ## v1.9.9 (2026-11-13)
 
 线上热修版：单提交，修复 v1.9.8 引入的 Loomy 供应商详情页客户端白屏。
