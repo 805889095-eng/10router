@@ -2,6 +2,25 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.9 (2026-11-13)
+
+线上热修版：单提交，修复 v1.9.8 引入的 Loomy 供应商详情页客户端白屏。
+
+### 🐛 修复
+
+- **Loomy 供应商页客户端 ReferenceError 白屏（回归自 `273f58e4`）**：v1.9.8 移植上游
+  「每日赠送积分优先收回 Loomy 专属 + 算法文案挪出工具栏」时，把上游 RSC 的
+  `balanceStrategy` Select 状态和 `getProviderQuotaCategory` / `PROVIDER_QUOTA_TYPES`
+  （本 fork 从未存在、也从未 import）一并抄进了 JSX 门控。服务端渲染与 HTTP 200 均正常，
+  客户端 hydrate 进入 Loomy 页立即 `Uncaught ReferenceError: balanceStrategy is not defined`，
+  整块 `<main>` 卸载为空，fnOS webview 收敛到通用「This page couldn't load」。
+  门控回落到本地真实符号 `dailyGrantFirst && DAILY_GRANT_PROVIDERS.has(providerId)`。
+- **为什么全绿测试没拦住**：`eslint.config.mjs` 未启用 `no-undef`，三条未定义标识符要等
+  浏览器 parse chunk 才暴露，服务端渲染阶段完全无感。自检口径：
+  `npx eslint --rule '{"no-undef":"error"}' "src/app/(dashboard)/dashboard/providers/[id]/page.js"`
+  —— 修复前命中 `2290:12` / `2292:13` / `2292:54` 三条 not defined，修复后零命中。
+  待办：把 `no-undef` 纳入 CI lint 覆盖面，避免同类「服务端 200、客户端白屏」静默上线。
+
 ## v1.9.8 (2026-11-13)
 
 本版本为上游功能移植专版：从 `techysy/10router` 移植 Trae 全家桶、Meoo（秒悟）、

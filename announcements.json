@@ -7,8 +7,17 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-11-13T20:43:05+08:00",
+  "updatedAt": "2026-11-13T22:05:00+08:00",
   "items": [
+    {
+      "id": "2026-11-13-loomy-blank-fix",
+      "level": "critical",
+      "date": "2026-11-13",
+      "title": "紧急修复：Loomy 供应商页白屏",
+      "body": "v1.9.8 里 Loomy 供应商详情页会整块打不开（客户端 ReferenceError，fnOS 内嵌窗口显示通用错误页）。请升级到 v1.9.9；其他供应商页不受影响，连接与数据无需任何迁移。",
+      "titleEn": "Hotfix: Loomy provider page went blank",
+      "bodyEn": "On v1.9.8 the Loomy provider detail page fails to render entirely (client-side ReferenceError; the fnOS embedded window shows its generic error page). Upgrade to v1.9.9. Other providers are unaffected and no connection or data migration is needed."
+    },
     {
       "id": "2026-11-13-trae-split",
       "date": "2026-11-13",
@@ -71,15 +80,6 @@
       "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
       "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
       "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
-    },
-    {
-      "id": "2026-10-20-inception",
-      "date": "2026-10-20",
-      "level": "feature",
-      "title": "新增 Inception Labs（Mercury 扩散模型）",
-      "body": "OpenAI 兼容。mercury-3：1M ctx / 工具调用 / ~1000 tok/s，launch 半价 $0.10/$0.35，新 key 送 1 亿 tokens（额度经 CreditDaddy 通用卡推送）。",
-      "titleEn": "New provider: Inception Labs (Mercury diffusion models)",
-      "bodyEn": "OpenAI compatible. mercury-3: 1M ctx / tool calling / ~1000 tok/s, 50% off launch at $0.10/$0.35; new keys include 100M free tokens (quota via the CreditDaddy generic card)."
     },
     {
       "id": "2026-10-20-combo-router",

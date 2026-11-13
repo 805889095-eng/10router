@@ -2,6 +2,16 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.9 (2026-11-13)
+
+### 🐛 Fixes
+
+- **Loomy provider page no longer goes blank**: v1.9.8 ported an algorithm hint that referenced
+  three identifiers this fork never defined, so the client threw a `ReferenceError` the moment the
+  Loomy page rendered — the whole content area emptied out and the fnOS embedded window fell back
+  to its generic error page. The hint is gated on the local toggle again. Other providers were
+  unaffected; upgrade to this build to recover.
+
 ## v1.9.8 (2026-11-13)
 
 ### ✨ New
