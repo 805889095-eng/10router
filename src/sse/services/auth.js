@@ -8,6 +8,7 @@ import { extractEarliestPackageExpiry } from "open-sse/services/usage/expiryExtr
 import { extractDailyGrantAndPermanent } from "open-sse/services/usage/balanceExtractor.js";
 import { selectRelayCarrier } from "open-sse/services/relaySelection.js";
 import { getAntigravityQuotaCache, getAntigravityModelQuota } from "./antigravityQuota.js";
+import { SENSITIVE_PROVIDERS } from "./backgroundTokenRefresh.js";
 import { NEEDS_REAUTH_MESSAGE } from "./tokenRefresh.js";
 import { hashApiKey } from "@/lib/db/crypto/apiKeyIdentity.js";
 import { errorResponse } from "open-sse/utils/error.js";

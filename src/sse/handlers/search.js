@@ -209,7 +209,7 @@ async function handleSingleProviderSearch(body, providerInput, request, apiKey, 
       onCredentialsRefreshed: async (newCreds) => {
         await persistRefreshedCredentials(credentials.connectionId, newCreds, {
           providerSpecificData: credentials.providerSpecificData,
-          provider,
+          provider: credentialProviderId,
           log,
         });
       },

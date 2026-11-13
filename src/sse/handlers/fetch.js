@@ -208,7 +208,7 @@ async function handleSingleProviderFetch(body, providerInput, request, apiKey, s
       onCredentialsRefreshed: async (newCreds) => {
         await persistRefreshedCredentials(credentials.connectionId, newCreds, {
           providerSpecificData: credentials.providerSpecificData,
-          provider,
+          provider: providerId,
           log,
         });
       }
