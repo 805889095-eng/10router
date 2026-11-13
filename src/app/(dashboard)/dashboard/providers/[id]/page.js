@@ -47,11 +47,6 @@ const AUTO_PING_SETTINGS_KEYS = {
   codex: "codexAutoPing",
 };
 
-// #Loomy-daily-first: providers whose usage exposes the daily-grant/permanent
-// pair — the only ones allowed to show the Daily Grant First toggle (upstream
-// DAILY_GRANT_PROVIDERS，防历史误存 qoder-cn 之类复活).
-const DAILY_GRANT_PROVIDERS = new Set(["loomy"]);
-
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
