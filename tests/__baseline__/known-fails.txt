@@ -1,13 +1,9 @@
 tests/translator/bugs-toClaude-context.test.js :: OpenAI → Claude context mapping assistant reasoning_content becomes a thinking block
 tests/translator/golden-request.test.js :: GOLDEN request: OpenAI → Kiro full body (image base64 + tool_result)
-tests/unit/changelog-release-cap.test.js :: served changelog files newest section is the version the changelog was calibrated for (no unreleased lead)
 tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
 tests/unit/codex-image-fetch.test.js :: CodexExecutor image handling execute() prefetches images before sending to upstream
 tests/unit/codex-image-fetch.test.js :: CodexExecutor image handling fetches 1MB remote image and inlines it as base64 data URI
-# [2026-10-21] qoder-web-packs: 改前既有失败（在原版 80d5b249 上同样 failed，
-# 对照实验确认非本次上游合并引入）
-tests/unit/qoder-web-packs.test.js :: getQoderUsage — web per-pack breakdown (CreditDaddy synced cookie) falls back to the campaign approximation without a session
-tests/unit/qoder-web-packs.test.js :: getQoderUsage — web per-pack breakdown (CreditDaddy synced cookie) campaign packs also fill the addOn aggregate when openapi zeroes it
+tests/unit/codex-registry-model-routing.test.js :: [suite-level failure]
 tests/unit/combo-autoswitch.test.js :: detectRequiredCapabilities web_search tool -> search
 tests/unit/combo-autoswitch.test.js :: reorderByCapabilities keeps order when no model matches
 tests/unit/db-benchmark.test.js :: [suite-level failure]
@@ -21,6 +17,7 @@ tests/unit/kimchi.test.js :: kimchi registry entry is an oauth provider auto-lis
 tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery bounds the retry HTTP error body
 tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery surfaces retry HTTP failures as SSE after heartbeat commits headers
 tests/unit/mimo-free.live.test.js :: MiMo Free anti-abuse gate (live) chat WITH Chrome User-Agent → 200
+tests/unit/mimo-free.live.test.js :: MiMo Free bootstrap (live) bootstrap returns 200 with JWT
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import extracts tokens using exact keys
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import falls back to fuzzy key matching on macOS when exact keys are missing
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import linux uses single hardcoded path and original error message
