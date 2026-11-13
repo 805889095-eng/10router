@@ -2285,11 +2285,12 @@ export default function ProviderDetailPage() {
             </div>
           </div>
 
-          {/* 算法说明独立成行（PURE_BALANCE + daily-grant 时）：放工具栏行内会把
-              整行布局挤乱（长文案强制换行、左右控件错位）。 */}
-          {balanceStrategy === "daily-grant" &&
-            DAILY_GRANT_PROVIDERS.has(providerId) &&
-            getProviderQuotaCategory(providerId) === PROVIDER_QUOTA_TYPES.PURE_BALANCE && (
+          {/* 算法说明独立成行（daily-grant 开关打开时）：放工具栏行内会把
+              整行布局挤乱（长文案强制换行、左右控件错位）。
+              注意：本地是 Toggle + dailyGrantFirst 布尔量，没有上游的 balanceStrategy
+              Select 状态；门控必须用本地真实存在的符号，否则客户端渲染直接
+              ReferenceError 白屏（v1.9.8 线上事故）。 */}
+          {dailyGrantFirst && DAILY_GRANT_PROVIDERS.has(providerId) && (
             <div className="-mt-3 mb-3 flex items-start gap-1.5 text-xs leading-relaxed text-text-muted">
               <span className="material-symbols-outlined text-[14px] leading-5">info</span>
               <p className="min-w-0">{translate("Daily Grant First Hint")}</p>
