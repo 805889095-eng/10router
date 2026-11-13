@@ -30,6 +30,14 @@ jobs:
           npm install --no-audit --no-fund
           npm --prefix tests install --no-audit --no-fund
 
+      # 客户端白屏门禁：只跑 no-undef（见 eslint.gate.config.mjs 的说明）。
+      # v1.9.8 的 Loomy 页事故就是三个未定义标识符一路穿过单测和 build，
+      # 只在浏览器 hydrate 时才抛 ReferenceError —— 这类问题 tsc/单测/build
+      # 全都看不见，只有静态的未定义符号检查拦得住。
+      # 主配置 eslint.config.mjs 有 145 条既有 error，不进 CI，这里单开一份。
+      - name: Undefined-symbol gate
+        run: npx eslint --config eslint.gate.config.mjs src/
+
       # The suite is not all-green: see tests/__baseline__/known-fails.txt.
       # Let it finish and let the gate below decide, rather than failing here.
       - name: Run test suite
