@@ -2,6 +2,41 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v1.9.8 (2026-11-13)
+
+### ✨ New
+
+- **Trae split into CN / International providers**: trae.cn and trae.ai accounts were never
+  interchangeable — they are now two separate provider cards with their own model catalogs and
+  login entry points (no site picker at login any more); existing connections need no migration.
+  OAuth upgraded to the official PKCE + auth-code flow; device fingerprints are now derived per
+  account (multiple accounts no longer share one device id). Plain chat requests take the
+  lightweight direct channel instead of renting a cloud sandbox.
+- **Trae daily check-in + quota query**: one click to claim daily credits; the quota card shows
+  your plan name and pack breakdown. When a new model is missing from the official catalog
+  (error 4001), it degrades to a working sibling tier and says so.
+- **Meoo added**: a new free pool from Alibaba Cloud. Sign in with the official OAuth flow or
+  just paste a key; the model catalog mirrors the live gateway; the quota card shows your points
+  balance and connections carry a daily “claim login points” button.
+- **Gemini Decision 1 provider**: the System One multi-account aggregated Gemini Decision lane —
+  drop in an AI Studio key and go.
+- **Loomy “daily grant first” scheduling**: with several accounts, traffic sticks to one account
+  until its 5000 daily grant points are fully burned (never spread thin); a drained account is
+  auto-disabled and re-enabled at midnight; permanent points stay out of the daily rotation.
+  Toggle on the Loomy provider page, off by default.
+- **Claude fingerprint auto-follow**: the CLI version is now read live from the official npm
+  registry — no more manual bumps.
+
+### 🐛 Fixed
+
+- **Reasoning-only responses are no longer dropped by clients**: before the stream ends, thinking
+  content is promoted to the reply body; combo mode detects zero-usable-content and advances to
+  the next model (previously clients like Hermes Agent discarded the whole turn).
+- DeepSeek-V4.1-Flash (river.ai) thinking effort is no longer truncated (it rejects xhigh, accepts max).
+- System One key validation: the 400 Google returns for invalid keys is no longer waved through.
+- Dragging media-page cards no longer swaps their positions; OpenCode session ids are deterministic again.
+- Antigravity reverse-proxy fingerprint bumped to 2.29.0 to match the latest client.
+
 ## v1.9.7 (2026-11-10)
 
 ### 🔧 Improved

@@ -2,6 +2,98 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v1.9.8 (2026-11-13)
+
+本版本为上游功能移植专版：从 `techysy/10router` 移植 Trae 全家桶、Meoo（秒悟）、
+Gemini Decision 与 Loomy 每日赠送优先调度四批功能，另修复 reasoning-only 空回复、
+deepseek thinking 档位与一批上游缺陷。共 54 个提交（含移植溯源 cherry-pick）。
+
+### ✨ 新增功能
+
+- **Trae 拆线 + 全链重构（#99/#105/#107/#108/#109，20 个提交）**：
+  - 供应商拆为 `trae`（国际站 trae.ai）+ `trae-cn`（国内站 trae.cn）两条独立线：
+    账号/refresh token 不互通（20101）、数据面与账号面主机完全分叉；executor 同类双例，
+    连接落库 `psd.site` 仍是最终权威，老连接（含 `trae`+site=cn）零迁移。国内 SOLO 数据面
+    修正为 `trae-api-cn.mchost.guru`（`core-normal.trae.cn` 不解析、`api.trae.com.cn` 只承接
+    CloudIDE/OAuth/pay，trae2api-hub / Trae2api-cn 双源实测）。登录弹窗去掉「站点选择」卡片
+    （条目即站点）；顺带修复 #69 隐藏断点——`prepareConfig` 此前只收 config，弹窗传上的
+    `meta.region` 从未生效。
+  - **新版授权**：PKCE + AuthCode 双形态、国际 host 换代、设备指纹按账号派生（多账号不再
+    共用同一设备号）；CN 换票对齐 CD 实测链（真设备号/客户端头/三段降级）；v3 换票字段名
+    对齐真机契约（`Result.Token` / `RefreshExpireAt`）。回调路径对齐授权页白名单 `/authorize`
+    （修浏览器登录死页）；裸 GET 预检不再误杀回调代理（修 ERR_CONNECTION_REFUSED）。
+  - **每日签到**：接入 `ug/checkin_credits`，移植 CD traeClient，站点/设备/9074 全口径
+    （#99 #105）；**额度查询**接入 `ide_user_ent_usage`，权益包归并 + 套餐名，积分包池化呈现。
+  - **文本工具协议完整栈（#107/#108）**：SOLO 协议无 function-calling 通道，宿主工具清单以
+    权威块注入 query 头部，点名即文本执行；marker 出口恢复 + 多轮历史透传，mock SOLO 流全链
+    tool_calls 透出验收通过。
+  - **4001 降级链（#109）**：上游 ConfigName 目录是社区人工静态表，新模型（GLM-5.3-FlashX）
+    可能未进表——命中 4001 按显式降级表（FlashX→Flash、Pro-Official→Pro、2.1-Turbo→2.1-Pro）
+    同 base 逐级重试；目录已知名/未知模型不降级（防降进未知名二次 4001），非 4001 立即中止。
+    豆包系（doubao-*）显式归位 SOLO 沙箱（上游 chat 通道对豆包也回落沙箱，As-Designed #58）。
+  - **直连非沙箱通道**：纯文本对话改走 `agent_type: chat + env: local`，不再在远端分配容器
+    沙箱（避并发上限）；只有 solo/work 任务模式才启用云端沙箱。
+  - 模型目录双线对齐官方客户端实拍清单（2026-11-09/11-10）：CN 20 款（删官方已下架旧模
+    型）；国际线 Auto Mode + Seed-2.1-Turbo 免费档，其余会员锁定。显示名去卡片 UI 文案
+    （300K/High/Max 是档位不是名字）。
+- **Meoo（秒悟）新供应商（上游 PR #111，阿里系免费池）**：
+  - 完整 OAuth + PKCE 登录：走通义控制面解析 identity / 默认项目 / `meooProjectApiKey`
+    （网关 bearer 是项目服务 AK 而非 OAuth token，登录后 AK 存入连接 apiKey 槽、刷新时原子
+    重解析）；client id/端点镜像 `@aliyun-meoo/cli`。
+  - **粘贴 key 通道（route B）**：不走 OAuth 直接贴 key，控制面 AK 自愈；另有
+    `POST /api/oauth/meoo/refresh-ak` 手动重解析。
+  - **实时模型目录**：网关 `/models` 活目录 + per-credential 缓存，401/403 触发 AK 重解析并
+    重试一次，静态表兜底；`qwen4-max-preview` 用实测小写 id（大写形式网关回 400）。
+  - **积分余额卡 + 每日签到按钮**：用量窗口显示积分余额，连接卡与详情页均有「每日登录领
+    积分」入口。DeepSeek-V4.1-Flash-1017 带 Meoo 专属能力行（原生多模态 1M/393216，防落
+    `*deepseek-v4*` 通配丢 vision）。官方图标 + 邀请链接（邀请码 Chip 胶囊冗余已删）。
+- **Gemini Decision 1 供应商（#110，System One 多账户聚合）**：registry 条目
+  `gemini-decision`（alias gmd，apikey 分类，AI Studio key），端点 `/v1beta/decisions` 独立
+  透传 lane（generateContent 调不通）；systemoneCore 方言化——`x-goog-api-key` 鉴权（Google
+  拒该端点 Bearer）、输入字段 `input`（替代 Drex 的 `state`）、usage 归一
+  （total_input/output_tokens，分模态计数透传保留）；`inputField` 按 `authHeader` 推导
+  （#110 实测：registry 漏配 inputField 曾把 body.input 拒成 Missing state）；validate probe
+  与连接测试按方言发；AI Studio 官方 logo。
+- **Loomy「每日赠送积分优先」调度（上游 dailyGrantFirst 全特性线，本地按 Toggle 形态重写接线）**：
+  - `balanceExtractor.extractDailyGrantAndPermanent` 识别每日赠送/永久积分配对，背景配额刷新
+    与 usage API 两条路径都持久化三元组（dailyGrantRemaining/dailyGrantTotal/permanentBalance）。
+  - **单账号烧穿**：锁定一个号把当日 5000 每日赠送烧到 0 才沿环形 step 到下一个（绝不平摊）；
+    `dailyRelayActive` + `selectRelayCarrier(healthOf)`，健康数据缺失视为健康、绝不因缺数预切换。
+  - **烧尽自动关闭**：handoff 时上一环 `isActive:false` + `dailyGrantAutoDisabled` 戳（卡片开关
+    变灰可见）；全环烧尽返回 allRateLimited（retry-after=次日 0 点），永久积分不接客。
+  - **0 点自动重开**：新调度器 `dailyGrantReset`（本地午夜 ±5min 抖动），只重开带戳的号并把
+    快照重置为满额；boot pass 回滚停机期间的烧尽；每次 tick 重读 providerStrategies 即时生效。
+  - UI：Loomy 供应商详情页新增「每日赠送积分优先」Toggle（`DAILY_GRANT_PROVIDERS` 门收归
+    Loomy 专属，防历史误存 qoder-cn 类 override 复活）；回显/保存链走本地 providerStrategies
+    形态。上游调度测试 10 例原样搬回，在本地手工接线源码上一次通过 = 语义等价。
+- **CLI 版本自动跟随（跟进 9router v0.5.119）**：claude 反代 UA 由 `resolveClaudeCliVersion()`
+  动态读 npm latest（异步路径动态跟随、chat 路径按 floor 2.1.322 发），以后 Claude CLI 指纹
+  漂移不再需要手动 bump；附带 qoder `enable:false` 处理、gemini-4 计价、engines 下限。
+
+### 🐛 修复
+
+- **reasoning-only 空回复丢弃（#96）**：模型只产生思考、正文为空且无工具调用时——流式在
+  `[DONE]` 前自动补发 content delta 把思考提升为正文；非流式安全填充 reasoning → content
+  （保留原 reasoning_content 字段）；combo `isZeroContentResponse` 判据修正为零可用内容自动
+  顺延下一模型。修复 Hermes Agent 等客户端整轮误丢。
+- **deepseek thinking 档位全透传（#106）**：river.ai 的 DeepSeek-V4.1-Flash 拒 `xhigh` 收
+  `max`，方言档位不再被中间层截断。
+- **System One validate 400 读 body**：Google 对无效 key 返回 400 + `API_KEY_INVALID`
+  （2026-11-12 实测），400 不再一律放行。
+- **media 页拖拽劫持**：DraggableCard 抑制 anchor 拖拽，卡片拖动不再换位。
+- **opencode 会话 ID 纯函数化（ccb6d56 单文件）**：`translateSessionId` 的 timeHex 由 digest
+  推导而非 `Date.now()`，消除跨毫秒边界的非确定性（并发全量时的假阴性红点）。
+- **Antigravity IDE 反代指纹升级 2.29.0**：保留本地实测的 `antigravity/hub/` 段位（上游改回
+  `ide/` 与本地 2026-11-03 抓包结论冲突，以实测为准），四处硬编码同步，testUtils 走常量引用。
+
+### 🔧 内部
+
+- vitest 基线口径锁定 CI 同款 4.x（npx 缓存 5.x 的用例名插值格式差异曾让回归门误报 152+
+  「测试不再运行」）；known-inventory 重录至 6155，known-fails 38 条；providers 基线跟
+  claude floor 2.1.322 与 antigravity 2.29.0 合法漂移。
+- Trae/Gemini Decision 移植途中发现并修复：旧补丁覆盖新函数（cherry-pick 必须严格按日期序）、
+  批量 pick 序列 abort 连坐回滚已完成项（发版前必须 `git log` 逐条核实）。
+
 ## v1.9.7 (2026-11-10)
 
 ### 🔧 依赖

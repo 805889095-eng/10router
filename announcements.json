@@ -7,8 +7,44 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-11-03T09:30:00+08:00",
+  "updatedAt": "2026-11-13T20:43:05+08:00",
   "items": [
+    {
+      "id": "2026-11-13-trae-split",
+      "date": "2026-11-13",
+      "level": "feature",
+      "title": "Trae 拆线：国内 / 国际两条供应商 + 每日签到",
+      "body": "账号本就不互通，现在拆成两张卡，登录不再选站点；老连接零迁移。新增每日签到领积分与额度查询（套餐名 + 权益包明细），纯文本对话改走轻量直连通道。",
+      "titleEn": "Trae split into CN / Intl providers + daily check-in",
+      "bodyEn": "Two account pools that never talked are now two provider cards — no site picker, existing connections unchanged. Daily credit check-in and quota card (plan + packs) added; plain chat now uses the lightweight direct channel."
+    },
+    {
+      "id": "2026-11-13-meoo",
+      "date": "2026-11-13",
+      "level": "promo",
+      "title": "Meoo（秒悟）接入：阿里系新免费池",
+      "body": "官方 OAuth 或直接粘贴 Key 两种接入方式；模型目录实时同步网关；用量卡显示积分余额，每日登录可领积分。",
+      "titleEn": "Meoo added: a new free pool from Alibaba Cloud",
+      "bodyEn": "Official OAuth or paste-a-key onboarding; the model catalog mirrors the live gateway; the quota card shows your points balance with a daily login claim."
+    },
+    {
+      "id": "2026-11-13-loomy-daily-first",
+      "date": "2026-11-13",
+      "level": "feature",
+      "title": "Loomy 每日赠送积分优先：单账号烧穿调度",
+      "body": "多账号时锁定一个号把当日 5000 赠送积分烧完才换号，绝不平摊；烧尽自动关闭、次日 0 点自动重开。开关在 Loomy 供应商页，默认关闭。",
+      "titleEn": "Loomy daily grant first: single-account burn scheduling",
+      "bodyEn": "Traffic sticks to one account until its 5000 daily points are fully burned, never spread thin; drained accounts auto-close and reopen at midnight. Toggle on the Loomy provider page, off by default."
+    },
+    {
+      "id": "2026-11-13-reasoning-fix",
+      "date": "2026-11-13",
+      "level": "info",
+      "title": "修复：只有思考没有正文的回复不再被客户端丢弃",
+      "body": "流式结束前自动把思考提升为正文；组合模式判定零可用内容时自动顺延下一模型。Hermes Agent 等严格客户端受益。",
+      "titleEn": "Fixed: reasoning-only responses no longer dropped",
+      "bodyEn": "Thinking content is promoted to the reply body before the stream ends; combo mode advances to the next model on zero usable content. Strict clients like Hermes Agent benefit."
+    },
     {
       "id": "2026-11-03-privacy-redaction",
       "date": "2026-11-03",
@@ -37,24 +73,6 @@
       "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
     },
     {
-      "id": "2026-10-20-cb-v41-flash",
-      "date": "2026-10-20",
-      "level": "promo",
-      "title": "CodeBuddy CN V4.1-Flash 1017 限免中",
-      "body": "codebuddy-cn 的 V4.1-Flash 1017 限免窗口内倍率 0x，结束后恢复发布倍率。",
-      "titleEn": "CodeBuddy CN V4.1-Flash 1017 free now",
-      "bodyEn": "codebuddy-cn's V4.1-Flash 1017 runs at 0x during the promo window and returns to the published rate afterwards."
-    },
-    {
-      "id": "2026-10-20-minimax-free-back",
-      "date": "2026-10-20",
-      "level": "promo",
-      "title": "MiniMax Code Free 回归",
-      "body": "minimax-free 免登录网关线回归（CreditDaddy 闭环）；订阅线支持每日自动签到，模型面已对齐 M3.1 Flash 正式 id。",
-      "titleEn": "MiniMax Code Free is back",
-      "bodyEn": "The minimax-free no-auth gateway lane is back (CreditDaddy closed loop); subscription lines gain daily auto check-in, and the model list is aligned to the official M3.1 Flash ids."
-    },
-    {
       "id": "2026-10-20-inception",
       "date": "2026-10-20",
       "level": "feature",
@@ -80,24 +98,6 @@
       "body": "Gemini 4 Argon 全线接入（gemini / vertex / antigravity 官方三线），支持常开推理与 1M 上下文；Codex 接入 GPT-6.1 Sol，采用全新极速 Responses Lite 协议传输。",
       "titleEn": "Gemini 4 Argon & GPT-6.1 Sol official support",
       "bodyEn": "Full Gemini 4 Argon support across gemini, vertex, and antigravity with always-on reasoning and 1M context; Codex adds GPT-6.1 Sol over the new Responses Lite transport protocol."
-    },
-    {
-      "id": "2026-10-20-endpoint-picker",
-      "date": "2026-10-20",
-      "level": "feature",
-      "title": "端点模型白名单改勾选式",
-      "body": "端点「允许调用的模型与组合」由手敲 id 改为勾选式选择器。",
-      "titleEn": "Endpoint model allowlist is now checkbox-based",
-      "bodyEn": "The endpoint's allowed models/combos are picked via checkboxes instead of typing ids."
-    },
-    {
-      "id": "2026-10-21-external-quota-single-card",
-      "date": "2026-10-21",
-      "level": "feature",
-      "title": "外配额卡升级：单账号单卡 + 签到徽章",
-      "body": "MiniMax Code Free 等推送卡改为每账号一张独立卡（余额不再跨账号加总），签到徽章紧贴余额数字；弹窗移动端居中体验对齐更新日志。",
-      "titleEn": "Pushed quota cards: one card per account, badge beside the balance",
-      "bodyEn": "Pushed cards (MiniMax Code Free and friends) are now one independent card per account — balances are no longer summed across accounts — with the check-in badge right beside the number; modals are now centered on mobile, matching the changelog dialog."
     }
   ]
 }
