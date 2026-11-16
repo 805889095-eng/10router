@@ -44,6 +44,10 @@ import {
 // ProviderCard() would leave a use-before-init (TDZ) window on first paint.
 const DraggableCardWrapper = DraggableCard;
 
+// Web Cookie 供应商的连接以 authType="cookie" 落库，但它也可能带着 apikey 形式的
+// 历史连接；统计/开关一律按两种类型一起匹配，否则卡片永远显示「未连接」。
+const WEB_COOKIE_AUTH_TYPES = ["cookie", "apikey"];
+
 function getStatusDisplay(connected, error, errorCode) {
   const parts = [];
   if (connected > 0) {
@@ -505,6 +509,25 @@ export default function ProvidersPage() {
     })
     .filter(([k, info]) => matchesStatusFilter(getProviderStats(k, "apikey"), info, k));
 
+  // Web Cookie 组（浏览器会话 cookie 而非 API Key）：lingxi / dumate / grok-web /
+  // perplexity-web。上游把整组 JSX 注释掉了（v1.8.0 与最新 main 都注释），导致
+  // 移植过来的 lingxi、dumate 在面板列表里根本没有入口——只能在详情页直连 URL 添加。
+  // 这里恢复渲染，统计与开关按 cookie + apikey 双类型匹配（连接落库的 authType 是 cookie）。
+  const webCookieEntries = Object.entries(WEB_COOKIE_PROVIDERS)
+    .filter(([, info]) => !info.hidden && matchSearch(info.name))
+    .sort(([ka, a], [kb, b]) => {
+      const ra = providerRank(getProviderStats(ka, WEB_COOKIE_AUTH_TYPES), a, ka);
+      const rb = providerRank(getProviderStats(kb, WEB_COOKIE_AUTH_TYPES), b, kb);
+      if (ra !== rb) return ra - rb;
+      const pa = a.priority ?? 999;
+      const pb = b.priority ?? 999;
+      if (pa !== pb) return pa - pb;
+      return (a.name || "").localeCompare(b.name || "");
+    })
+    .filter(([k, info]) =>
+      matchesStatusFilter(getProviderStats(k, WEB_COOKIE_AUTH_TYPES), info, k),
+    );
+
   const customProviders = [...compatibleProviders, ...anthropicCompatibleProviders]
     .filter((p) => matchesStatusFilter(getProviderStats(p.id, "apikey"), null, p.id))
     .sort((a, b) => {
@@ -528,8 +551,11 @@ export default function ProvidersPage() {
     for (const [k] of apikeyEntries) {
       if (!keys.includes(k)) keys.push(k);
     }
+    for (const [k] of webCookieEntries) {
+      if (!keys.includes(k)) keys.push(k);
+    }
     return keys;
-  }, [compatibleProviders, anthropicCompatibleProviders, oauthEntries, freeAllEntries, apikeyEntries]);
+  }, [compatibleProviders, anthropicCompatibleProviders, oauthEntries, freeAllEntries, apikeyEntries, webCookieEntries]);
 
   const handleCardDrop = useCallback(
     (targetId) => {
@@ -921,26 +947,31 @@ export default function ProvidersPage() {
       </div>
       )}
 
-      {/* Web Cookie Providers — use browser subscription cookie instead of API key */}
-      {/* <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            Web Cookie Providers{" "}
-          </h2>
+      {/* Web Cookie Providers — use browser subscription cookie instead of API key.
+          上游把整组注释掉了；本仓恢复渲染，否则 lingxi / dumate 在列表页没有入口。 */}
+      {webCookieEntries.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              Web Cookie Providers{" "}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {webCookieEntries.map(([key, info]) => (
+              <ApiKeyProviderCard
+                key={key}
+                providerId={key}
+                provider={info}
+                stats={getProviderStats(key, WEB_COOKIE_AUTH_TYPES)}
+                authType={info.authType === "cookie" ? "cookie" : "apikey"}
+                onToggle={(active) =>
+                  handleToggleProvider(key, WEB_COOKIE_AUTH_TYPES, active)
+                }
+              />
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Object.entries(WEB_COOKIE_PROVIDERS).map(([key, info]) => (
-            <ApiKeyProviderCard
-              key={key}
-              providerId={key}
-              provider={info}
-              stats={getProviderStats(key, "apikey")}
-              authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
-            />
-          ))}
-        </div>
-      </div> */}
+      )}
 
       <AddCompatibleModal
         variant="openai"
