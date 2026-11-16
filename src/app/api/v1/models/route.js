@@ -14,6 +14,7 @@ import { resolveKiroModels } from "open-sse/services/kiroModels.js";
 import { resolveKimchiModels } from "open-sse/services/kimchiModels.js";
 import { resolveQoderModels } from "open-sse/services/qoderModels.js";
 import { resolveMeooModels } from "open-sse/services/meooModels.js";
+import { resolveDeepaiModels } from "open-sse/services/deepaiModels.js";
 import { resolveCopilotModels } from "open-sse/services/copilotModels.js";
 
 // This GET reads live connection/registry state — without it Next may serve a

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getProviderIconSrc, markProviderIconMissing } from "@/shared/utils/providerIcon";
-import { Card, Button, Badge, Input, Modal, CardSkeleton, OAuthModal, KiroOAuthWrapper, CursorAuthModal, ZedAuthModal, XiaomiMimoAuthModal, IFlowCookieModal, GitLabAuthModal, Toggle, Select, EditConnectionModal, NoAuthProxyCard, ConfirmModal, InviteCodeChip, Tooltip } from "@/shared/components";
+import { Card, Button, Badge, Input, Modal, CardSkeleton, OAuthModal, KiroOAuthWrapper, CursorAuthModal, ZedAuthModal, XiaomiMimoAuthModal, DeepaiAuthModal, IFlowCookieModal, GitLabAuthModal, Toggle, Select, EditConnectionModal, NoAuthProxyCard, ConfirmModal, InviteCodeChip, Tooltip } from "@/shared/components";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, getProviderAlias, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, AI_PROVIDERS } from "@/shared/constants/providers";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { mergeQoderLivePricing } from "@/shared/utils/qoderLivePricing";
@@ -33,6 +33,8 @@ import CodeBuddyImportModal from "./CodeBuddyImportModal";
 import OAuthTransferModal from "./OAuthTransferModal";
 import AutoPingScheduleModal from "./AutoPingScheduleModal";
 import LoomySmsModal from "../components/LoomySmsModal";
+import DumateQrModal from "../components/DumateQrModal";
+import LingxiCaptureModal from "../components/LingxiCaptureModal";
 import { getScheduleSlotLabels } from "@/shared/services/quotaPingSchedule";
 
 const ONE_BY_ONE_DELAY_MS = 1000;
@@ -83,6 +85,11 @@ export default function ProviderDetailPage() {
   const [showOAuthModal, setShowOAuthModal] = useState(false);
   const [showXiaomiMimoModal, setShowXiaomiMimoModal] = useState(false);
   const [showIFlowCookieModal, setShowIFlowCookieModal] = useState(false);
+  const [showDeepaiAuthModal, setShowDeepaiAuthModal] = useState(false);
+  const [showDumateQrModal, setShowDumateQrModal] = useState(false);
+  const [dumateQrConnectionId, setDumateQrConnectionId] = useState(null);
+  const [showLingxiCaptureModal, setShowLingxiCaptureModal] = useState(false);
+  const [lingxiCaptureConnectionId, setLingxiCaptureConnectionId] = useState(null);
   const [showAddApiKeyModal, setShowAddApiKeyModal] = useState(false);
   const [addConnectionError, setAddConnectionError] = useState("");
   const [showBulkImportCodex, setShowBulkImportCodex] = useState(false);
@@ -175,6 +182,12 @@ export default function ProviderDetailPage() {
   };
 
   const triggerApiKeyConnection = () => {
+    // DeepAI Code 走面板原生浏览器登录弹窗（desktop_auth exchange），
+    // 不是通用粘贴表单 —— 弹窗内仍保留手填 key 的次要路径。
+    if (providerId === "deepai") {
+      setShowDeepaiAuthModal(true);
+      return;
+    }
     setAddConnectionError("");
     setShowAddApiKeyModal(true);
   };
@@ -2336,6 +2349,16 @@ export default function ProviderDetailPage() {
                         Cookie
                       </Button>
                     )}
+                    {!isCompatible && providerId === "dumate" && (
+                      <Button size="sm" icon="qr_code_2" variant="secondary" onClick={() => { setDumateQrConnectionId(null); setShowDumateQrModal(true); }}>
+                        {translate("QR Login")}
+                      </Button>
+                    )}
+                    {!isCompatible && providerId === "lingxi" && (
+                      <Button size="sm" icon="cookie" variant="secondary" onClick={() => { setLingxiCaptureConnectionId(null); setShowLingxiCaptureModal(true); }}>
+                        {translate("Capture Session")}
+                      </Button>
+                    )}
                     {hasClaimCheckin && renderQoderCheckinBlock()}
                     {providerId === "codex" && (
                       <Button size="sm" icon="playlist_add" variant="secondary" onClick={() => setShowBulkImportCodex(true)}>
@@ -2410,6 +2433,30 @@ export default function ProviderDetailPage() {
                       className="w-full sm:w-auto"
                     >
                       Cookie
+                    </Button>
+                  )}
+                  {providerId === "dumate" && (
+                    <Button
+                      size="sm"
+                      icon="qr_code_2"
+                      variant="secondary"
+                      onClick={() => { setDumateQrConnectionId(null); setShowDumateQrModal(true); }}
+                      title={translate("Login by scanning the Baidu QR code (no browser is spawned)")}
+                      className="w-full sm:w-auto"
+                    >
+                      {translate("QR Login")}
+                    </Button>
+                  )}
+                  {providerId === "lingxi" && (
+                    <Button
+                      size="sm"
+                      icon="cookie"
+                      variant="secondary"
+                      onClick={() => { setLingxiCaptureConnectionId(null); setShowLingxiCaptureModal(true); }}
+                      title={translate("Paste a logged-in lingxi.kdocs.cn session cookie")}
+                      className="w-full sm:w-auto"
+                    >
+                      {translate("Capture Session")}
                     </Button>
                   )}
                   {providerId === "codex" && (
@@ -2640,6 +2687,46 @@ export default function ProviderDetailPage() {
           isOpen={showIFlowCookieModal}
           onSuccess={handleIFlowCookieSuccess}
           onClose={() => setShowIFlowCookieModal(false)}
+        />
+      )}
+      {providerId === "deepai" && (
+        <DeepaiAuthModal
+          isOpen={showDeepaiAuthModal}
+          onSuccess={() => {
+            setShowDeepaiAuthModal(false);
+            refreshAfterConnectionChange();
+          }}
+          onClose={() => setShowDeepaiAuthModal(false)}
+        />
+      )}
+      {providerId === "dumate" && (
+        <DumateQrModal
+          isOpen={showDumateQrModal}
+          connectionId={dumateQrConnectionId}
+          onSuccess={() => {
+            setShowDumateQrModal(false);
+            setDumateQrConnectionId(null);
+            refreshAfterConnectionChange();
+          }}
+          onClose={() => {
+            setShowDumateQrModal(false);
+            setDumateQrConnectionId(null);
+          }}
+        />
+      )}
+      {providerId === "lingxi" && (
+        <LingxiCaptureModal
+          isOpen={showLingxiCaptureModal}
+          connectionId={lingxiCaptureConnectionId}
+          onSuccess={() => {
+            setShowLingxiCaptureModal(false);
+            setLingxiCaptureConnectionId(null);
+            refreshAfterConnectionChange();
+          }}
+          onClose={() => {
+            setShowLingxiCaptureModal(false);
+            setLingxiCaptureConnectionId(null);
+          }}
         />
       )}
       <AddApiKeyModal

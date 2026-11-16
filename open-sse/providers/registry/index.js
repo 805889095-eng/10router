@@ -164,6 +164,7 @@ import p158 from "./gemini-decision.js";
 import p159 from "./meoo.js";
 import pdumate from "./dumate.js";
 import plingxi from "./lingxi.js";
+import pdeepai from "./deepai.js";
 
 export default [
   p0,
@@ -331,4 +332,5 @@ export default [
   p159,
   pdumate,
   plingxi,
+  pdeepai,
 ];

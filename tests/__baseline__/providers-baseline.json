@@ -1479,5 +1479,30 @@
     "format": "openai",
     "clientId": "meoo_app_tdWlRbpvAxN1EjmZ8XICxdTh",
     "tokenUrl": "https://meoo.com/oauth/token"
+  },
+  "dumate": {
+    "baseUrl": "https://dumate-svc.baidu.com/gateway/apis/v1/chat/completions",
+    "format": "openai",
+    "authType": "cookie"
+  },
+  "lingxi": {
+    "baseUrl": "https://lingxi.kdocs.cn/solution/api/aigc/v3/assistant/sessions",
+    "format": "openai",
+    "authType": "cookie"
+  },
+  "deepai": {
+    "baseUrl": "https://api.deepai.org/deepai_code/chat/completions",
+    "validateUrl": "https://api.deepai.org/deepai_code/models",
+    "auth": {
+      "combined": true,
+      "header": "api-key",
+      "scheme": "raw"
+    },
+    "headers": {
+      "X-DeepAI-Code-Theos": "4",
+      "User-Agent": "10router-deepai/1.0"
+    },
+    "timeoutMs": 120000,
+    "format": "openai"
   }
 }

@@ -1002,5 +1002,22 @@
   "Harvest & refresh Lingxi session cookies with CreditDaddy — daily check-in keeps 灵点 credits flowing, balances auto-synced to 10Router.": "用 CreditDaddy 收割/重新整理 Lingxi 工作階段 Cookie —— 每日簽到讓靈點源源不絕，餘額自動同步到 10Router。",
   "Re-login (QR code)": "重新登入（掃碼）",
   "QR Login": "掃碼登入",
-  "Login by scanning the Baidu QR code (no browser is spawned)": "掃描百度二維碼登入（不會拉起瀏覽器）"
+  "Login by scanning the Baidu QR code (no browser is spawned)": "掃描百度二維碼登入（不會拉起瀏覽器）",
+  "Save key": "儲存 Key",
+  "Paste your DeepAI API key (UUID)": "貼上 DeepAI API Key (UUID)",
+  "Already have an API key? Paste it instead": "已有 API Key？直接貼上",
+  "Connecting…": "連線中…",
+  "Finish connection": "完成連線",
+  "Connection name (optional)": "連線名稱（可不填）",
+  "Paste the callback address (or just the code)": "貼上回呼位址（或只貼 code）",
+  "After signing in, the browser jumps to an address that cannot load (127.0.0.1) — that is expected. Copy the whole address from the address bar and paste it here.": "登入後瀏覽器會跳到一個打不開的位址（127.0.0.1），這是正常的。把位址欄裡整串位址複製下來，貼到這裡。",
+  "2. Paste the callback address": "2. 貼上回呼位址",
+  "Open sign-in page": "開啟登入頁",
+  "1. Open the DeepAI sign-in page": "1. 開啟 DeepAI 登入頁",
+  "Sign in with Google or Apple in your browser — no desktop app, no key to copy.": "在瀏覽器裡用 Google 或 Apple 登入——不用裝桌面版、不用抄鑰匙。",
+  "Connect DeepAI Code": "連接 DeepAI Code",
+  "Quota": "配額",
+  "Unmetered, does not spend Theos": "免費不計量——不消耗 Theos",
+  "charged against the daily Theos grant": "從每日發放的 Theos 配額裡扣",
+  "用Google或Apple账户登录后，进入仪表盘，复制API Key添加至下方指定位置": "用Google或Apple帳號登入後，進入儀表板，複製API Key並加到下方指定位置"
 }
