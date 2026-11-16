@@ -10,7 +10,7 @@
 // fingerprinting surface for zero benefit — the backend gates the rewrite-worthy
 // checks on :generateContent / :streamGenerateContent alone.
 
-const ANTIGRAVITY_IDE_VERSION = "2.29.0";
+const ANTIGRAVITY_IDE_VERSION = "2.32.1";
 const ANTIGRAVITY_IDE_VERSION_OVERRIDE_ENABLED = true;
 
 function shouldRewriteMetadata(metadata) {

@@ -166,7 +166,10 @@ export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 // So the argon 404 is the ACCOUNT lacking the model entitlement, not the client
 // version — upgrading this constant does not grant argon access. The registry
 // still lists the argon tiers for accounts that do have it.
-export const ANTIGRAVITY_IDE_VERSION = "2.29.0";
+// Official Antigravity Hub Desktop 2.32.1 fingerprint (version aligned 2026-11-16
+// with the upstream 9router-line capture; the `hub/` token is this line's own
+// measured choice — see the argon note below — so only the version moves).
+export const ANTIGRAVITY_IDE_VERSION = "2.32.1";
 export const ANTIGRAVITY_IDE_BASE_URL = "https://daily-cloudcode-pa.googleapis.com";
 export const ANTIGRAVITY_IDE_USER_AGENT = `antigravity/hub/${ANTIGRAVITY_IDE_VERSION} darwin/arm64`;
 
