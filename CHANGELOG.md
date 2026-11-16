@@ -2,6 +2,26 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.1.2 (2026-11-16)
+
+补丁版：仪表盘的**公告**与**更新日志**改从本仓读取。配置、连接、数据零迁移。
+
+### 🐛 修复
+
+- **面板读的是上游仓的公告 / 更新日志，本仓写的不生效**。`GITHUB_CONFIG` 里
+  `announcementsUrl` / `announcementsUrlFallback` / `changelogUrlBase` /
+  `changelogUrlFallbackBase` 四个地址全部指向 `techysy/10router`，所以本仓
+  `announcements.json` 与 `public/i18n/changelog/*.md` 的改动对已安装客户端**完全不可见**
+  （客户端拉的是上游的）。现改为本仓地址，实测三处环境（开发机 / NAS / VPS）均可达
+  raw.githubusercontent.com（NAS 实测 0.38s），故不再保留上游 Gitee 镜像（那是上游内容）。
+- **新增本地兜底**。远端镜像全部不可达且本地无缓存时，回落到随构建打包的副本：
+  公告读 `/announcements.json`，更新日志读 `/i18n/changelog/<locale>.md`。为此
+  `scripts/copy-standalone-assets.mjs`（postbuild）新增把仓库根 `announcements.json`
+  复制进 `standalone/public/` 的步骤，否则全新离线安装会看到空公告栏。
+- **`repoUrl` / `donateUrl` 有意保持不变**：`/api/version` 的「最新版本」取自上游 npm 包
+  （`@techysy/10router`，见 `UPDATER_CONFIG`），把 `repoUrl` 改成本仓会让更新按钮指向一个
+  我们从不发布的 tag；打赏仍归上游作者。
+
 ## v2.1.1 (2026-11-16)
 
 补丁版：修 v2.1.0 里三个新供应商在面板上找不到入口的问题。配置、连接、数据零迁移。

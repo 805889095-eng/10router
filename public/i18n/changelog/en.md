@@ -2,6 +2,14 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.1.2 (2026-11-16)
+
+The dashboard's **announcements** and **changelog** used to be fetched from the upstream
+project's URLs, so anything we published ourselves never showed up (you were seeing upstream's
+entries). They now read from this repo — posting an announcement is a push, no release needed.
+A bundled copy is used as a fallback when the network is unreachable, so the announcement box
+is never blank. No config, connection or data migration.
+
 ## v2.1.1 (2026-11-16)
 
 Small fix: the **DuMate (Baidu Dazi)** and **WPS Lingxi** providers added in v2.1.0 had no card

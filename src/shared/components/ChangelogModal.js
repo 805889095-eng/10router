@@ -90,9 +90,12 @@ export default function ChangelogModal({ isOpen, onClose }) {
 
     const file = changelogFileForLocale(getCurrentLocale());
     const urls = [
-      `${GITHUB_CONFIG.changelogUrlBase}${file}.md`,                               // GitHub raw
-      `${GITHUB_CONFIG.changelogUrlFallbackBase}${file}.md`,                       // Gitee raw
-    ];
+      `${GITHUB_CONFIG.changelogUrlBase}${file}.md`,                               // GitHub raw (our fork)
+      `${GITHUB_CONFIG.changelogUrlFallbackBase}${file}.md`,                       // mirror (unset)
+      // Build-bundled copy served by the app itself: last resort when no mirror
+      // is reachable (public/i18n/changelog/<locale>.md ships in the image).
+      `${GITHUB_CONFIG.changelogLocalBase}${file}.md`,
+    ].filter(Boolean);
     const capPromise = fetchChangelogCap();
     // main carries the next release's notes before it ships; render only what
     // this client could actually have installed. See utils/changelogCap.js.

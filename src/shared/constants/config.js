@@ -9,22 +9,34 @@ export const APP_CONFIG = {
 
 // GitHub configuration
 export const GITHUB_CONFIG = {
+  // NOTE: repoUrl / donateUrl deliberately still point at the upstream project.
+  // repoUrl builds the release link in /api/version, whose "latest version" comes
+  // from the upstream npm package (@techysy/10router, see UPDATER_CONFIG) — point
+  // it at our fork and the button leads to a tag we never publish. Donations go to
+  // the upstream authors.
   repoUrl: "https://github.com/techysy/10router",
   donateUrl: "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/donate.json",
-  // Live announcement feed (repo-root announcements.json), same trust shape as
-  // donateUrl: read straight from `main` by every installed client, so posting
-  // an entry is a push, not a release. Gitee raw as fallback for regions where
-  // raw.githubusercontent.com is unreachable.
-  announcementsUrl: "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/announcements.json",
-  announcementsUrlFallback: "https://gitee.com/techysy/10router/raw/main/announcements.json",
-  // Per-locale changelog markdown (public/i18n/changelog/<locale>.md) fetched
-  // live from the repo, with Gitee as a fallback mirror. See ChangelogModal.
+  // Live announcement feed. Read straight from `main` by every installed client,
+  // so posting an entry is a push, not a release. Pointed at OUR fork (was
+  // upstream), so the dashboard shows our own announcements; measured reachable
+  // from the dev box, the NAS and the VPS. The modal falls back to the copy
+  // bundled with the build (/announcements.json) when every mirror fails.
+  announcementsUrl: "https://raw.githubusercontent.com/805889095-eng/10router/refs/heads/main/announcements.json",
+  // No Gitee mirror for our fork (upstream's would serve upstream's entries).
+  announcementsUrlFallback: "",
+  // Per-locale changelog markdown (public/i18n/changelog/<locale>.md). Same deal:
+  // fetched from OUR fork's `main`, with the build-bundled copy
+  // (/i18n/changelog/<locale>.md) as the last resort. See ChangelogModal.
   // NOTE: these are read from `main` by every installed client, so a release
   // section written here reaches users before the release exists. Author it in
   // the "Release: vX.Y.Z — 发版面校准" commit only; ChangelogModal additionally
   // caps what it renders at the newest published version (utils/changelogCap.js).
-  changelogUrlBase: "https://raw.githubusercontent.com/techysy/10router/refs/heads/main/public/i18n/changelog/",
-  changelogUrlFallbackBase: "https://gitee.com/techysy/10router/raw/main/public/i18n/changelog/",
+  changelogUrlBase: "https://raw.githubusercontent.com/805889095-eng/10router/refs/heads/main/public/i18n/changelog/",
+  changelogUrlFallbackBase: "",
+  // Build-bundled copies served by the app itself (public/). Used as the final
+  // fallback when the raw mirrors are unreachable and nothing is cached yet.
+  announcementsLocalUrl: "/announcements.json",
+  changelogLocalBase: "/i18n/changelog/",
 };
 
 // Updater configuration

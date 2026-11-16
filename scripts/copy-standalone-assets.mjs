@@ -57,6 +57,17 @@ export function copyStandaloneAssets({ projectRoot = process.cwd(), distDir = pr
     cpSync(consoleArchiveSource, consoleArchiveDestination, { force: true });
     console.log(`[standalone-assets] Copied consoleArchiveStandalone.mjs to ${consoleArchiveDestination}`);
   }
+  // Announcement feed served by the app itself (/announcements.json). The live
+  // copy lives at the repo root and the dashboard reads it from `main` on every
+  // client; this bundled copy is the last-resort fallback when no remote mirror
+  // is reachable (see GITHUB_CONFIG.announcementsLocalUrl). Without it a fresh
+  // offline install shows an empty announcement box.
+  const announcementsSource = resolve(projectRoot, "announcements.json");
+  const announcementsDestination = resolve(standaloneDir, "public", "announcements.json");
+  if (existsSync(announcementsSource)) {
+    cpSync(announcementsSource, announcementsDestination, { force: true });
+    console.log(`[standalone-assets] Copied announcements.json to ${announcementsDestination}`);
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(dirname(fileURLToPath(import.meta.url)), "copy-standalone-assets.mjs")) {

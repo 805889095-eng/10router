@@ -122,7 +122,13 @@ export default function AnnouncementsModal({ isOpen, onClose }) {
     setStale(false);
 
     (async () => {
-      const urls = [GITHUB_CONFIG.announcementsUrl, GITHUB_CONFIG.announcementsUrlFallback].filter(Boolean);
+      const urls = [
+        GITHUB_CONFIG.announcementsUrl,
+        GITHUB_CONFIG.announcementsUrlFallback,
+        // Build-bundled copy: last resort so a first install still shows the
+        // feed when every remote mirror is unreachable.
+        GITHUB_CONFIG.announcementsLocalUrl,
+      ].filter(Boolean);
       for (const url of urls) {
         try {
           const res = await fetch(url, { cache: "no-store" });
