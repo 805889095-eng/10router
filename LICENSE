@@ -1,3 +1,22 @@
+10Router — 许可范围说明 / Licensing scope
+==========================================
+
+本仓库主体采用 MIT 许可（全文见下）。
+
+  例外：移植自上游 techysy/10router 提交 e23d64b（DeepAI Code 供应商，
+  2026-11-16T09:55:05Z，位于上游 MIT→AGPL 分界线之后）的文件与片段，依
+  GNU Affero General Public License v3.0 授权，全文见 LICENSES/AGPL-3.0.txt。
+
+  具体哪些文件受 AGPL-3.0 约束、哪些仍为 MIT，见 NOTICE 文件。
+
+  上游 techysy/10router 自 v1.8.1 起整体改为 AGPL-3.0（提交 9d6045f）。
+  本仓库移植的上游内容按原始引入提交判定许可：v1.8.0（含）之前为 MIT，
+  之后为 AGPL-3.0。
+
+以下为 MIT 许可全文，适用于本仓库除上述 AGPL-3.0 部分之外的所有内容：
+
+---
+
 MIT License
 
 Copyright (c) 2024-2026 decolua, techysy and contributors

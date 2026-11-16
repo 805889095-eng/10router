@@ -125,6 +125,9 @@ mkdir -p fnos-packaging/app/server
 cp -r .next/standalone/. fnos-packaging/app/server/
 cp -r open-sse fnos-packaging/app/server/
 cp -r src/mitm fnos-packaging/app/server/
+# 许可与第三方声明（AGPL-3.0 第 6 条：分发须附带许可文本）
+cp LICENSE NOTICE fnos-packaging/app/server/
+cp -r LICENSES fnos-packaging/app/server/
 copy_if_missing() {
   local pkg="$1"
   if [ -d "$SRV/node_modules/$pkg" ]; then

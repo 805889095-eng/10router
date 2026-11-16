@@ -37,6 +37,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/custom-server.js ./custom-server.js
+# 许可与第三方声明（AGPL-3.0 第 6 条：分发须附带许可文本）
+COPY --from=builder /app/LICENSE ./LICENSE
+COPY --from=builder /app/NOTICE ./NOTICE
+COPY --from=builder /app/LICENSES ./LICENSES
 COPY --from=builder /app/open-sse ./open-sse
 # Next file tracing can omit sibling files; MITM runs server.js as a separate process.
 COPY --from=builder /app/src/mitm ./src/mitm

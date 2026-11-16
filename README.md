@@ -320,4 +320,12 @@ npx vitest run --dir tests
 
 ## 📄 许可证
 
-[MIT](LICENSE) — 与 [decolua/9router](https://github.com/decolua/9router) 保持一致
+主体为 [MIT](LICENSE) — 与 [decolua/9router](https://github.com/decolua/9router) 保持一致。
+
+**例外**：移植自上游 [techysy/10router](https://github.com/techysy/10router) 提交 `e23d64b`
+（DeepAI Code 供应商）的文件与片段依 **AGPL-3.0** 授权，全文见
+[LICENSES/AGPL-3.0.txt](LICENSES/AGPL-3.0.txt)，具体文件清单见 [NOTICE](NOTICE)。
+
+> 背景：上游自 v1.8.1 起由 MIT 改为 AGPL-3.0（提交 `9d6045f`）。本仓移植内容按上游
+> **原始引入提交**判定许可——v1.8.0（含）之前为 MIT，之后为 AGPL-3.0。因而 DuMate、
+> WPS 灵犀、Antigravity、Gemini 4 Hydrogen、排水探测仍为 MIT，仅 DeepAI 一项是 AGPL-3.0。

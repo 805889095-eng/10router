@@ -1,0 +1,87 @@
+NOTICE — 第三方许可与来源声明
+================================
+
+本仓库主体（除下列条目外）采用 MIT 许可，见 LICENSE。
+
+本仓库是基于 decolua/9router（MIT）自行魔改的本地分支，并持续移植上游
+techysy/10router 的功能。上游 techysy/10router 自 v1.8.1 起将许可由 MIT
+改为 AGPL-3.0（上游提交 9d6045f，2026-11-16T08:07:49Z）。因此：
+
+  · 上游 tag v1.8.0（含）之前的内容 = MIT
+  · 上游 v1.8.1 起 main 上的提交  = AGPL-3.0
+
+本仓库移植内容的许可归属，按上游引入该内容的原始提交判定，逐项列明如下。
+
+
+一、受 AGPL-3.0 约束的部分
+---------------------------
+
+来源：techysy/10router 提交 e23d64b
+      "feat: #144 DeepAI Code 供应商 (free-tier, Theos 配额, 面板原生登录) + 基线补跟"
+      2026-11-16T09:55:05Z —— 该提交位于 AGPL 分界线（08:07:49Z）之后。
+
+上述提交引入的文件与片段，在本仓库中依 GNU Affero General Public License
+v3.0 授权，全文见 LICENSES/AGPL-3.0.txt。
+
+完整文件（10 个，均为新增）：
+
+  open-sse/providers/registry/deepai.js
+  open-sse/services/deepaiModels.js
+  open-sse/services/usage/deepai.js
+  open-sse/shared/deepai/auth.js
+  open-sse/shared/deepai/constants.js
+  providers/deepai.json
+  public/providers/deepai.png
+  src/app/api/oauth/deepai/exchange/route.js
+  src/shared/components/DeepaiAuthModal.js
+  tests/unit/deepai-provider.test.js
+
+含 AGPL 衍生片段的既有文件（本仓库原始内容仍为 MIT，仅 DeepAI 相关片段
+及为接纳它而必需的改动受 AGPL-3.0 约束）：
+
+  open-sse/providers/capabilities.js            (PROVIDER_CAPABILITIES.deepai 规格块)
+  open-sse/providers/registry/index.js          (注册表 import 与数组项)
+  open-sse/services/usage.js                    (deepai 用量查询分支)
+  src/app/api/providers/[id]/models/route.js    (deepai 模型解析分支)
+  src/app/api/v1/models/route.js                (deepai 模型解析引用)
+  src/app/(dashboard)/dashboard/providers/[id]/page.js   (DeepAI 登录弹窗接线)
+  src/app/(dashboard)/dashboard/providers/[id]/ModelRow.js (Theos 徽标)
+  src/shared/components/index.js                (组件导出)
+  public/i18n/literals/zh-CN.json               (deepai.* 文案键)
+  public/i18n/literals/zh-TW.json               (deepai.* 文案键)
+  tests/__baseline__/providers-baseline.json    (含 deepai 的快照数据)
+  tests/__baseline__/alias-baseline.json        (含 deepai 的快照数据)
+  tests/unit/deepseek-v4-capabilities.test.js   (期望供应商名单含 deepai)
+
+AGPL-3.0 对网络服务的关键义务：若你将包含上述内容的程序作为网络服务提供给
+他人使用，必须向使用者提供对应的完整源码。本仓库为公开仓库，源码可从此处
+获取：https://github.com/805889095-eng/10router
+
+
+二、MIT 许可的部分（上游 v1.8.0 及更早）
+----------------------------------------
+
+来源：techysy/10router tag v1.8.0 及其之前的提交（MIT 时期），以及
+      decolua/9router（MIT）。
+
+包括但不限于本分支移植的：DuMate（百度搭子）、WPS 灵犀（lingxi）、
+Antigravity 指纹与提示词改写、Gemini 4 Hydrogen 模型档位、自动更新排水探测。
+
+MIT 许可全文见 LICENSE。
+
+
+三、维护约定
+------------
+
+移植上游新内容前，先确认该内容对应上游的引入提交日期：
+
+  · 早于 2026-11-16T08:07:49Z  → MIT，可直接合入
+  · 晚于该时间点              → AGPL-3.0，须同步登记到本 NOTICE 第一节
+
+判定命令（需对上游仓库有读权限的 gh 环境）：
+
+  gh api repos/techysy/10router/commits/<sha> --jq '.commit.committer.date'
+
+或直接查某文件是否已在 v1.8.0 的树中：
+
+  gh api "repos/techysy/10router/git/trees/v1.8.0?recursive=1" --jq '.tree[].path'
