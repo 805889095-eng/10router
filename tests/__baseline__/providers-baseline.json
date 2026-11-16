@@ -266,7 +266,15 @@
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
       "X-IDE-Version": "2.184.0",
-      "Content-Type": "application/json;charset=UTF-8",
+      "X-Private-Data": "false",
+      "x-stainless-arch": "x64",
+      "x-stainless-lang": "js",
+      "x-stainless-os": "Linux",
+      "x-stainless-package-version": "7.39.0",
+      "x-stainless-retry-count": "0",
+      "x-stainless-runtime": "node",
+      "x-stainless-runtime-version": "v26.13.0",
+      "Content-Type": "application/json",
       "x-requested-with": "XMLHttpRequest"
     },
     "auth": {
@@ -290,7 +298,15 @@
       "X-IDE-Type": "CLI",
       "X-IDE-Name": "CLI",
       "X-IDE-Version": "2.184.0",
-      "Content-Type": "application/json;charset=UTF-8",
+      "X-Private-Data": "false",
+      "x-stainless-arch": "x64",
+      "x-stainless-lang": "js",
+      "x-stainless-os": "Linux",
+      "x-stainless-package-version": "7.39.0",
+      "x-stainless-retry-count": "0",
+      "x-stainless-runtime": "node",
+      "x-stainless-runtime-version": "v26.13.0",
+      "Content-Type": "application/json",
       "x-requested-with": "XMLHttpRequest"
     },
     "auth": {

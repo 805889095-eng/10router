@@ -51,6 +51,19 @@ export const CODEBUDDY_USER_AGENT = `CLI/${CODEBUDDY_CLI_VERSION} CodeBuddy/${CO
 /**
  * Identity headers shared by the CN and Intl transports. Callers spread this into
  * their own `headers` so channel-specific additions stay local.
+ *
+ * Values below are byte-for-byte from a live 2.184.0 CLI capture. The two groups
+ * added on top of the original set are deliberate:
+ *   - `X-Private-Data: false` is a constant on every real request.
+ *   - `x-stainless-*` is the stamp the OpenAI Node SDK (which the CLI bundles)
+ *     puts on every call: os/arch/runtime describe the machine running the CLI
+ *     (they vary per user — the values here are the ones our capture host sent),
+ *     while package-version is fixed by the CLI's own dependency (7.39.0) and
+ *     retry-count is 0 on a first attempt.
+ * NOT mirrored on purpose: the OTel family (`traceparent`, `b3`, `baggage`,
+ * `X-B3-*`, `X-Trace-ID`) — those must agree with each other on trace/span ids,
+ * and an inconsistent hand-rolled set is a stronger tell than no set at all.
+ * `X-Root-Request-ID` is also absent (it duplicates X-Conversation-Request-ID).
  */
 export function codebuddyIdentityHeaders() {
   return {
@@ -59,7 +72,15 @@ export function codebuddyIdentityHeaders() {
     "X-IDE-Type": "CLI",
     "X-IDE-Name": "CLI",
     "X-IDE-Version": CODEBUDDY_CLI_VERSION,
-    "Content-Type": "application/json;charset=UTF-8",
+    "X-Private-Data": "false",
+    "x-stainless-arch": "x64",
+    "x-stainless-lang": "js",
+    "x-stainless-os": "Linux",
+    "x-stainless-package-version": "7.39.0",
+    "x-stainless-retry-count": "0",
+    "x-stainless-runtime": "node",
+    "x-stainless-runtime-version": "v26.13.0",
+    "Content-Type": "application/json",
     "x-requested-with": "XMLHttpRequest",
   };
 }
