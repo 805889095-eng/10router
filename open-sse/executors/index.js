@@ -1,4 +1,6 @@
 import { AntigravityExecutor } from "./antigravity.js";
+import { DumateExecutor } from "./dumate.js";
+import { LingxiExecutor } from "./lingxi.js";
 import { AzureExecutor } from "./azure.js";
 import { GeminiCLIExecutor } from "./gemini-cli.js";
 import { GithubExecutor } from "./github.js";
@@ -32,6 +34,9 @@ import { DevinCliExecutor } from "./devin-cli.js";
 
 const executors = {
   antigravity: new AntigravityExecutor(),
+  dumate: new DumateExecutor(),
+  lingxi: new LingxiExecutor(),
+  lx: new LingxiExecutor(), // Alias for lingxi
   azure: new AzureExecutor(),
   "gemini-cli": new GeminiCLIExecutor(),
   github: new GithubExecutor(),

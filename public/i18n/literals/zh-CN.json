@@ -2168,5 +2168,11 @@
   "Trae auto daily check-in": "Trae 每日自动签到",
   "Automatically check in Trae CN connections daily to claim the free daily credits — international trae.ai connections are not covered (the upstream registers this endpoint on the CN site only)": "每天自动为 Trae CN 连接签到领取每日赠送积分——国际站 trae.ai 连接不参与（该接口只在国内站注册）",
   "No Trae CN connections found — check-in covers CN-site connections only": "未找到 Trae CN 连接——签到只覆盖国内站连接",
-  "Claim the daily Trae check-in credits": "领取 Trae 每日签到积分"
+  "Claim the daily Trae check-in credits": "领取 Trae 每日签到积分",
+  "Lingxi auto daily check-in": "Lingxi 每日自动签到",
+  "Automatically claim the daily check-in credits for Lingxi connections (100 a day, 200 on the seventh) — retries all day until today's claim is confirmed": "自动为 Lingxi 连接每日签到领取灵点（每日 100、第七天 200）——全天重试，当日确认完成即停",
+  "Harvest & refresh Lingxi session cookies with CreditDaddy — daily check-in keeps 灵点 credits flowing, balances auto-synced to 10Router.": "用 CreditDaddy 收割/刷新 Lingxi 会话 Cookie —— 每日签到让灵点源源不断，余额自动同步到 10Router。",
+  "Re-login (QR code)": "重新登录（扫码）",
+  "QR Login": "扫码登录",
+  "Login by scanning the Baidu QR code (no browser is spawned)": "扫描百度二维码登录（不会拉起浏览器）"
 }

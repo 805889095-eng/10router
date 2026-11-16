@@ -1069,6 +1069,22 @@ async function testApiKeyConnection(connection, effectiveProxy = null, options =
         const res = await fetchWithConnectionProxy("https://llm.chutes.ai/v1/models", { headers: { Authorization: `Bearer ${connection.apiKey}` } }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
+      case "lingxi": {
+        // Live check = the tasks endpoint (same liveness probe CreditDaddy's
+        // lingxi line uses; it carries the full WPS session jar and answers
+        // 200 with data.tasks[] when the session is alive, 401/403 when dead).
+        const res = await fetchWithConnectionProxy("https://lingxi.kdocs.cn/api/public/v1/tasks", {
+          method: "GET",
+          headers: {
+            Cookie: connection.apiKey || connection.accessToken,
+            Referer: "https://lingxi.kdocs.cn/",
+            Accept: "application/json, text/plain, */*",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+          },
+        }, effectiveProxy);
+        const valid = res.status === 200;
+        return { valid, error: valid ? null : "WPS session expired — re-capture from a logged-in lingxi.kdocs.cn browser" };
+      }
       case "grok-web": {
         const token = connection.apiKey.startsWith("sso=") ? connection.apiKey.slice(4) : connection.apiKey;
         const randomHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, "0")).join("");
@@ -1101,6 +1117,22 @@ async function testApiKeyConnection(connection, effectiveProxy = null, options =
         const data = await res.json().catch(() => null);
         const valid = !!(data && data.user);
         return { valid, error: valid ? null : "Session expired — re-paste cookie" };
+      }
+
+      case "dumate": {
+        // Live check = the gateway token exchange; tokenFor also runs the
+        // silent passport relogin and returns the rotated cookie blob, which is
+        // persisted here since the request-path refresh can't reach this row.
+        try {
+          const { tokenFor } = await import("open-sse/shared/dumate/token.js");
+          const r = await tokenFor(connection.apiKey, { force: true, proxyOptions: effectiveProxy });
+          const patch = { accessToken: r.token, expiresAt: new Date(r.exp).toISOString() };
+          if (r.raw !== connection.apiKey) patch.apiKey = r.raw;
+          await updateProviderConnection(connection.id, patch);
+          return { valid: true, error: null };
+        } catch (e) {
+          return { valid: false, error: String(e.message || e).slice(0, 200) };
+        }
       }
       case "opencode-go": {
         const res = await fetchWithConnectionProxy("https://opencode.ai/zen/go/v1/chat/completions", {

@@ -3,6 +3,8 @@
  */
 
 import { getGitHubUsage } from "./usage/github.js";
+import { getDumateUsage } from "./usage/dumate.js";
+import { getLingxiUsage } from "./usage/lingxi.js";
 import { getGeminiUsage, getAntigravityUsage } from "./usage/google.js";
 import { getClaudeUsage, consumeClaudeResetGrant } from "./usage/claude.js";
 import { getCodexUsage, consumeCodexRateLimitResetCredit, getCodexRateLimitResetCredits } from "./usage/codex.js";
@@ -75,6 +77,16 @@ const USAGE_HANDLERS = {
   // first, stored control key (psd.meooControlKey) as the fallback inside
   // the handler — the project AK in c.apiKey cannot read it.
   meoo: (c) => getMeooUsage(c.accessToken, c.providerSpecificData, c.proxyOptions),
+  dumate: (c) =>
+    getDumateUsage({
+      apiKey: c.apiKey,
+      proxyOptions: c.proxyOptions,
+      onRenewed: c.onRenewed,
+    }),
+  // 灵犀的智点账本在 lingxi.kdocs.cn（公开 API，无签名），凭据是连接上的 WPS
+  // Cookie 罐（自捕获/CD 同步同一形状）。到期桶见 usage/lingxi.js。
+  // apiKey || accessToken：CD transfer 同步的连接把 Cookie 存在 apiKey 上。
+  lingxi: (c) => getLingxiUsage({ apiKey: c.apiKey || c.accessToken, proxyOptions: c.proxyOptions }),
   loomy: (c) => getLoomyUsage(c.apiKey, c.proxyOptions),
   "opencode-go": (c) => getOpencodeGoUsage(c.apiKey, c.proxyOptions),
   "opencode-zen": (c) => getOpenCodeZenUsage(c.apiKey, c.proxyOptions),
@@ -140,6 +152,10 @@ export async function getUsageForProvider(connection, proxyOptions = null, optio
     providerDataWithProjectId,
     proxyOptions,
     force: options.force === true,
+    // Cookie 型 provider 的静默续期可能轮换凭据（dumate）：连接 id 与写回回调
+    // 由调用方提供，缺省时 handler 只读不写，功能不受影响。
+    connectionId: connection.id,
+    onRenewed: options.onRenewed,
   });
 }
 

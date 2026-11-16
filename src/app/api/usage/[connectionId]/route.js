@@ -202,8 +202,15 @@ export async function computeConnectionUsage(connection, { force = false } = {})
       }
     }
 
+    // Cookie 型 provider（dumate）在会话失效时会静默续期并轮换凭据：回调把
+    // 新 Cookie 写回连接，否则下次仍然拿旧 Cookie 去续，白白多跑一次登录链。
+    const onRenewed = async (rawCookie) => {
+      if (!connection.id) return;
+      await updateProviderConnection(connection.id, { apiKey: rawCookie });
+    };
+
     // Fetch usage from provider API
-    let usage = await getUsageForProvider(connection, proxyOptions, { force });
+    let usage = await getUsageForProvider(connection, proxyOptions, { force, onRenewed });
 
     // If provider returned an auth-expired message instead of throwing,
     // force-refresh token and retry once (OAuth only)
@@ -211,7 +218,7 @@ export async function computeConnectionUsage(connection, { force = false } = {})
       try {
         const retryResult = await refreshAndUpdateCredentials(connection, true, proxyOptions);
         connection = retryResult.connection;
-        usage = await getUsageForProvider(connection, proxyOptions, { force });
+        usage = await getUsageForProvider(connection, proxyOptions, { force, onRenewed });
       } catch (retryError) {
         console.warn(`[Usage] ${connection.provider}: force refresh failed: ${retryError.message}`);
       }

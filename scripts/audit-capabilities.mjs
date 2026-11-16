@@ -148,6 +148,23 @@ export const ALLOWLIST = {
   // 讯飞自家模型（×0.0 免费倍率），规格只能以客户端实测为准，保留地板值。
   "loomy/spark-x2.6": "no public spec",
 
+  // DuMate (百度搭子) internal selectors: the platform routes "model-text" and
+  // the dm-auto-model/text.L* tiers to a concrete upstream per request — same
+  // aggregator nature as cursor/default and trae/auto.
+  "dumate/model-text": "aggregator",
+  "dumate/dm-auto-model/text.L2": "aggregator",
+  "dumate/dm-auto-model/text.L1": "aggregator",
+  "dumate/dm-auto-model/text.L0": "aggregator",
+
+  // WPS 灵犀 (web 会话线): "auto" 让服务端按请求挑真实模型(plans 目录的
+  // aggregator 性质); plan_pro/plan_max 是计费档位选择器，不是具体模型 ——
+  // 同 cursor/default 的 aggregator 口径。doubao_seed_2_1_pro_260628 的
+  // 日期后缀 id 无 models.dev 条目，规格只能以 plans 接口为准，保留地板值。
+  "lingxi/auto": "aggregator",
+  "lingxi/plan_pro": "aggregator",
+  "lingxi/plan_max": "aggregator",
+  "lingxi/doubao_seed_2_1_pro_260628": "no-models-dev-entry",
+
   // [merge f493b89a] Inception Labs dLLM: models.dev 未收录（官方 docs 是唯一规格源）。
   // 注册表行已按 docs 写全（ctx/out/reasoning），地板判定来自其余默认字段。
   "inception/mercury-3": "no-models-dev-entry",

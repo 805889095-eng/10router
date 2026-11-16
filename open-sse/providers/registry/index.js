@@ -162,6 +162,8 @@ import p156 from "./inception.js";
 import p157 from "./opendesign-amr.js";
 import p158 from "./gemini-decision.js";
 import p159 from "./meoo.js";
+import pdumate from "./dumate.js";
+import plingxi from "./lingxi.js";
 
 export default [
   p0,
@@ -327,4 +329,6 @@ export default [
   p157,
   p158,
   p159,
+  pdumate,
+  plingxi,
 ];

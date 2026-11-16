@@ -950,7 +950,6 @@
   "Select decision model": "選擇決策模型",
   "Select Decision Model": "選擇決策模型",
   "Select an option": "請選擇",
-  "Community": "社群",
   "GitHub": "GitHub",
   "Telegram": "Telegram",
   "If you find 10Router useful, consider supporting its development — every token of the free-channel work is powered by coffee. Thanks to all the backers ❤️": "如果 10Router 對你有幫助，歡迎支持它的開發 —— 免費渠道的每一瓦輸出都靠咖啡驅動。感謝所有贊助者 ❤️",
@@ -997,5 +996,11 @@
   "Trae auto daily check-in": "Trae 每日自動簽到",
   "Automatically check in Trae CN connections daily to claim the free daily credits — international trae.ai connections are not covered (the upstream registers this endpoint on the CN site only)": "每天自動為 Trae CN 連線簽到領取每日贈送積分——國際站 trae.ai 連線不參與（該介面只在國內站註冊）",
   "No Trae CN connections found — check-in covers CN-site connections only": "未找到 Trae CN 連線——簽到只涵蓋國內站連線",
-  "Claim the daily Trae check-in credits": "領取 Trae 每日簽到積分"
+  "Claim the daily Trae check-in credits": "領取 Trae 每日簽到積分",
+  "Lingxi auto daily check-in": "Lingxi 每日自動簽到",
+  "Automatically claim the daily check-in credits for Lingxi connections (100 a day, 200 on the seventh) — retries all day until today's claim is confirmed": "自動為 Lingxi 連線每日簽到領取靈點（每日 100、第七天 200）——全天重試，當日確認完成即停",
+  "Harvest & refresh Lingxi session cookies with CreditDaddy — daily check-in keeps 灵点 credits flowing, balances auto-synced to 10Router.": "用 CreditDaddy 收割/重新整理 Lingxi 工作階段 Cookie —— 每日簽到讓靈點源源不絕，餘額自動同步到 10Router。",
+  "Re-login (QR code)": "重新登入（掃碼）",
+  "QR Login": "掃碼登入",
+  "Login by scanning the Baidu QR code (no browser is spawned)": "掃描百度二維碼登入（不會拉起瀏覽器）"
 }
