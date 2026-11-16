@@ -2,6 +2,84 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.1.0 (2026-11-16)
+
+移植上游 `techysy/10router` v1.8.0 的功能集，并新增三个供应商。**没有**破坏性 API /
+配置 / 数据变更，连接与数据零迁移。
+
+### ✨ 新增供应商（3 个）
+
+- **DuMate（百度搭子）**：扫码登录。`shared/dumate/` 下五个模块拆开做（cookies / http /
+  qr / session / token），cookie 通过 `onRenewed` 回调在用量查询时自动轮换并回写连接，
+  不需要用户重扫码。接入点：executor、registry、usage handler、连接测试、面板扫码弹窗。
+- **WPS 灵犀（lingxi）**：cookie 抓取登录 + 每日签到。`lingxiCheckin.js` 走灵犀开放接口，
+  用量走 `services/usage/lingxi.js`；executor 侧 `lingxi` / `lx` 双别名。连接测试用
+  `/api/public/v1/tasks` 带完整 cookie jar 探活。
+- **DeepAI Code**：面板原生登录（`DeepaiAuthModal`，Google / Apple 账户 → 仪表盘复制
+  API Key），Theos 免费额度结算。模型清单由 `resolveDeepaiModels` 动态解析（含
+  glm-5.3-flash / deepseek-v4.1-flash / mimo-2.6-flash / gemini-4-hydrogen / gpt-6-astra 等
+  28 条规格），模型行带「免费 / 扣费」徽标。
+
+三个供应商的 i18n 键已补进 zh-CN / zh-TW；`audit-capabilities.mjs` 的 ALLOWLIST 同步登记
+聚合类模型。
+
+### ⚡ 自动更新不再打断在途请求
+
+`/api/health` 现在返回 `activeRequests`（聚合 `_pendingRequests.byAccount`）。配套新增
+`fnos-packaging/cmd/drain-lib.js`（纯函数 `drainDecision`）+ `drain-wait.js`（CLI），
+`cmd/main` 的 `stop()` 在停服前先探测并等待在途请求排空：
+
+| 情形 | 判定 |
+|---|---|
+| 无在途请求 | `proceed` |
+| 有在途、窗口未到 | `keep-waiting`（继续轮询） |
+| 窗口耗尽 + 定时更新触发 | `defer`（本轮跳过，等下个窗口） |
+| 窗口耗尽 + 手动操作 | `proceed`（用户明确要停，不拦） |
+
+健康端点不可达时按 `proceed` 处理（不阻塞安装）。旧版本没有该字段，读取到 `undefined`
+视为 0，向后兼容。
+
+### 🔧 Antigravity 指纹跟进
+
+- IDE 指纹 `2.29.0` → **`2.32.1`**（`shared.js` 与 `src/mitm/antigravityIdeVersion.js` 双处）。
+  UA 前缀仍保留本仓实测的 `antigravity/hub/`，**不跟随**上游的 `ide/`——那是本仓有据可查的
+  选择（`ide/` 在 argon 系列上会 404）。
+- 提示词身份句改写补齐 Codex CLI 与 `pi`：Codex CLI 开头归一化、`codex` 改写成
+  `antigravity`（保留大小写）、pi 仅匹配身份句（不做裸词替换，避免误伤 pip / 树莓派）。
+- 新增 **Gemini 4 Hydrogen** 三档模型（high / medium / low），`upstreamModelId` 形如
+  `gemini-4-hydrogen-high(<level>)`。
+
+### 🔒 CodeBuddy CLI 指纹（2.183.0 → 2.184.0，实机抓包校准）
+
+- 版本升到 **2.184.0**，并补齐官方新版新增的归属头。
+- **实机校准了两处此前推断错误的值**（搭 mock 上游 + 跑官方 headless CLI 抓真实请求头）：
+  - `X-Feature-Module` = `cli_local`（不是空串；`?? ""` 只对非 CLI 身份生效）
+  - `X-Agent-Runtime` = `other`（不是 `local-agent`；后者只存在于枚举表，没有任何代码写它）
+- 新增死值头：`X-Private-Data: false` + `x-stainless-*` 七件（arch / lang / os /
+  package-version / retry-count / runtime / runtime-version），Content-Type 由
+  `application/json;charset=UTF-8` 改为官方原值 `application/json`。
+- **故意不发**：OTel 族（`traceparent` / `b3` / `baggage` / `X-B3-*` / `X-Trace-ID`）——
+  这些头内部必须互相自洽，手搓一套不一致的比不发更像异常；`x-codebuddy-request: 1`
+  同理（只在官方本地 daemon 端点发）；`X-Root-Request-ID` 与本仓 `X-Conversation-Request-ID` 重复。
+- 改头集合后重录了 `translator/golden-url-header` 快照（diff 仅 Content-Type 六处）。
+
+### 📄 许可
+
+上游自 v1.8.1 起由 MIT 改为 AGPL-3.0。本仓主体仍为 MIT，按上游**原始引入提交**判定移植
+内容的许可：
+
+- 本次移植的 DuMate / 灵犀 / Antigravity / Gemini 4 Hydrogen / 排水探测均在 v1.8.0 树内 → **MIT**
+- **仅 DeepAI**（上游 `e23d64b`，位于分界线之后）→ **AGPL-3.0**
+
+新增 `NOTICE`（逐文件列明归属与上游提交号）+ `LICENSES/AGPL-3.0.txt`（全文），
+`LICENSE` 顶部加许可范围说明；Docker、fpk 两条分发路径都已带上这三份文件。
+
+### 📊 验证
+
+- 全量 vitest **6277 例**，失败集合与既有基线**逐条一致**（38 个环境性失败），零回归
+- `next build` 通过；基线重录 122 providers / 294 alias tokens，三条校验字节级一致
+- 新增单测：deepai 17、dumate + lingxi 108、drain 7
+
 ## v2.0.0 (2026-11-13)
 
 主版本号跳级说明：本版**没有**破坏性 API / 配置 / 数据变更，连接与数据零迁移。跳 2.0.0

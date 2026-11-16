@@ -2,6 +2,44 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.1.0 (2026-11-16)
+
+Three new providers plus non-disruptive auto-updates. No breaking changes — config,
+connections and data need no migration.
+
+### ✨ New providers
+
+- **DuMate (Baidu Dazi)**: add it by scanning a QR code. Credentials renew automatically,
+  so you won't have to re-scan.
+- **WPS Lingxi**: works after capturing a cookie once from your browser; includes a daily
+  check-in for quota.
+- **DeepAI Code**: sign in right from the dashboard (Google / Apple account), then paste the
+  key from the official dashboard. Comes with Theos free quota; each model row shows whether
+  it is free or billed.
+
+### ⚡ Auto-update no longer cuts off running requests
+
+Previously an auto-update or restart would kill in-flight completions. The service now checks
+how many requests are still running and waits for them to finish before stopping. If the wait
+runs too long and the update was scheduled, it is deferred to the next window instead of
+forcing a stop. Manual stop/restart is unaffected and still takes effect immediately.
+
+### 🔧 Models and fingerprints
+
+- **Antigravity**: IDE fingerprint bumped to 2.32.1; prompt-level client detection now covers
+  Codex CLI and pi as well.
+- **Gemini 4 Hydrogen** added in three tiers (high / medium / low).
+- **CodeBuddy**: CLI fingerprint bumped to 2.184.0, plus several header groups the official
+  build sends. We captured real requests from the official client against a mock server; two
+  header values were previously wrong and are corrected here (`X-Agent-Runtime` and
+  `X-Feature-Module`).
+
+### 📄 Licensing
+
+Three providers in this release are ported from an upstream project. **DeepAI** is the only
+one licensed under the upstream's new AGPL-3.0 terms (the rest remain MIT). The exact file
+list is in `NOTICE`; this does not affect personal use.
+
 ## v2.0.0 (2026-11-13)
 
 A release dedicated to runtime-only crashes: several defects that no unit test and no build

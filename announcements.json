@@ -7,8 +7,17 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-11-13T22:35:00+08:00",
+  "updatedAt": "2026-11-16T21:30:00+08:00",
   "items": [
+    {
+      "id": "2026-11-16-210-three-providers",
+      "level": "feature",
+      "date": "2026-11-16",
+      "title": "v2.1.0：新增 DuMate / WPS 灵犀 / DeepAI Code 三个供应商",
+      "body": "DuMate 扫码即用、WPS 灵犀抓一次 cookie 即可（含每日签到）、DeepAI Code 面板内登录并带 Theos 免费额度。同一版里自动更新不再打断正在生成的回答：停服前会等请求跑完，等太久就推迟到下一个窗口。配置、连接、数据零迁移。",
+      "titleEn": "v2.1.0: three new providers — DuMate, WPS Lingxi, DeepAI Code",
+      "bodyEn": "DuMate works by scanning a QR code, WPS Lingxi needs a one-time cookie capture (with daily check-in), and DeepAI Code signs in from the dashboard with Theos free quota. Auto-update no longer cuts off in-flight completions: it waits for requests to finish and defers to the next window if the wait is too long. No config, connection or data migration."
+    },
     {
       "id": "2026-11-13-200-runtime-crash-fix",
       "level": "feature",
@@ -89,15 +98,6 @@
       "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
       "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
       "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
-    },
-    {
-      "id": "2026-10-20-combo-router",
-      "date": "2026-10-20",
-      "level": "feature",
-      "title": "组合新增 router 策略",
-      "body": "固定顺序/轮询不看谁更擅长当前任务；Router 由决策模型分析用户 prompt，动态挑最擅长的成员回答——仅一次额外调用，兼顾能力与速度；失败/超时 8s 内自动退回原顺序。",
-      "titleEn": "Combo router strategy",
-      "bodyEn": "Order/round-robin ignores model strengths. Router analyzes your prompt and picks the best-suited member to answer — one extra call; failures/timeouts fall back to the original order within 8s."
     }
   ]
 }
