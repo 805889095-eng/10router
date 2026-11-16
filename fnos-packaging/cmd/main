@@ -52,6 +52,27 @@ HOSTNAME="0.0.0.0"
 LOG="${DATA_DIR}/10router.log"
 PID_FILE="${DATA_DIR}/10router.pid"
 
+# 排水探测（移植自上游 v1.8.0 issue #97 收尾）：重启/停止前轮询 /api/health
+# 的 activeRequests，等在途与流式请求排空，避免把用户对话掐断。
+#   TRIM_DRAIN_SKIP=1      → 跳过探测
+#   TRIM_DRAIN_MAX_MS      → 等待窗口（默认 120000）
+#   TRIM_DRAIN_TRIGGER     → manual(默认,等满窗口照做) / schedule(排不空则 defer,退出码 2)
+# 探测脚本缺失、node 缺失、健康端点不可达 → 一律直接放行（绝不阻塞启停）。
+drain_wait() {
+    [ "${TRIM_DRAIN_SKIP:-0}" = "1" ] && return 0
+    local script="" cand
+    for cand in "$(dirname "$0")/drain-wait.js" "${SRC_DIR}/../fnos-packaging/cmd/drain-wait.js"; do
+        [ -f "$cand" ] && script="$cand" && break
+    done
+    [ -n "$script" ] || return 0
+    [ -x "${NODE_BIN}" ] || return 0
+    "${NODE_BIN}" "$script" \
+        --trigger="${TRIM_DRAIN_TRIGGER:-manual}" \
+        --port="${PORT}" \
+        --max-ms="${TRIM_DRAIN_MAX_MS:-120000}" || true
+    return 0
+}
+
 start() {
     mkdir -p "${DATA_DIR}"
     if [ -f "${PID_FILE}" ] && kill -0 "$(cat "${PID_FILE}")" 2>/dev/null; then
@@ -109,6 +130,7 @@ start() {
 }
 
 stop() {
+    drain_wait
     if [ -f "${PID_FILE}" ]; then
         kill "$(cat "${PID_FILE}")" 2>/dev/null || true
         rm -f "${PID_FILE}"
