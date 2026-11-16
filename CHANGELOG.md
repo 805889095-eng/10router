@@ -2,6 +2,22 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.1.1 (2026-11-16)
+
+补丁版：修 v2.1.0 里三个新供应商在面板上找不到入口的问题。配置、连接、数据零迁移。
+
+### 🐛 修复
+
+- **供应商列表页恢复「Web Cookie Providers」分组**。上游 v1.8.0 与后续 main 都把这一组的
+  JSX 整块注释掉了，而本版移植的 `lingxi`（WPS 灵犀）与 `dumate`（百度搭子）都属于
+  `category: webCookie` —— 结果两者在列表页**根本没有卡片**，只能用
+  `/dashboard/providers/<id>` 直连 URL 添加连接。现恢复渲染该组，Grok Web / DuMate /
+  Lingxi / Perplexity Web 四个供应商正常出现在列表中。
+- **连接统计与启停开关按 `cookie` + `apikey` 双类型匹配**。Web Cookie 供应商的连接以
+  `authType="cookie"` 落库，而上游那段遗留代码写死按 `"apikey"` 过滤，照抄会让卡片
+  永远显示「未连接」、开关点了不动。
+- 该组一并纳入卡片的拖拽排序与折叠集合（`allDisplayKeys`）；组内无可见项时不渲染标题。
+
 ## v2.1.0 (2026-11-16)
 
 移植上游 `techysy/10router` v1.8.0 的功能集，并新增三个供应商。**没有**破坏性 API /

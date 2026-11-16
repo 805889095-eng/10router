@@ -2,6 +2,13 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.1.1 (2026-11-16)
+
+Small fix: the **DuMate (Baidu Dazi)** and **WPS Lingxi** providers added in v2.1.0 had no card
+in the provider list — you could only reach them by typing the detail URL. They now appear
+normally in the "Web Cookie Providers" group at the bottom of the list; click the card to add
+them (DuMate by QR scan, Lingxi by cookie capture). No config, connection or data migration.
+
 ## v2.1.0 (2026-11-16)
 
 Three new providers plus non-disruptive auto-updates. No breaking changes — config,

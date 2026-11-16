@@ -7,8 +7,17 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-11-16T21:30:00+08:00",
+  "updatedAt": "2026-11-16T22:35:00+08:00",
   "items": [
+    {
+      "id": "2026-11-16-211-webcookie-cards",
+      "level": "info",
+      "date": "2026-11-16",
+      "title": "v2.1.1：百度搭子 / WPS 灵犀 现在能在供应商列表里看到了",
+      "body": "v2.1.0 新增的 DuMate（百度搭子）和 WPS 灵犀此前没有列表入口，只能手动输网址进详情页。现在它们正常显示在列表底部的 Web Cookie Providers 分组，点卡片即可添加（搭子扫码、灵犀抓 cookie）。配置与数据零迁移。",
+      "titleEn": "v2.1.1: DuMate and WPS Lingxi now show up in the provider list",
+      "bodyEn": "The DuMate (Baidu Dazi) and WPS Lingxi providers added in v2.1.0 had no card in the provider list and could only be reached by URL. They now appear in the Web Cookie Providers group at the bottom of the list — click the card to add them (DuMate by QR scan, Lingxi by cookie capture). No config or data migration."
+    },
     {
       "id": "2026-11-16-210-three-providers",
       "level": "feature",
@@ -89,15 +98,6 @@
       "body": "内置 Spark X2.6、Qwen 3.8、DeepSeek V4.1、MiniMax M3、Kimi K2.6、GLM 5.3 Flash 等 8 个模型。供应商页点「验证码登录」，输手机号收码即可，无需安装客户端，会话 14 天有效。",
       "titleEn": "iFlytek Loomy free pool: 8 free models + phone-code sign-in",
       "bodyEn": "Eight models built in — Spark X2.6, Qwen 3.8, DeepSeek V4.1, MiniMax M3, Kimi K2.6, GLM 5.3 Flash and more. On the provider page press “SMS Login”, enter your phone number, done — no client install needed, session lasts about 14 days."
-    },
-    {
-      "id": "2026-10-20-proxy-strict",
-      "date": "2026-10-20",
-      "level": "warning",
-      "title": "代理行为变更：不可直连渠道默认严格模式",
-      "body": "Google Cloud Code、Gemini CLI 等渠道代理失败立即报错并顺位接力，不再回退直连死等（此前实测 788s）。连接级显式 strictProxy 优先。",
-      "titleEn": "Proxy behavior change: direct-connect channels now default to strict mode",
-      "bodyEn": "For channels that cannot connect directly (Google Cloud Code, Gemini CLI, …), a proxy failure now errors immediately and relays to the next account/combo member instead of hanging on a blocked direct connection (788s observed). Connection-level strictProxy overrides the default."
     }
   ]
 }
