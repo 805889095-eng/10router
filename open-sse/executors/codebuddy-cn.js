@@ -1,5 +1,6 @@
 import crypto, { createHash, randomUUID } from "crypto";
 import { DefaultExecutor } from "./default.js";
+import { CODEBUDDY_AGENT_CORE, CODEBUDDY_AGENT_RUNTIME, CODEBUDDY_FEATURE_MODULE } from "../shared/codebuddyIdentity.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 
 // Deterministic RFC-4122-v5-shaped UUID derived from a session key, mirroring
@@ -84,10 +85,11 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       headers["X-Conversation-Request-ID"] = reqUuid;
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
-      // Agent identity headers: @tencent-ai/codebuddy-code 2.183.0 sets all four on
+      // Agent identity headers: @tencent-ai/codebuddy-code 2.184.0 sets all four on
       // every completions call (dist/codebuddy-headless.js):
       //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
-      //   X-Agent-Runtime = resolveAgentRuntime() → "local-agent" for the local CLI
+      //   X-Agent-Runtime = resolveAgentRuntime() → "other" for a plain CLI (verified
+      //                     live; "local-agent" only arrives via host baggage/meta/env)
       //   X-Agent-Type    = resolveModelCallAgentType() → "main" for main-loop calls
       //   X-Agent-Purpose = getEffectiveAgentPurpose() → AgentPurpose.Conversation
       //                     (enum literal "conversation"; subagents use "<prefix>:<name>")
@@ -96,9 +98,13 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       // The previous "IDE extensions do not send these" note applied to the IDE-plugin
       // identity, which this provider does not claim.
       headers["X-Agent-Intent"] = "craft";
-      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Runtime"] = CODEBUDDY_AGENT_RUNTIME;
       headers["X-Agent-Type"] = "main";
       headers["X-Agent-Purpose"] = "conversation";
+      // 2.184.0 attribution pair: X-Agent-Core is a hardcoded "agent-cli" and
+      // X-Feature-Module is the feature module (empty on a plain conversation call).
+      headers["X-Agent-Core"] = CODEBUDDY_AGENT_CORE;
+      headers["X-Feature-Module"] = CODEBUDDY_FEATURE_MODULE;
     } catch {
       const fallbackConvId = randomUUID();
       const fallbackReqId = randomUUID().replace(/-/g, "");
@@ -108,9 +114,11 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       headers["X-Request-ID"] = fallbackReqId;
       // 降级路径也必须保持同一套 CLI 身份头，否则降级时头集合自相矛盾。
       headers["X-Agent-Intent"] = "craft";
-      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Runtime"] = CODEBUDDY_AGENT_RUNTIME;
       headers["X-Agent-Type"] = "main";
       headers["X-Agent-Purpose"] = "conversation";
+      headers["X-Agent-Core"] = CODEBUDDY_AGENT_CORE;
+      headers["X-Feature-Module"] = CODEBUDDY_FEATURE_MODULE;
     }
 
     return headers;

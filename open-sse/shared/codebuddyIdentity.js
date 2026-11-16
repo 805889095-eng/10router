@@ -16,13 +16,34 @@
 //     It has not tripped detection, and it is strictly closer to a real client than
 //     the old IDE-plugin identity (which claimed X-IDE-Type: IDE with a CLI-series
 //     version — a pair no real client can produce).
-//   - Keep the header SET in sync when bumping. 2.183.0 changed no auth/header
-//     behaviour (its changelog is Web UI agent-resume toggles, multi-root
-//     workspaces, goal/team fixes, TUI status-line tweaks — no auth/identity/
-//     device lines), so a version bump is the whole change.
+//   - Keep the header SET in sync when bumping. 2.184.0 is NOT a version-only
+//     release: it adds the attribution pair X-Agent-Core: "agent-cli" and
+//     X-Feature-Module (empty when no feature module) to every model call, so the
+//     header set moved and the executors must mirror it.
 //   - `x-codebuddy-request: 1` must stay absent: the CLI only emits it on its LOCAL
 //     daemon endpoints, so forwarding it upstream marks the request as non-official.
-export const CODEBUDDY_CLI_VERSION = "2.183.0";
+export const CODEBUDDY_CLI_VERSION = "2.184.0";
+
+/**
+ * Attribution headers the CLI attaches to every model call since 2.184.0.
+ * Values captured from a live 2.184.0 CLI run against a mock upstream
+ * (CODEBUDDY_BASE_URL + fake token) — the real request carried:
+ *   X-Agent-Core: agent-cli        (hardcoded literal in the bundle)
+ *   X-Feature-Module: cli_local    (resolveFeatureModule: ideType AND ideName are
+ *                                   "cli" → "cli_local"; the `?? ""` fallback only
+ *                                   fires for NON-CLI identities, so an empty value
+ *                                   is itself a mismatch for a CLI-identity client)
+ *   X-Agent-Runtime: other         (normalizeAgentRuntime returns "other" for
+ *                                   anything outside AGENT_RUNTIMES; nothing in the
+ *                                   bundle ever writes "local-agent" — that value
+ *                                   only arrives from host baggage / session meta /
+ *                                   CODEBUDDY_AGENT_RUNTIME env)
+ * Sending a value the real client never produces is worse than a version drift:
+ * it is a positive contradiction, not an absence.
+ */
+export const CODEBUDDY_AGENT_CORE = "agent-cli";
+export const CODEBUDDY_FEATURE_MODULE = "cli_local";
+export const CODEBUDDY_AGENT_RUNTIME = "other";
 
 /** The UA both channels send. */
 export const CODEBUDDY_USER_AGENT = `CLI/${CODEBUDDY_CLI_VERSION} CodeBuddy/${CODEBUDDY_CLI_VERSION}`;

@@ -1,6 +1,7 @@
 import crypto, { createHash, randomUUID } from "crypto";
 import { DefaultExecutor } from "./default.js";
 import { parseCodeBuddyFrequencyLimit } from "./codebuddy-cn.js";
+import { CODEBUDDY_AGENT_CORE, CODEBUDDY_AGENT_RUNTIME, CODEBUDDY_FEATURE_MODULE } from "../shared/codebuddyIdentity.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 
 // Deterministic RFC-4122-v5-shaped UUID derived from a session key, mirroring
@@ -98,17 +99,22 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
       headers["X-Conversation-Message-ID"] = reqUuid;
       headers["X-Request-ID"] = reqUuid;
       // Agent identity headers: the channel now declares X-IDE-Type: CLI (see registry),
-      // and @tencent-ai/codebuddy-code 2.183.0 sets all four on every completions call:
+      // and @tencent-ai/codebuddy-code 2.184.0 sets all four on every completions call:
       //   X-Agent-Intent  = meta["codebuddy.ai/mode"] ?? "craft"
-      //   X-Agent-Runtime = "local-agent" (local CLI runtime)
+      //   X-Agent-Runtime = "other" (verified live: nothing in the bundle writes
+      //                     "local-agent"; that needs host baggage/session meta/env)
       //   X-Agent-Type    = "main" (main-loop model call)
       //   X-Agent-Purpose = "conversation" (AgentPurpose.Conversation; subagents differ)
       // Omitting them while claiming a CLI identity is itself a fingerprint, so the intl
       // channel mirrors the verified CN set.
       headers["X-Agent-Intent"] = "craft";
-      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Runtime"] = CODEBUDDY_AGENT_RUNTIME;
       headers["X-Agent-Type"] = "main";
       headers["X-Agent-Purpose"] = "conversation";
+      // 2.184.0 attribution pair (same values as the CN channel; see
+      // shared/codebuddyIdentity.js for why they are not optional).
+      headers["X-Agent-Core"] = CODEBUDDY_AGENT_CORE;
+      headers["X-Feature-Module"] = CODEBUDDY_FEATURE_MODULE;
     } catch {
       const fallbackConvId = randomUUID();
       const fallbackReqId = randomUUID().replace(/-/g, "");
@@ -118,9 +124,11 @@ export class CodeBuddyIntlExecutor extends DefaultExecutor {
       headers["X-Request-ID"] = fallbackReqId;
       // 降级路径也必须保持同一套 CLI 身份头，否则降级时头集合自相矛盾。
       headers["X-Agent-Intent"] = "craft";
-      headers["X-Agent-Runtime"] = "local-agent";
+      headers["X-Agent-Runtime"] = CODEBUDDY_AGENT_RUNTIME;
       headers["X-Agent-Type"] = "main";
       headers["X-Agent-Purpose"] = "conversation";
+      headers["X-Agent-Core"] = CODEBUDDY_AGENT_CORE;
+      headers["X-Feature-Module"] = CODEBUDDY_FEATURE_MODULE;
     }
 
     return headers;

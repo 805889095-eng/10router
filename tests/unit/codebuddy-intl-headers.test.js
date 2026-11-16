@@ -27,16 +27,23 @@ describe("CodeBuddy channel verification headers & anti-fingerprint protection",
     expect(headers["X-Conversation-Message-ID"]).toMatch(HEX32_RE);
     expect(headers["X-Request-ID"]).toBe(headers["X-Conversation-Message-ID"]);
 
-    // Agent identity: the real @tencent-ai/codebuddy-code 2.180.0 CLI sets all four
+    // Agent identity: the real @tencent-ai/codebuddy-code CLI sets all four
     // on every completions call (extracted from dist/codebuddy-headless.js):
     // buildConversationHeaders() assigns Intent/Type/Runtime/Purpose. Both channels
     // declare the CLI identity (X-IDE-Type: CLI), so both must send them — omitting
     // any is an identity contradiction the WorkBuddy WAF can fingerprint.
     expect(headers["X-Agent-Intent"]).toBe("craft");
-    expect(headers["X-Agent-Runtime"]).toBe("local-agent");
+    // normalizeAgentRuntime → "other" for a plain CLI (nothing in the bundle writes
+    // "local-agent"; that only comes from host baggage/session meta/env).
+    expect(headers["X-Agent-Runtime"]).toBe("other");
     expect(headers["X-Agent-Type"]).toBe("main");
     // Enum AgentPurpose.Conversation — the main-loop value; subagents use "<prefix>:<name>".
     expect(headers["X-Agent-Purpose"]).toBe("conversation");
+    // 2.184.0 attribution pair, values captured from a live CLI request:
+    // 2.183.0 and earlier had neither header.
+    expect(headers["X-Agent-Core"]).toBe("agent-cli");
+    // resolveFeatureModule → "cli_local" because both X-IDE-Type and X-IDE-Name are CLI.
+    expect(headers["X-Feature-Module"]).toBe("cli_local");
   });
 
   it("maintains session continuity with stable conversation ID and unique request IDs", () => {
