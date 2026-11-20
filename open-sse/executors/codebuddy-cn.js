@@ -102,7 +102,7 @@ export class CodeBuddyExecutor extends DefaultExecutor {
       headers["X-Agent-Type"] = "main";
       headers["X-Agent-Purpose"] = "conversation";
       // 2.184.0 attribution pair: X-Agent-Core is a hardcoded "agent-cli" and
-      // X-Feature-Module is the feature module (empty on a plain conversation call).
+      // X-Feature-Module resolves to "cli_local" for this CLI identity (see identity module).
       headers["X-Agent-Core"] = CODEBUDDY_AGENT_CORE;
       headers["X-Feature-Module"] = CODEBUDDY_FEATURE_MODULE;
     } catch {
