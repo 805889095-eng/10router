@@ -2,6 +2,67 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.1.3 (2026-11-20)
+
+修复版：五个上游正确性修复移植 + Google 伪 429 的渠道级熔断。配置、连接、数据零迁移。
+
+### 🐛 修复
+
+- **Responses 终态丢内容（上游 #119）**。Chat 的 choice index 与 tool-call index 是两个
+  独立命名空间，而典型上游把 reasoning / 正文 / 工具调用全塞在 choice 0 —— 终态
+  `response.completed` 按 `output_index` 装配时全部挤到 0 号位，先输出的内容被后来的覆盖。
+  Codex 这类客户端从终态读 `output` 而非回放事件流，表现就是「多轮对话里上一轮的推理
+  或工具调用凭空消失」。现改为在 announce 时统一分配紧凑的 Responses 输出位
+  （`allocateOutputIndex`，reasoning / message / function_call 各自独立映射），
+  所有 delta / done / 终态引用同一对 index/id；id-only 的工具调用先补 `output_item.added`
+  再完成兜底项，不再出现「done 了却没 added 过」的孤儿项。
+  `tests/unit/responses-completed-output.test.js` 15 例（announce→close 一致性、
+  并行工具、稀疏上游索引、文本与工具同 delta 分位）。
+- **回退时请求体被上一次尝试污染（上游 #120）**。预处理与翻译器会**原地**改写嵌套结构
+  （文本模型剥图片、RTK 压缩、工具结果改写），而 fallback / fusion 的多次尝试共享同一
+  body 的嵌套引用 —— 第一个模型把图片剥掉后，后续视觉回退收到的输入已经被削掉；
+  调用方的原始请求也被改写。`handleChatCore` 入口 `structuredClone(body)`，每次尝试
+  拥有独立请求体。`tests/unit/chat-attempt-isolation.test.js` 2 例用真实 combo 选择 +
+  mock 上游验证「文本模型失败 → 视觉回退仍带图」。
+- **过期模型锁遮蔽有效账号锁（上游 #121）**。`isModelLockActive` 只读
+  `modelLock_<model> || modelLock___all` 的第一个命中，而过期的模型字段是惰性清理残留 ——
+  一个已失效的模型锁会让仍有效的全账号锁（例如 GitHub 月度限额）看似不存在，账号被反复
+  选中后连续失败。新增 `getModelLockUntil(connection, model)`：对所请求模型取两把锁中
+  **更晚**失效的时间，`isModelLockActive` 复用同一判定；`auth.js` 的重试时间也改按它计算
+  （原来用 `getEarliestModelLockUntil` 取全表最早，会给用户一个早于真实解锁的重试提示）。
+  `tests/unit/account-model-lock-overlap.test.js` 8 例（stale 字段矩阵 + 合并冷却）。
+- **用量导入重复计数 / 命名 key 归属断线（上游 #123）**。导出备份里 `apiKey` 是打码值
+  （`sk-496f00***`）加一个摘要列，旧导入逻辑对打码值重新 hash，**造出一个不存在的 key 身份**
+  —— 重导既不去重（每次导入都翻倍），按 key 命名的统计也会断线。改为
+  `apiKeyIdentity(key, suppliedHash)` 统一解析：备份自带合法摘要则校验后直用（明文同行时
+  校验一致性），打码值无摘要**直接拒绝**（绝不从显示掩码发明身份），旧备份的明文 key 照旧
+  派生。整批先验证后写入，不再出现「导一半报错」；读 SQLite 时兼容无 `apiKeyHash` 列的旧库
+  （`PRAGMA table_info` 探测）。`tests/unit/usage-import-identity.test.js` 13 例。
+- **Google 伪 429 打穿全池导致连封（上游 #147）**。Google 返回的 429 有两类：带归因信号的
+  真配额 429（`Retry-After` 头 / `RetryInfo` / `QuotaFailure` / 配额类 `ErrorInfo` reason /
+  重置时钟文本），和不带任何配额载荷的**裸 429** —— 后者是 WAF 身份识别类，与请求内容无关。
+  旧逻辑对两者一视同仁地「锁账号 → 换下一个 sibling」，一次请求在亚秒级打穿整个账号池留下的
+  连续被拒记录，正是 Google abuse 判定吃的信号（上游 60 天日志实证：1688 次全池锁定 → 两个账号
+  `TOS_VIOLATION`）。现新增 `open-sse/services/googleQuotaSignal.js` 判别器，
+  `antigravity` / `gemini-cli` executor 对裸 429 打 `unattributed429` 标记穿透到 chat 层：
+  **当前账号照常冷却，但绝不轮换 sibling**，改为渠道级暂停（`CHANNEL_BLOCK_MS` 新增
+  `google429` 档：首犯 5 分钟给误伤封顶，升级窗内再犯 30 分钟），窗口内该 provider 走
+  selection 侧既有的 channelBlock 预检快速失败。同账号的指数退避重试同样被否决 —— 退避重试
+  也是 burst 信号。`tests/unit/google-unattributed-429.test.js` 15 例（判据矩阵 / 分级 /
+  线程化）+ `antigravity-retry-hook` 新增裸 429 否决用例。
+
+### ✅ 验证
+
+- 真机端到端（本地 mock 上游 + 两个 antigravity 账号 + 真实 dev server + 真实 SQLite）：
+  - 裸 429 → 上游命中 **1 次**（未轮换），日志
+    `[AUTH] antigravity | unattributed 429 (#147) — channel blocked for 300s (strike 1),
+    account fallback aborted`，渠道块落库
+    `channelBlocks.antigravity = {strikes:1, durationMs:300000}`，客户端收到 `reset after 5m`。
+  - 配额 429（`RESOURCE_EXHAUSTED` + `RetryInfo`）→ 上游命中 **2 次**（正常轮换 sibling），
+    两个账号各写 `modelLock_<model>`，**不写**渠道块。
+- 全量：6216 通过 / 36 失败，失败集合 100% 落在 `known-fails` 基线内（零新增）；
+  `verify-no-regression` ✅；providers / alias / oauth-urls 三基线 byte-for-byte equal。
+
 ## v2.1.2 (2026-11-16)
 
 补丁版：仪表盘的**公告**与**更新日志**改从本仓读取。配置、连接、数据零迁移。

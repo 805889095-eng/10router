@@ -2,6 +2,36 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.1.3 (2026-11-20)
+
+Five upstream correctness fixes plus a circuit breaker for Google channels. Nothing to do on
+upgrade.
+
+**What's fixed:**
+
+- **Codex multi-turn sessions lost the previous turn's reasoning or tool call.** Three kinds of
+  content (reasoning, message, tool call) were assembled into the same output slot and
+  overwrote each other. Each now gets its own slot.
+- **Fallback to another model arrived without the images.** The first, text-only attempt strips
+  media out of the shared request body, so the vision fallback saw an input with the images
+  already gone. Every attempt now owns its own copy of the request.
+- **Accounts kept being picked while already locked.** A stale per-model lock hid a still-valid
+  account-wide lock (e.g. GitHub's monthly quota). The later of the two now wins, and the retry
+  hint is accurate again.
+- **Re-importing a usage backup double-counted everything.** Backups store a masked key, and the
+  old importer re-hashed the mask — inventing a key identity that never existed, so nothing was
+  deduplicated and per-key stats broke. Imports now trust the digest shipped in the backup,
+  verify it against the plaintext when both are present, and reject a mask without a digest
+  instead of guessing.
+- **A single request could sweep the whole account pool and get accounts banned on Google.**
+  Google returns two kinds of 429: a real quota exhaustion (with attribution signals) and a
+  bare 429 that is a WAF/identity block. The old logic treated both as "lock this account, try
+  the next one", hitting every sibling within milliseconds — exactly the burst signal Google's
+  abuse detection looks for. The two are now distinguished: real quotas still rotate; a bare
+  429 stops the whole channel for 5 minutes (escalating to 30 on repeat) instead of rotating.
+
+**What you need to do:** nothing. No config, connection or data migration.
+
 ## v2.1.2 (2026-11-16)
 
 The dashboard's **announcements** and **changelog** used to be fetched from the upstream
