@@ -1,6 +1,6 @@
 import { getProviderConnections, validateApiKey, updateProviderConnection, getSettings, getProxyPools } from "@/lib/localDb";
 import { resolveConnectionProxyConfig, pickProxyPoolId } from "@/lib/network/connectionProxy";
-import { formatRetryAfter, checkFallbackError, isModelLockActive, buildModelLockUpdate, getEarliestModelLockUntil, channelBlockRemainingMs, isNeedsReauthCooling, NEEDS_REAUTH_STATUS, MODEL_LOCK_ALL } from "open-sse/services/accountFallback.js";
+import { formatRetryAfter, checkFallbackError, isModelLockActive, buildModelLockUpdate, getModelLockUntil, channelBlockRemainingMs, isNeedsReauthCooling, NEEDS_REAUTH_STATUS, MODEL_LOCK_ALL } from "open-sse/services/accountFallback.js";
 import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import { resolveProviderId, FREE_PROVIDERS } from "@/shared/constants/providers.js";
 import { getUsageForProvider } from "open-sse/services/usage.js";
@@ -358,7 +358,9 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
       const excluded = excludeSet.has(c.id);
       const locked = isModelLockActive(c, model);
       if (excluded || locked) {
-        const lockUntil = getEarliestModelLockUntil(c);
+        // 所请求模型的重试时间 = 模型锁与全账号锁中更晚失效的那个 —— 过期的
+        // modelLock_* 字段是惰性清理的残留，不得遮蔽有效的账号级锁。
+        const lockUntil = getModelLockUntil(c, model);
         log.debug("AUTH", `  → ${c.id?.slice(0, 8)} | ${excluded ? "excluded" : ""} ${locked ? `modelLocked(${model}) until ${lockUntil}` : ""}`);
       }
     });
@@ -383,7 +385,7 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
         });
       }
       const expiries = [
-        ...lockedConns.map(c => getEarliestModelLockUntil(c)),
+        ...lockedConns.map(c => getModelLockUntil(c, model)),
         ...reauthConns.map(c => c.needsReauthUntil),
         ...agExpiries,
       ].filter(Boolean);
@@ -674,8 +676,12 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
  * @returns {{ shouldFallback: boolean, cooldownMs: number, channelScope: boolean }}
  *   `channelScope: true` means the caller must NOT try sibling accounts — the
  *   error belongs to the channel, not to this account.
+ * @param {object} [options] - `{ unattributed429?: boolean }`：#147 Google 伪
+ *   429（WAF 身份识别类）标记。为真时本函数照常锁当前账号（裸 429 命中
+ *   backoff 规则，channelScope 仍为 false），并在返回值里透传该标记——调用方
+ *   据此做渠道级暂停且绝不轮换 sibling（轮换 burst 正是上游 abuse 判定的信号）。
  */
-export async function markAccountUnavailable(connectionId, status, errorText, provider = null, model = null, resetsAtMs = null) {
+export async function markAccountUnavailable(connectionId, status, errorText, provider = null, model = null, resetsAtMs = null, options = {}) {
   if (!connectionId || connectionId === "noauth") return { shouldFallback: false, cooldownMs: 0, channelScope: false };
   const connections = await getProviderConnections({ provider });
   const conn = connections.find(c => c.id === connectionId);
@@ -698,6 +704,10 @@ export async function markAccountUnavailable(connectionId, status, errorText, pr
     ({ shouldFallback, cooldownMs, newBackoffLevel, channelScope } = checkFallbackError(status, errorText, backoffLevel, resolveProviderId(provider)));
   }
   if (!shouldFallback) return { shouldFallback: false, cooldownMs: 0, channelScope: false };
+
+  // #147：Google 伪 429 标记透传。当前账号照常锁（下面走 backoff 路径），
+  // 调用方据标记做渠道暂停且不得轮换 sibling。
+  const unattributed = options?.unattributed429 === true;
 
   // Channel-scope failures are not this account's fault: do NOT lock the account
   // (the caller sets a provider-wide block instead, so a later request is not
@@ -752,7 +762,7 @@ export async function markAccountUnavailable(connectionId, status, errorText, pr
     console.error(`❌ ${provider} [${status}]: ${reason}`);
   }
 
-  return { shouldFallback: true, cooldownMs, channelScope: false };
+  return { shouldFallback: true, cooldownMs, channelScope: false, unattributed429: unattributed };
 }
 
 /**

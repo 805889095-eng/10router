@@ -9,6 +9,7 @@ import { cleanJSONSchemaForAntigravity, normalizeGeminiContents } from "../trans
 import { DEFAULT_THINKING_AG_SIGNATURE } from "../config/defaultThinkingSignature.js";
 import { getGeminiThoughtSignatureSync } from "../services/thoughtSignatureStore.js";
 import { ANTIGRAVITY_USER_AGENT_TAG } from "../providers/shared.js";
+import { isUnattributedGoogle429 } from "../services/googleQuotaSignal.js";
 
 // Sanitize function name: Gemini requires [a-zA-Z_][a-zA-Z0-9_.:\-]{0,63}
 function sanitizeFunctionName(name) {
@@ -119,6 +120,11 @@ export class AntigravityExecutor extends BaseExecutor {
   // Parse Antigravity quota error to extract precise resetsAtMs from ErrorInfo/RetryInfo
   parseError(response, bodyText) {
     if ((response.status === 429 || response.status === 409) && bodyText) {
+      // #147 伪 429（WAF 身份识别类）：不带任何配额归因信号。打标穿透给
+      // chat 层 → 渠道级暂停，绝不轮换（一次请求打穿全池 = TOS 连封）。
+      const unattributed429 =
+        response.status === 429 &&
+        isUnattributedGoogle429(429, response.headers?.get?.("retry-after"), bodyText);
       try {
         const json = JSON.parse(bodyText);
         const err = json?.error;
@@ -147,6 +153,9 @@ export class AntigravityExecutor extends BaseExecutor {
           return { status: response.status, message: err?.message || bodyText, resetsAtMs };
         }
       } catch { /* fall through to default */ }
+      if (unattributed429) {
+        return { status: response.status, message: bodyText, unattributed429: true };
+      }
     }
     return super.parseError(response, bodyText);
   }
@@ -477,6 +486,15 @@ export class AntigravityExecutor extends BaseExecutor {
       retryMs = this.parseRetryFromErrorMessage(errorMessage);
     }
     if (retryMs) return retryMs <= MAX_RETRY_AFTER_MS ? retryMs : false;
+
+    // #147：裸 429（无 Retry-After、无配额载荷）= WAF 身份识别类。同账号
+    // 指数退避重试 3 次同样是 burst 信号——直接否决，交给 chat 层渠道暂停。
+    if (
+      response.status === HTTP_STATUS.RATE_LIMITED &&
+      isUnattributedGoogle429(response.status, response.headers?.get?.("retry-after"), bodyText)
+    ) {
+      return false;
+    }
 
     if (!this.isTransientAntigravityError(response.status, errorMessage)) return false;
 
