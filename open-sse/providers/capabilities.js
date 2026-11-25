@@ -542,15 +542,24 @@ export const PROVIDER_CAPABILITIES = {
   // （DeepSeek-V4.1-Flash 大写开头），大写不命中 canonical 键会掉进
   // *deepseek-v4* 文本档（vision 被剥）与 *qwen* / *glm-5* 通用档（输出被压
   // 到 65536 / 128000）——按各家族第一方剖面全量显式声明。
-  // spark-x2.6 无公开规格（讯飞自家模型，×0.0 免费），保留 floor + allowlist。
+  // spark-x2.6 无公开规格（讯飞自家模型），保留 floor + allowlist。
+  // 2026-11-25 live /models：spark-x2.6 限时免费结束（×2.5），0731/mimo-v2.5
+  // 下架，新增 deepseek-v4-flash-1017（vision 与 V4.1-Flash 同剖面，1M/384K）。
   "loomy": {
-    "qwen3.8-flash":          { vision: true, reasoning: true, thinkingFormat: "qwen", contextWindow: 1000000, maxOutput: 131072 },
-    "qwen-3.8-max":           { vision: true, reasoning: true, thinkingFormat: "qwen", contextWindow: 1000000, maxOutput: 131072 },
-    "DeepSeek-V4.1-Flash":    { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
-    "deepseek-v4-flash-0731": { vision: false, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
-    "MiniMax-M3":             { vision: true, reasoning: true, thinkingFormat: "minimax", contextWindow: 1000000, maxOutput: 131072 },
-    "Kimi-k2.6":              { vision: true, reasoning: true, thinkingFormat: "kimi", contextWindow: 262144, maxOutput: 262144 },
-    "GLM-5.3-Flash":          { vision: true, reasoning: true, thinkingFormat: "zai", contextWindow: 1000000, maxOutput: 131072 },
+    "qwen3.8-flash":            { vision: true, reasoning: true, thinkingFormat: "qwen", contextWindow: 1000000, maxOutput: 131072 },
+    "DeepSeek-V4.1-Flash":      { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
+    "deepseek-v4-flash-1017":   { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
+    "GLM-5.3-Flash":            { vision: true, reasoning: true, thinkingFormat: "zai", contextWindow: 1000000, maxOutput: 131072 },
+  },
+  // Capy 的广告档模型 id 带 `-ads` 后缀（`deepseek/deepseek-v4.1-flash-ads`、
+  // `zai/glm-5.3-flash-ads`），既不是 canonical 名也不命中家族 pattern 的完整
+  // 形态，会落 DEFAULT_CAPABILITIES（vision 被剥、200000/64000）。这里按 Capy
+  // `/app/models` 返回的 limits 原值声明：两档广告模型的 context 都是 1048576，
+  // maxOutput 65536——与第一方 V4.1-Flash 的 384000 输出上限不同，不能套
+  // canonical 行，否则会把超出 65536 的输出请求发给只收 64K 的上游。
+  "capy": {
+    "deepseek/deepseek-v4.1-flash-ads": { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1048576, maxOutput: 65536 },
+    "zai/glm-5.3-flash-ads":            { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 131072 },
   },
   "codex": {
     "gpt-6-astra":               { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 },

@@ -6,6 +6,31 @@
 
 修复版：五个上游正确性修复移植 + Google 伪 429 的渠道级熔断。配置、连接、数据零迁移。
 
+
+## v1.8.3 (2026-11-22)
+
+### ✨ 新增
+
+- **新增供应商 QwenWork + QwenWork CN（千问办公，2026-11-21）**：阿里办公 Agent（国际 gateway.qwenwork.ai / 国内 gateway.qwenwork.cn）与 Qoder 同协议族——设备码登录（PKCE + nonce + machine_id，授权页在网关域名下、需带 client_id/redirect_uri 且要选团队）、COSY 信封签名、agent_chat_generation SSE、/algo/api/v2/model/list 的 qwork 场景目录。落地件：registry p178/p179（category oauth、passthroughModels、静态档位+直通键兜底）；QwenWorkService 继承 QoderService（授权 URL 补 client_id/redirect_uri、poll 的 200 空体判 pending、userinfo 改走 account-context 的 data.user）；独立 QwenWorkExecutor（qwork 场景请求体：slim model_config、business.product=qoder_work、session_type=qoder_work、QwenWork 前导 system 文本块、request 三 id 合一；COSY 指纹经 buildCosyHeaders 新增的可选 site 覆盖注入——版本 1.1.59 / clientType 6 / Cosy-Scene: qwork / Cosy-Business-Product: qoder_work，Qoder 默认值不变）；qwenworkModels 目录服务（设备令牌直签，无 PAT/jobToken 层）；刷新走 /api/v1/deviceToken/refresh（{refresh_token, target:"c"}，单次轮换，REFRESH_HANDLERS 双 id 注册）；额度卡读 account-context 的 plan/quota；模型路由四处（provider 页 / v1/models / 连接测试 / 校验）接线，连接测试为目录感知（治「Provider test not supported」）。与 Qoder 的关键差异：聊天用设备令牌直打、令牌可刷新、目录场景是 qwork 不是 chat。 **2026-11-22 目录根因已修**：直通模型不走 model/list——官方客户端用 chat-modes-v2（GET /api/desktop/chat-modes），已双源接入并按 frontier 分拣 tier/直通，国际站直通 6 个全部上线（见修复段）。**剩余已知**：Free 账户对直通模型 403（权利门，付费档解锁）。
+
+- **CrowLLM 供应商**（2026-11-21 接入，全部信息来自公开 /api/status、/api/pricing、/v1/models 与端点探测）：one-hub/new-api 家族 OpenAI 兼容网关，API 与站点同域 Bearer key；/v1/models 公开可拉（183 模型 / 19 家厂商）→ passthroughModels 动态透传全量 + 静态锚定 4 个重点免费行。`:free` 后缀即零倍率（40 个），用户点名的 **qwen4-max:free** 只有免费版（model_ratio=0），24h 实测成功率 91.26%、平均延迟 27.5s（偏慢）。无签到/赠送机制（服务端 checkin_enabled=false 下发）→ 不接每日任务调度器；注册页带 Cloudflare Turnstile 但 /api/*、/v1/* 当前裸 curl 直通（服务端调用不受盾影响，规则可能变，接入后观测）；/v1/messages 端点存在但官方 supported_endpoint 矩阵未列 anthropic → 暂按纯 OpenAI 协议接入，claude 协议面待真 key 实测。**获取 API 入口 = 邀请码池轮换**：用户 4 码（xGk0/quJ8/tEjJ/6CNM）getter 随机取一条（同 croli 口径）；此前误挂的 emqU 经用户澄清非其所有，连同错误注释一并清除；/console/token 是 one-hub 惯例 key 页路径但 SPA 无法无浏览器渲染验证、未实锤，弃用。
+
+- **Capy 供应商（#156，PR by Duseus）**（2026-11-21）：agent 平台——**无补全接口**，一次请求 = 一轮真实 jam 执行（登录时建一次持久化 jamId 复用，绑定设备掉线不影响调用；事件流实为一页即关、从本次 messageId 起按 cursor 轮询至终止信号），合成 OpenAI 响应返回。Clerk Native API 邮箱验证码两步登录（code-send/code-login 限流对齐 loomy 口径：单邮箱 3 条/10 分钟 + 单 IP 10 条/小时 / 验码 6 次 + 20 次/10 分钟），铸 session JWT 必须带 `Origin: capy://app`（缺 azp claim 全 401 的坑写入隧道文件头）；能列出模型的会话才落连接（模型访问未开通的废连接直接拒）。**无头设备** = 设备码配对自动批准 + wss 隧道（`ready` 是客户端发出的、事件体是二进制帧 streamId+JSON——两坑入档），不再依赖 Capy 桌面端在线；隧道按 (orgId, deviceId) 单例，token 被拒重配对一次。工具调用靠提示词模拟：`<tool_call>` 反向解析回 tool_calls，未闭合/截断 fail closed 绝不泄漏半截可执行调用。免费广告档三模型（particle-1 / glm-5.3-flash-ads / deepseek-v4.1-flash-ads）全 0 计费，能力按私有 API 实测单独声明（`-ads` 落 DEFAULT 会剥 vision 且把 65536 上限压成 64K），capy-ai 别名共享同表、audit 白名单留地板值；付费档 Claude/GPT-6.2/Gemini 等 9 家 + passthroughModels。真机端到端三免费模型全通（设备离线态，5-9s）。合并解冲突一处：audit 白名单与 main 侧 crowllm 目录提交双保留。连接级测试探针补齐（铸 session JWT + 列模型，不建 jam、不需要设备在线；此前 Test 按钮报 Provider test not supported）。**信任模型注记（2026-11-21 发版审查收口）**：无头隧道的 machine RPC 实现了 bash 与文件读写（与桌面运行时同面；文件 handler 放行绝对路径，worktreeBase 只约束 worktree_ensure 的根注册）——隧道另一端（Capy 云端 agent）可在宿主机执行命令/读写文件，且所有经 Capy 路由的对话都会到达该 agent，客户端流量被提示注入即可触达这些 RPC。这是无头 jam 能跑的前提（桌面端产品同面暴露，只是流量来源不同）；部署上不想要此能力就不要配对设备/吊销设备令牌——无 `capyd_` token 不会拨隧道。隧道文件头注释已按实现重写（旧注释宣称 headless 不实现终端/文件编辑，与实现矛盾）。
+
+- **流式上游终态追踪（#159，PR by Duseus）**：流式/非流式两条链路新增 `onCompletedResponse` 生命周期 hook——只有上游**原生终态帧**才算完成（openai finish_reason stop/tool_calls/function_call、claude message_delta stop_reason、gemini finishReason STOP、responses status completed），HTTP 200、EOF、网关合成的 `[DONE]` 一律不算；cleanTerminal 门控还要求无 incomplete/restoreLost/parseFailures。回调异步触发不阻塞流。用途见 Croli #158 的真实回合上报。
+
+- **settings 事务原子读改写（#160，PR by Duseus）**：`mutateSettingsMap(key, mutator)`——对形如 `{ [subKey]: {...} }` 的 settings map 键做事务内原子 read-modify-write，两个调用方并发更新不同 subKey 不再互相覆盖（per-connection 签到状态等场景）。
+
+- **Meoo 邀请码池轮换 + 调度偏好大额/小额优先**：邀请池 3 条（用户 2026-11-22 提供：2i2N6e2y / ycDdBjLV / Raxntxwk，croli 5 码池同款 getter，页面加载换一条归因分散）；meoo/qwenwork/qwenwork-cn 归入 PURE_BALANCE 分类——调度偏好下拉新增「大额优先（highest-first）/小额优先（lowest-first）」，排序消费连接持久化的 quotaBalance（无余额账号排最后；余额由 extractConnectionBalance 全 provider 提取链既有供给）。
+- **删除连接确认改样式化弹窗**（用量页）：原生 confirm() 在 Electron 壳里渲染成 OS 原生框（用户 2026-11-22 报「太原生」）——改 ConfirmModal（danger 变体，删除连接/移除推送卡两分支），按钮走 Confirm/Cancel 词典。
+- **QwenWork 官方客户端图标**：本机安装的官方客户端 window-icon 256×256 双站（国际站白底绿标 / CN 绿底白标），替换官网 favicon 版。
+- **Croli 额度卡钱包行接 translate 四语**（ea0deead9）：钱包行/Credits 单位/「与每日试用额度分开」此前硬编码英文。
+- **QwenWork apikey 通道 + 储值单值卡/降级文案（#164）**：authModes 补 apikey（CD sk-key 场景经 /api/providers 建连接此前 400 Invalid provider）+ features.usageApikey；额度卡在 quota.total/used 为 null（个人版余额制）时按储值单值卡（isCreditBalance）渲染；access 过期（CD access-only 约 7 天）卡面降级为重同步指引，不渲染死数字。
+
+### 🎨 界面
+
+- **CrowLLM / Token Harbor 移入「免费」分组**（2026-11-21 用户定版）：两者形态一致——apikey 接入 + 轮换的 `:free` 零倍率模型集，正是 freeTier 分组的语义（deepai / dots / api-airforce 同组）；providers 页把 free + freeTier 合并渲染成「免费」列表后从付费 API Key 组消失。`free` 组是 noAuth 直连型（devin-cli / opencode 那批）不适用；freeTier+apikey 的详情页连接渲染是现成路径。providers 基线不快照 category，快照复验 byte-for-byte 一致。
+
 ### 🐛 修复
 
 - **Responses 终态丢内容（上游 #119）**。Chat 的 choice index 与 tool-call index 是两个

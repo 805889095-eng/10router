@@ -1,63 +1,61 @@
-/**
- * Loomy (讯飞) provider registration.
- *
- * The whole point of the entry: an out-of-the-box free pool that does not need
- * a custom node. Three things break silently if the wiring drifts, so they are
- * pinned here:
- *   - the registry row exists with the eight measured models;
- *   - `features.usageApikey` is spelled exactly as providers.js filters on
- *     (camel-case `usageApiKey` would silently drop the points card);
- *   - the /models probe uses the custom `token:` header, not Bearer.
- */
-
+// Loomy (讯飞) 内置 freeTier 收录形状钉（issue #92 的内置化收尾）：
+// chat 认 Bearer（transport.auth），/models 只认 `token:` 头（PROVIDER_MODELS_CONFIG
+// 的 authHeader 覆盖），5 个模型为 2026-11-25 live /models 实测清单（6 个 NAS
+// session 全一致），凭据为客户端 session（约 14 天）。
 import { describe, it, expect } from "vitest";
-import loomy from "../../open-sse/providers/registry/loomy.js";
-import registry from "../../open-sse/providers/registry/index.js";
+import { FREE_TIER_PROVIDERS, AI_PROVIDERS } from "../../src/shared/constants/providers.js";
+import { getModelsByProviderId } from "../../open-sse/config/providerModels.js";
 import { getCapabilitiesForModel } from "../../open-sse/providers/capabilities.js";
+import fs from "node:fs";
 
-describe("loomy registry entry", () => {
-  it("is registered under the freeTier category", () => {
-    expect(loomy.id).toBe("loomy");
-    expect(loomy.category).toBe("freeTier");
-    expect(loomy.transport.baseUrl).toBe("https://loomyad.xunfei.cn/api/v1/chat/completions");
+describe("Loomy provider registration", () => {
+  it("registers as a freeTier provider with apikey auth and llm service kind", () => {
+    const p = FREE_TIER_PROVIDERS.loomy;
+    expect(p).toBeDefined();
+    expect(p.id).toBe("loomy");
+    expect(p.authModes).toEqual(["apikey"]);
+    expect(p.serviceKinds).toContain("llm");
+    expect(p.notice.apiKeyUrl).toContain("loomy.xunfei.cn");
+    expect(AI_PROVIDERS.loomy).toBeDefined();
   });
 
-  it("exposes the eight measured models", () => {
-    expect(loomy.models.map((m) => m.id)).toEqual([
-      "spark-x2.6",
-      "qwen3.8-flash",
-      "qwen-3.8-max",
-      "DeepSeek-V4.1-Flash",
-      "deepseek-v4-flash-0731",
-      "MiniMax-M3",
-      "Kimi-k2.6",
-      "GLM-5.3-Flash",
-    ]);
+  it("ships the 2026-11-25 live-verified lineup (spark-x2.6 ×2.5, 1017 variant added)", () => {
+    const models = getModelsByProviderId("loomy").map((m) => m.id);
+    expect(models).toEqual(expect.arrayContaining([
+      "spark-x2.6", "qwen3.8-flash", "DeepSeek-V4.1-Flash",
+      "deepseek-v4-flash-1017", "GLM-5.3-Flash",
+    ]));
+    expect(models).toHaveLength(5);
+    // 2026-11-25 live 下架：不得回流
+    expect(models).not.toContain("deepseek-v4-flash-0731");
+    expect(models).not.toContain("mimo-v2.5");
+    // 2026-11-08 上游收紧：三款下线不可调，不得回流
+    expect(models).not.toContain("qwen-3.8-max");
+    expect(models).not.toContain("MiniMax-M3");
+    expect(models).not.toContain("Kimi-k2.6");
   });
 
-  it("is reachable through the registry index", () => {
-    const found = registry.filter((r) => r.id === "loomy");
-    expect(found).toHaveLength(1);
-    expect(found[0].alias).toBe("loomy");
+  it("pins rate multipliers to the client's credit-cost labels (2026-11-25)", () => {
+    const byId = Object.fromEntries(getModelsByProviderId("loomy").map((m) => [m.id, m]));
+    // spark-x2.6 限时免费已结束——若再出现 rateMultiplier 0 / promoFree 就是回退
+    expect(byId["spark-x2.6"].rateMultiplier).toBe(2.5);
+    expect(byId["spark-x2.6"].promoFreeNote).toBeUndefined();
+    expect(byId["DeepSeek-V4.1-Flash"].rateMultiplier).toBe(2.0);
+    expect(byId["deepseek-v4-flash-1017"].rateMultiplier).toBe(2.0);
+    expect(byId["GLM-5.3-Flash"].rateMultiplier).toBe(0.8);
+    expect(byId["qwen3.8-flash"].rateMultiplier).toBe(0.8);
   });
 
-  it("opts into the api-key points card with the exact flag providers.js filters on", () => {
-    expect(loomy.features?.usage).toBe(true);
-    expect(loomy.features?.usageApikey).toBe(true);
+  it("does not fall through to DEFAULT_CAPABILITIES for any shipped model", () => {
+    for (const m of getModelsByProviderId("loomy")) {
+      const caps = getCapabilitiesForModel("loomy", m.id);
+      expect(caps, m.id).toBeTruthy();
+    }
   });
 
-  it("declares capabilities for the case-sensitive upstream ids", () => {
-    // `DeepSeek-V4.1-Flash` is capitalised upstream; without an exact entry it
-    // falls into the generic *deepseek-v4* text profile and loses vision.
-    const ds = getCapabilitiesForModel("loomy", "DeepSeek-V4.1-Flash");
-    expect(ds.vision).toBe(true);
-    expect(ds.reasoning).toBe(true);
-    expect(ds.contextWindow).toBe(1000000);
-
-    const kimi = getCapabilitiesForModel("loomy", "Kimi-k2.6");
-    expect(kimi.contextWindow).toBe(262144);
-
-    const glm = getCapabilitiesForModel("loomy", "GLM-5.3-Flash");
-    expect(glm.maxOutput).toBe(131072);
+  it("icon ships as a real file and the official avatar was committed", () => {
+    expect(fs.existsSync(new URL("../../public/providers/loomy.png", import.meta.url))).toBe(true);
+    const png = fs.readFileSync(new URL("../../public/providers/loomy.png", import.meta.url));
+    expect(png.length).toBeGreaterThan(10000); // 官方高清头像，非占位图
   });
 });

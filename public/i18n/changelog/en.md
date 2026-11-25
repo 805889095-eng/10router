@@ -123,26 +123,25 @@ statically in CI. No config, connection, or data migration.
 
 ### ✨ New
 
-- **Trae split into CN / International providers**: trae.cn and trae.ai accounts were never
-  interchangeable — they are now two separate provider cards with their own model catalogs and
-  login entry points (no site picker at login any more); existing connections need no migration.
-  OAuth upgraded to the official PKCE + auth-code flow; device fingerprints are now derived per
-  account (multiple accounts no longer share one device id). Plain chat requests take the
-  lightweight direct channel instead of renting a cloud sandbox.
-- **Trae daily check-in + quota query**: one click to claim daily credits; the quota card shows
-  your plan name and pack breakdown. When a new model is missing from the official catalog
-  (error 4001), it degrades to a working sibling tier and says so.
-- **Meoo added**: a new free pool from Alibaba Cloud. Sign in with the official OAuth flow or
-  just paste a key; the model catalog mirrors the live gateway; the quota card shows your points
-  balance and connections carry a daily “claim login points” button.
-- **Gemini Decision 1 provider**: the System One multi-account aggregated Gemini Decision lane —
-  drop in an AI Studio key and go.
-- **Loomy “daily grant first” scheduling**: with several accounts, traffic sticks to one account
-  until its 5000 daily grant points are fully burned (never spread thin); a drained account is
-  auto-disabled and re-enabled at midnight; permanent points stay out of the daily rotation.
-  Toggle on the Loomy provider page, off by default.
-- **Claude fingerprint auto-follow**: the CLI version is now read live from the official npm
-  registry — no more manual bumps.
+- **Loomy catalog update**: the official client shipped a new model — DeepSeek V4.1 Flash 1017 (×2.0, 1M context, image input), priced the same as DeepSeek V4.1 Flash. Spark-X2.6's limited-time free period has ended; its credit multiplier is restored to the official ×2.5. The delisted DeepSeek V4 Flash 0731 and MiMo V2.5 are removed. All multipliers now match the official client labels (GLM 5.3 Flash ×0.8, Qwen 3.8 Flash ×0.8). Existing Loomy connections need no re-login — just "Refresh model list".
+
+- **New models on QwenWork CN**: GLM-5.4 (launch promo, 1.2x, strong at coding/multi-step/visual tasks) and Ling-3.1-Flash (limited 90% off, 0.1x, long-horizon reasoning) are now live in the QwenWork CN catalog (verified against the official client, 2026-11-25); the static roster and capability table follow — GLM-5.4 corrected to multimodal (text+image+video+PDF, 1M context) and Ling-3.1-Flash corrected to a 1M context window. The official "Now Live" / "90% OFF" badges pass through from the live catalog. The international QwenWork gateway has not shipped these yet; the picker follows automatically once it does.
+
+- **New provider: QuWork (quwork.cn)**: sign in with a phone number (SMS code after a slider captcha) or paste an llm_token (+ optional account token). Its OpenAI-compatible gateway serves 10 models — DeepSeek V4.1 Flash, Kimi K2.7/2.6, GLM 5.2 / 5.3 Flash, Qwen3.7/3.8, MiniMax M2.5 and more — under the `quwork/` prefix. Carries a points card (balance + permanent/limited breakdown), daily sign-in points (manual button on the connection card or automatic via Experimental — status-checked first, never blind-claimed), WeChat binding and invite/redemption-code activation (connection card Account dialog). ⚠️ QuWork gateways reject non-mainland-China IPs (HTTP 405): on an overseas server, bind a mainland proxy pool to the connection or set an outbound proxy in Settings. The account token auto-renews every ~2 hours; the llm_token never rotates (inference is unaffected). Also fixes packaged builds silently dropping undici, which made connection-level proxies fall back to direct connections.
+
+- **New provider: OrcaTerm (Tencent Cloud)**: sign in with WeChat to your own OrcaTerm account (Tencent Cloud terminal); once connected you can run DeepSeek V4.1 Flash, DeepSeek V4, Kimi K3, GLM 5.3 / 5.2, Hunyuan 3 and 8 models in total through its native API (the `orcaterm/` prefix). Tool calling is supported (definitions ride a prompt overlay, results resume the conversation) and so is image input (DeepSeek V4.1 Flash / Kimi K3; base64 PNG/JPEG/WebP/GIF, up to 4 images, 10 MB each, 20 MB total). Credentials auto-renew every ~2 hours with deduplicated renewal requests; re-scan after a revoked grant.
+
+- **New provider: SenseTime Raccoon (商汤小浣熊)**: sign in by scanning a QR code with WeChat (confirm inside the Raccoon mini-program); nothing needs to be installed on the server. Once connected you can run Raccoon, SenseNova, Qwen4 Max, GLM 5.3, Kimi K3.1 Pro and DeepSeek V4.1 Flash through its OpenAI-compatible API under the `xhx/` prefix. The connection's usage panel shows the points balance (available / daily / monthly / reward / top-up) and task progress (registration pack, desktop login, mobile login, invite count) — Raccoon grants points for tasks and referrals automatically, there is no daily check-in to click. Credentials last ~30 days; re-scan when they expire.
+
+- **New providers: AtomCode, Clixad, FreePi (three free-quota lanes)**: AtomCode (AtomGit CodingPlan) signs in with your AtomGit account and claims the free Lite tier during sign-in (300 requests per 5 hours; models qwen3.8-27b, glm5.3-flash); Clixad signs in with GitHub — 120k credits daily across 8 free models (GPT-5 Nano, GPT-6 Luna, Claude Haiku 5.5, GLM-5.3 Flash and more); FreePi signs in with GitHub (ad-funded) — 4k credits daily across particle, DeepSeek V4.1 Flash and GLM-5.3 Flash. All three carry quota cards. These ride each client's own API: upstream policy changes may break them or flag your account, at your own risk (FreePi's terms explicitly forbid proxy access).
+
+- **New providers: AutoClaw + AutoClaw CN (智谱澳龙, unofficial)**: use your own AutoClaw (Zhipu AutoGLM desktop) account — international (sign in with z.ai: pass the slider check, authorize, then paste the localhost:18432 address the browser lands on) or China (+86 phone SMS code). Models: AutoClaw Auto / Auto Fast / GLM-5.3 Flash (free) / GLM-5.3 Coding, 1M context, reasoning low/high/max. Credits balance card and an optional daily sign-in (Experimental page). This is a reverse-engineered desktop API: accounts may be restricted, and do not keep the AutoClaw desktop app signed in to the same account while 10Router uses it.
+
+- **Time-window sticky rotation for combos**: with a combo's "Round Robin" strategy, every request used to hop to the next model — in group-assistant use (many people interleaving) a conversation kept switching models mid-thread. Within an active period the same model now keeps answering; only after the idle window (default 5 minutes, adjustable in Settings, overridable per combo on its card) does the ring step to the next one. A per-request switch mode is still available in Settings.
+
+- **New provider: Junie (JetBrains free lane)**: sign in with your own JetBrains account (a free account is enough) to use the free Junie Lite lane — one model for small tasks, served by JetBrains. Click sign-in, approve on the opened page, and the browser lands on a page that won't load — copy the whole address from the address bar, paste it into the connection box, and connect. Only sign in with your own account.
+
+- **New provider: Numes**: an OpenAI-compatible inference marketplace — frontier and open-source models served by independent providers, billed per request from a USD or Bitcoin balance (the key's currency is fixed at creation). Model ids are OpenRouter-shaped (`author/model`); ids suffixed `:free` cost nothing (GLM-5.3, GLM-5.3-Flash, DeepSeek V4.1 Flash, Kimi K3.1 Pro, Nemotron 3 Ultra 550B), while a plain id only routes to priced endpoints. 34 flagship models are pre-listed and everything else in the catalog works by id; reasoning tiers ride the standard OpenAI reasoning_effort.
 
 ### 🐛 Fixed
 
