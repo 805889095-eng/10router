@@ -4,8 +4,9 @@ import { formatRetryAfter, checkFallbackError, isModelLockActive, buildModelLock
 import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import { resolveProviderId, FREE_PROVIDERS } from "@/shared/constants/providers.js";
 import { getUsageForProvider } from "open-sse/services/usage.js";
-import { extractEarliestPackageExpiry } from "open-sse/services/usage/expiryExtractor.js";
-import { extractDailyGrantAndPermanent } from "open-sse/services/usage/balanceExtractor.js";
+import { extractEarliestPackageExpiry, extractDisplayPackageExpiry } from "open-sse/services/usage/expiryExtractor.js";
+import { extractConnectionBalance, extractDailyGrantAndPermanent } from "open-sse/services/usage/balanceExtractor.js";
+import { getProviderQuotaCategory, PROVIDER_QUOTA_TYPES } from "open-sse/config/providerCategories.js";
 import { selectRelayCarrier } from "open-sse/services/relaySelection.js";
 import { getAntigravityQuotaCache, getAntigravityModelQuota } from "./antigravityQuota.js";
 import { SENSITIVE_PROVIDERS } from "./backgroundTokenRefresh.js";
@@ -176,6 +177,37 @@ function triggerBackgroundQuotaRefresh(connections) {
         };
         const usage = await getUsageForProvider(conn, proxyOptions);
         const expiryInfo = extractEarliestPackageExpiry(usage);
+        // The quota wall's own reading (drained-but-refilling grants included) —
+        // persisted as `displayPackageExpiry` so a card's position on a paginated
+        // wall matches the countdown printed on it. Relay keeps `expiryInfo`.
+        const displayInfo = extractDisplayPackageExpiry(usage);
+
+        // Family-partitioned pools (Antigravity: gemini_* / claude_gpt_*) must be
+        // stored per family. A single merged reading lets the LONGEST window of
+        // the other family win the "long window" slot — with claude_gpt_weekly
+        // at 100% and gemini_weekly at 87%, the stored long came out 100 and the
+        // Gemini row reported "long=100%" while its own card showed 87%. The
+        // request path reads these columns whenever its in-memory family view
+        // misses, so a contaminated column silently overrides the correct one.
+        const famPatch = {};
+        if (usage?.quotas && conn.provider === "antigravity") {
+          for (const family of ["gemini", "claude_gpt"]) {
+            const fam = extractEarliestPackageExpiry(usage, { family });
+            if (!fam) continue;
+            const key = family === "gemini" ? "Gemini" : "ClaudeGpt";
+            famPatch[`${key}ShortWindowRemaining`] =
+              typeof fam.shortRemainingPct === "number" ? fam.shortRemainingPct : null;
+            famPatch[`${key}LongWindowRemaining`] =
+              typeof fam.longRemainingPct === "number" ? fam.longRemainingPct : null;
+            famPatch[`${key}Zone`] = fam.zone || null;
+            famPatch[`${key}PackageExpiry`] = fam.expiry || null;
+            famPatch[`${key}PackageName`] = fam.name || null;
+          }
+        }
+
+        const parsedBalance = extractConnectionBalance(usage);
+        const balancePatch = typeof parsedBalance === "number" ? { quotaBalance: parsedBalance } : {};
+
         // #Loomy-daily-first: persist the daily-grant / permanent split so the
         // dailyGrantFirst scheduler can rank accounts without a live usage call.
         const grantPair = extractDailyGrantAndPermanent(usage);
@@ -185,6 +217,12 @@ function triggerBackgroundQuotaRefresh(connections) {
         await updateProviderConnection(conn.id, {
           earliestPackageExpiry: expiryInfo?.expiry || null,
           earliestPackageName: expiryInfo?.name || null,
+          // Display-reading twin, persisted for the quota wall only (see
+          // expiryExtractor): the wall sorts and the card header count down by
+          // this, so a card's position cannot disagree with the number printed on
+          // it. Relay keeps ranking on `earliestPackageExpiry`.
+          displayPackageExpiry: displayInfo?.expiry || null,
+          displayPackageName: displayInfo?.name || null,
           // Live remaining-percentage of the most-constrained bucket — the
           // relay red-zone signal. Undefined when the provider has no
           // percentage quota (relay then degrades to "burn until 429").

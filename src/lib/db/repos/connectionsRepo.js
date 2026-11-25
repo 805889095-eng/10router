@@ -16,6 +16,29 @@ const OPTIONAL_FIELDS = [
   "lastTested", "lastError", "lastErrorAt", "rateLimitedUntil", "expiresIn", "errorCode",
   "consecutiveUseCount", "idToken", "lastRefreshAt",
   "earliestPackageExpiry", "earliestPackageName", "earliestPackageRemaining", "quotaCheckedAt",
+  // Countdown as the QUOTA WALL shows it — the same scan under the display
+  // profile (drained-but-refilling windows and monthly grants included).
+  // `earliestPackageExpiry` is the ROUTING reading, deliberately narrower: a
+  // drained CodeBuddy grant must not pin every account to the same month-end
+  // date. Sorting the wall on the routing value made cards order by a number
+  // their own header did not print (2026-11-25 report), so the display value is
+  // persisted alongside it and feeds the UI only. Relay keeps `earliestPackage*`.
+  "displayPackageExpiry", "displayPackageName",
+  // Stored-value currency or token balance for pure-balance providers
+  "quotaBalance",
+  // Subscription health split (see usage/expiryExtractor.js): the fastest- and
+  // slowest-resetting windows answer different questions — "serve now?" vs
+  // "how much is left?" — and the relay handoff reads the short one.
+  "shortWindowRemaining", "longWindowRemaining", "quotaZone",
+  "shortZone", "longZone", "quotaWindowSource",
+  // Antigravity keeps TWO independent pools (gemini_* / claude_gpt_*). The
+  // merged columns above cannot represent them — the longest window of the
+  // other family wins the "long window" slot — so the family-partitioned
+  // readings are stored separately and preferred on the request path.
+  "GeminiShortWindowRemaining", "GeminiLongWindowRemaining", "GeminiZone",
+  "GeminiPackageExpiry", "GeminiPackageName",
+  "ClaudeGptShortWindowRemaining", "ClaudeGptLongWindowRemaining", "ClaudeGptZone",
+  "ClaudeGptPackageExpiry", "ClaudeGptPackageName",
 ];
 
 // Every read and every write of a connection funnels through these two, which is

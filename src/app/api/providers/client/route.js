@@ -3,6 +3,7 @@ import { getProviderConnections } from "@/lib/localDb";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
 import { USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
 import { isUsageEligible } from "@/shared/utils/usageEligibility";
+import { quotaCountdownFromRaw } from "open-sse/utils/quotaTiming.js";
 import { buildExternalConnectionRows, filterClaimedExternalRows, attachClaimRefreshUrls } from "@/lib/externalQuota";
 
 const SAFE_FIELDS = [
@@ -11,6 +12,17 @@ const SAFE_FIELDS = [
   "testStatus", "lastError", "lastErrorAt", "errorCode",
   "expiresAt", "lastUsedAt", "consecutiveUseCount",
   "createdAt", "updatedAt",
+  // Read-only quota-freshness mirror (written by the usage refresh path, see
+  // computeConnectionUsage): feeds the server-side "expiring" sort below and
+  // the client-side expiring-first fallback for cards whose quota fetch has
+  // not landed yet. A timestamp, no credentials.
+  // `displayPackageExpiry` is the same mirror under the DISPLAY reading (a
+  // drained-but-refilling window and a monthly grant DO count) — what the card
+  // header prints — and is what the sort prefers. `earliestPackageExpiry` stays
+  // the ROUTING reading and is the fallback for rows written before the display
+  // column existed.
+  "earliestPackageExpiry",
+  "displayPackageExpiry",
   // Mirrored from a same-name-claimed external push (see attachClaimRefreshUrls)
   // so the connection card's refresh button can call the pusher back. Not a DB
   // column — present only on rows that actually claimed a push with a callback.
@@ -68,6 +80,42 @@ function sortConnections(connections, sort) {
       const orderB = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);
       if (orderA !== orderB) return orderA - orderB;
       return a.provider.localeCompare(b.provider);
+    });
+  }
+
+  // "Resets first" (quota toolbar's hourglass): earliest-package-expiry order
+  // across PAGES. The dashboard's hourglass toggle was client-side-only — it
+  // re-sorted just the ~20 connections on the current page using per-card
+  // resetAt that only exists after the quota fetch lands, so with few live
+  // resetAt values the order collapsed back to the default and the button
+  // looked dead. The connection row already persists the routing-side
+  // earliest-package expiry (earliestPackageExpiry, written by the usage
+  // refresh path), so the server can sort the WHOLE list before paging.
+  // EXPIRED dates rank as "no date" (sink to the bottom): a window whose
+  // resetAt is in the past has already refilled, so it is not "about to
+  // reset/expire" — same rule as the client-side fallback in
+  // sortVisibleConnections (2026-11-24 用户报：已过期 0 额度的账户排在最前).
+  // Both read `quotaCountdownFromRaw`, the one implementation of the date rules
+  // (past / year-9999 sentinel / unparseable → nothing), so server and client
+  // pages of the same wall cannot order the same account differently.
+  if (sort === "expiring") {
+    const now = Date.now();
+    // Display reading first, routing reading as the fallback (rows from before
+    // the column existed, or a provider whose refresh has not run since).
+    const expiryTime = (c) =>
+      quotaCountdownFromRaw(c?.displayPackageExpiry ?? c?.earliestPackageExpiry, now) ??
+      Number.POSITIVE_INFINITY;
+    return list.sort((a, b) => {
+      // Compare VALUES, not the difference: Infinity - Infinity is NaN and a
+      // NaN comparator result is treated as "equal", which would silently
+      // skip the provider/name tiebreak below.
+      const ta = expiryTime(a);
+      const tb = expiryTime(b);
+      if (ta !== tb) return ta - tb;
+      return (
+        (a.provider || "").localeCompare(b.provider || "") ||
+        (a.name || "").localeCompare(b.name || "")
+      );
     });
   }
 
