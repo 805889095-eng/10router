@@ -2191,5 +2191,8 @@
   "Quota": "配额",
   "Unmetered, does not spend Theos": "免费不计量——不消耗 Theos",
   "charged against the daily Theos grant": "从每日发放的 Theos 配额里扣",
-  "用Google或Apple账户登录后，进入仪表盘，复制API Key添加至下方指定位置": "用Google或Apple账户登录后，进入仪表盘，复制API Key添加至下方指定位置"
+  "用Google或Apple账户登录后，进入仪表盘，复制API Key添加至下方指定位置": "用Google或Apple账户登录后，进入仪表盘，复制API Key添加至下方指定位置",
+  "Sign in with your QuWork phone number (SMS code after a slider captcha) or paste llm_token + access token. QuWork's gateways reject non-mainland-China IPs (HTTP 405): if this server is outside mainland China, set a mainland proxy in Settings (outbound proxy) or on the connection. Daily reward points can be claimed from the connection card or automatically (Experimental).": "用 QuWork 手机号登录（滑块验证后收短信验证码），或粘贴 llm_token + access token。QuWork 网关拒绝非中国大陆 IP（HTTP 405）：若本服务器不在中国大陆，请在设置（出站代理）或该连接上配置国内代理。每日签到积分可在连接卡上领取，或自动领取（实验功能）。",
+  "QuWork auto daily reward": "QuWork 自动每日签到",
+  "Automatically claim the QuWork daily sign-in points for every QuWork connection with an account token (checks status first, never blind-claims)": "为每个带账号 token 的 QuWork 连接自动领取每日签到积分（先查状态，绝不盲领）"
 }

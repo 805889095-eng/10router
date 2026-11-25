@@ -92,10 +92,10 @@ const OFFICIAL_ID = REGISTRY.flatMap((entry) =>
 
 describe("DeepSeek V4.1-Flash official id (deepseek-flash)", () => {
   it("is offered by the first-party provider and by opencode-go", () => {
-    // 2026-11-25: quwork / qwenwork / qwenwork-cn 三个供应商尚未移植进本仓
-    // （上游 #167 / #161 的供应商本体不在），清单暂不列；移植后追加。
+    // 2026-11-26: quwork 已移植（#167）；qwenwork / qwenwork-cn（#161）仍未移植，
+    // 移植后追加到本清单。
     const providers = OFFICIAL_ID.map((m) => m.provider).sort();
-    expect(providers).toEqual(["deepseek", "opencode-go"]);
+    expect(providers).toEqual(["deepseek", "opencode-go", "quwork"]);
   });
 
   it("resolves from the canonical row, not the V3 *deepseek* wildcard", () => {

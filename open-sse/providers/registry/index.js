@@ -163,6 +163,7 @@ import p157 from "./opendesign-amr.js";
 import p158 from "./gemini-decision.js";
 import p159 from "./meoo.js";
 import p160 from "./crowllm.js";
+import p161 from "./quwork.js";
 import pdumate from "./dumate.js";
 import plingxi from "./lingxi.js";
 import pdeepai from "./deepai.js";
@@ -335,4 +336,5 @@ export default [
   plingxi,
   pdeepai,
   p160,
+  p161,
 ];

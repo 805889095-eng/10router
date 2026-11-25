@@ -19,6 +19,7 @@ import {
   refreshZedToken,
   refreshWindsurfToken,
   refreshMinimaxCodeToken,
+  refreshQuworkToken,
   classifyOAuthRefreshError,
 } from "./tokenRefresh/providers.js";
 
@@ -41,6 +42,7 @@ export {
   refreshZedToken,
   refreshWindsurfToken,
   refreshMinimaxCodeToken,
+  refreshQuworkToken,
   classifyOAuthRefreshError,
 };
 
@@ -197,7 +199,9 @@ const REFRESH_HANDLERS = {
   "minimax-code": (c, log) => refreshMinimaxCodeToken("minimax-code", c.refreshToken, log),
   "minimax-code-global": (c, log) => refreshMinimaxCodeToken("minimax-code-global", c.refreshToken, log),
   vertex: vertexRefreshHandler,
-  "vertex-partner": vertexRefreshHandler
+  "vertex-partner": vertexRefreshHandler,
+  // QuWork: account token renewal; llm_token (apiKey) is not rotated.
+  quwork: (c, log) => refreshQuworkToken(c.refreshToken, log),
 };
 
 export async function getAccessToken(provider, credentials, log) {

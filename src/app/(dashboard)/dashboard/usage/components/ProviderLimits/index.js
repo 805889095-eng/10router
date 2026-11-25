@@ -194,6 +194,11 @@ const KNOWN_PROVIDER_NAMES = {
   "minimax-cn": "MiniMax CN",
   "glm-cn": "GLM CN",
   "kimi-cn": "Kimi CN",
+  "lingxi": "Lingxi",
+  "qwenwork": "QwenWork",
+  "qwenwork-cn": "QwenWork CN",
+  "crowllm": "CrowLLM",
+  "quwork": "QuWork",
 };
 
 export default function ProviderLimits() {

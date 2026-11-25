@@ -25,6 +25,7 @@ import {
   KIMCHI_CONFIG,
 } from "@/lib/oauth/constants/oauth";
 import { buildClineHeaders } from "@/shared/utils/clineAuth";
+import { testQuworkConnection } from "./quworkConnection.js";
 import { buildAccountValidationMessage } from "open-sse/utils/error.js";
 
 // OAuth provider test endpoints
@@ -1524,7 +1525,15 @@ export async function testSingleConnection(id, options = {}) {
   // sk- key → /models, session cookie → Preview model — lives in the apikey
   // path's provider switch. Route xiaomi-mimo there regardless of authType,
   // otherwise the Test button reports "Provider test not supported".
-  if (isKeyLike || connection.provider === "xiaomi-mimo" || connection.provider === "mimo-desktop") {
+  if (connection.provider === "quwork") {
+    // QuWork 连接建立时已用 GET /v1/models 校验过 llm_token（不耗积分），
+    // 这里只探账号额度端点判断凭据是否仍有效。
+    result = await testQuworkConnection(connection, effectiveProxy);
+  } else if (
+    isKeyLike ||
+    connection.provider === "xiaomi-mimo" ||
+    connection.provider === "mimo-desktop"
+  ) {
     result = await testApiKeyConnection(connection, effectiveProxy, options);
   } else {
     result = await testOAuthConnection(connection, effectiveProxy, options);

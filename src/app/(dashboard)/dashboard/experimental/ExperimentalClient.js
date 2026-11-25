@@ -145,6 +145,20 @@ export default function ExperimentalClient() {
               />
             </div>
 
+            {/* QuWork daily reward auto-claim — status-gated (claim only when
+                daily-reward/status says can_claim). */}
+            <CheckinCard
+              title={translate("QuWork auto daily reward")}
+              desc={translate("Automatically claim the QuWork daily sign-in points for every QuWork connection with an account token (checks status first, never blind-claims)")}
+              checked={settings.quworkCheckin === true}
+              onToggle={() =>
+                patch(
+                  { quworkCheckin: !(settings.quworkCheckin === true) },
+                  "Error toggling QuWork auto daily reward:"
+                )
+              }
+            />
+
             {/* CodeBuddy CN auto daily check-in (shares the UI slot with import/export) */}
             <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
               <div className="flex-1 min-w-0">

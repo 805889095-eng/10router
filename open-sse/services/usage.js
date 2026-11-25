@@ -36,6 +36,7 @@ import { getCommandCodeUsage } from "./usage/commandcode.js";
 import { getMiniMaxCodeUsage } from "./usage/minimax-code.js";
 import { getCursorUsage } from "./usage/cursor.js";
 import { getTraeUsage } from "./usage/trae.js";
+import { getQuworkUsage } from "./usage/quwork.js";
 import { extractEarliestPackageExpiry } from "./usage/expiryExtractor.js";
 
 /**
@@ -133,6 +134,7 @@ const USAGE_HANDLERS = {
   // 才有国内产品面——intl 连接不发这个 handler，卡面继续走 "not implemented"
   // 文案之外的指路逻辑（site 判定与 traeCheckin 的资格过滤同口径）。
   "trae-cn": (c) => getTraeUsage(c.accessToken, c.proxyOptions),
+  quwork: (c) => getQuworkUsage(c.accessToken, c.providerSpecificData, c.proxyOptions),
   trae: (c) =>
     String(c.providerSpecificData?.site || "").toLowerCase() === "cn"
       ? getTraeUsage(c.accessToken, c.proxyOptions)
