@@ -6,7 +6,7 @@
 // of them always got missed. A stale UA is itself a bot fingerprint (2.108.1 was
 // once 68 releases behind).
 //
-// Verified against `@tencent-ai/codebuddy-code` 2.185.0 — the shipped bundle at
+// Verified against `@tencent-ai/codebuddy-code` 2.186.0 — the shipped bundle at
 // dist/codebuddy-headless.js. Notes from that extraction:
 //   - The official 2.x CLI does NOT emit a literal `CLI/x.y.z CodeBuddy/x.y.z`
 //     User-Agent. It builds one dynamically (CLI/TUI/IDE tokens are present in the
@@ -20,14 +20,18 @@
 //     release: it adds the attribution pair X-Agent-Core: "agent-cli" and
 //     X-Feature-Module (empty when no feature module) to every model call, so the
 //     header set moved and the executors must mirror it.
-//   - 2.185.0 is a version-only move for our purposes: re-checked against the 2.185.0
-//     bundle, `resolveFeatureModule` still yields "cli_local" for a CLI identity and
-//     nothing new was added to the header set. Its only attribution change is how
+//   - 2.185.0 was a version-only move for us: re-checked against its bundle,
+//     `resolveFeatureModule` still yielded "cli_local" for a CLI identity and nothing
+//     new was added to the header set. Its only attribution change was how
 //     X-Agent-Purpose is derived for auxiliary/Mod-plugin calls (#184-185); our value
 //     is the plain "conversation" one, which is unaffected.
+//   - 2.186.0 is again a version-only move: its changelog is feature/UI/sandbox work
+//     (macOS file protection, /model panel, plugin mcp.json, Web UI dock), no auth,
+//     header or identity changes; the bundle still carries the same nine header names
+//     and a single version literal.
 //   - `x-codebuddy-request: 1` must stay absent: the CLI only emits it on its LOCAL
 //     daemon endpoints, so forwarding it upstream marks the request as non-official.
-export const CODEBUDDY_CLI_VERSION = "2.185.0";
+export const CODEBUDDY_CLI_VERSION = "2.186.0";
 
 /**
  * Attribution headers the CLI attaches to every model call since 2.184.0.
