@@ -1765,44 +1765,6 @@ exports[`GOLDEN buildHeaders (default executor providers) > quwork → headers (
 }
 `;
 
-exports[`GOLDEN buildHeaders (default executor providers) > qwenwork → headers (apiKey / oauth) 1`] = `
-{
-  "apiKey": {
-    "Accept": "text/event-stream",
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-  "nonStream": {
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-  "oauth": {
-    "Accept": "text/event-stream",
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-}
-`;
-
-exports[`GOLDEN buildHeaders (default executor providers) > qwenwork-cn → headers (apiKey / oauth) 1`] = `
-{
-  "apiKey": {
-    "Accept": "text/event-stream",
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-  "nonStream": {
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-  "oauth": {
-    "Accept": "text/event-stream",
-    "Authorization": "Bearer <TOK>",
-    "Content-Type": "application/json",
-  },
-}
-`;
-
 exports[`GOLDEN buildHeaders (default executor providers) > river → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -2852,20 +2814,6 @@ exports[`GOLDEN buildUrl (default executor providers) > quwork → url (stream +
 {
   "nonStream": "https://llm.quwork.cn/v1/chat/completions",
   "stream": "https://llm.quwork.cn/v1/chat/completions",
-}
-`;
-
-exports[`GOLDEN buildUrl (default executor providers) > qwenwork → url (stream + non-stream) 1`] = `
-{
-  "nonStream": "https://gateway.qwenwork.ai/algo/api/v2/service/pro/sse/agent_chat_generation",
-  "stream": "https://gateway.qwenwork.ai/algo/api/v2/service/pro/sse/agent_chat_generation",
-}
-`;
-
-exports[`GOLDEN buildUrl (default executor providers) > qwenwork-cn → url (stream + non-stream) 1`] = `
-{
-  "nonStream": "https://gateway.qwenwork.cn/algo/api/v2/service/pro/sse/agent_chat_generation",
-  "stream": "https://gateway.qwenwork.cn/algo/api/v2/service/pro/sse/agent_chat_generation",
 }
 `;
 
