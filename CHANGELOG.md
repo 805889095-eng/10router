@@ -6,6 +6,9 @@
 
 修复版：五个上游正确性修复移植 + Google 伪 429 的渠道级熔断。配置、连接、数据零迁移。
 
+- **Loomy 四模型 vision:true → false（#179，文本通道如实声明）**（2026-11-26）：公开 Bearer 接口 `loomyad.xunfei.cn/api/v1/chat/completions` 实为文本通道——报告者实测标准 image_url 400「请求有误」，1079×423 PNG 个别 200 但模型自述只看到 base64 文本并猜错颜色（HTTP 200 ≠ 视觉成功）；Web 附件走 `/api/chat/files` + `file_ref` 私有协议，当前 transport 够不到（loomyad 404 / loomy 409 Server Action unavailable）。改 `PROVIDER_CAPABILITIES.loomy` 四行（qwen3.8-flash / DeepSeek-V4.1-Flash / deepseek-v4-flash-1017 / GLM-5.3-Flash）vision:false，窗口/输出/思考形态不动；块注释记录理由与恢复条件（将来做 Web 附件 executor 再恢复）。canonical 行不动——模型本身多模态，是该通道不行，其他 provider 同 id 不受影响（测试钉住）。loomy 无别名分歧（alias=uiAlias=id），shim 无需加行；`git diff | grep "^-"` 核对恰删 7 行（4 能力行+3 注释行），无相邻行误删。消费方核查：registry/models 无 vision 字段、pricing 无 loomy 条目、live 目录 parseOpenAIStyleModels 原样透传（capabilities 富化走 getCapabilitiesForModel，同一张表）、audit allowlist 仅 spark-x2.6（floor 本就 vision:false）。测试：新 `tests/unit/loomy-vision-text-channel.test.js` 8 例（四行 false / 剖面不动 / 不泄漏到他家 / 全表 pin / 组合 vision 分层让位 / 纯文本仍走 loomy / 全 loomy 组合保序+modality 剥图占位符）；`deepseek-v4-capabilities.test.js` 的 MULTIMODAL/TEXT_ONLY 集合显式排除 loomy（保留真实视觉渠道断言，非把兜底池测空）。capability 相关 8 文件 CI=1 全绿（57 例），combo-autoswitch 既有 2 红均在 known-fails 基线内；三基线+capability/pricing 审计绿；inventory 文本插入 8 键。未打真实上游（本机无 Loomy session），依据报告者实测矩阵。
+
+- **Responses→Chat 归一化 image_url.detail（#178，DuMate 400）**（2026-11-26）：Codex 发图带 `detail:"original"`（Responses API 合法值），DuMate 的 Chat 入口只收 auto/low/high，请求在模型调用前直接 400。两条 Responses→Chat 路径（`translator/formats/responsesApi.js` 的 `convertResponsesApiFormat` 与 `translator/request/openai-responses.js` 的 `openaiResponsesToOpenAIRequest`）此前都写 `c.detail || "auto"`——只补缺失、不校验非法值。修法=集中归一化：新 `translator/concerns/imageDetail.js` 的 `normalizeChatImageDetail()`，合法集与默认值落 `schema/defaults.js`（`CHAT_IMAGE_DETAILS`/`DEFAULT_IMAGE_DETAIL`），两条路径共用；auto/low/high 保留，缺失/非法（含 original）→ auto。反向 Chat→Responses（`openaiToOpenAIResponsesRequest`）与 codex executor 的 `prefetchImages`（目标本就是 Responses 端点，original 合法）不动；将来真有上游支持 original 再走显式 provider quirk，不在通用层透传。测试：新 `tests/unit/image-detail-normalize.test.js` 11 例（归一化函数边界 / 两条路径 / file_id 兜底 / 多轮多图 / 反向不回归），known-inventory 文本插入 11 键；Responses 相关既有套件（translator 全量 + multiturn/nonstream/custom-tools/empty-toolcalls/modality-strip/multimodal-drop-lock/parallel-tool-calls/completed-output/codex-image-fetch）CI=1 复跑，4 红全部命中 known-fails 基线，无新增失败。三基线 + capability/pricing 审计绿。未打真实上游（本机无 DuMate 凭据），依据报告者实测矩阵 + 翻译层单测等价覆盖。
 
 ## v1.8.3 (2026-11-22)
 
@@ -1059,7 +1062,6 @@ deepseek thinking 档位与一批上游缺陷。共 54 个提交（含移植溯�
 - **捐赠弹窗重做**：爱发电置顶渠道 + 微信/支付宝/爱发电矢量收款码（解码重编码 SVG，扫码验证一致）；GitHub Sponsors 保留；Star 按钮主题橙；文案全部走翻译并致谢赞助者。
 - **节点健康度展开明细**：列可见性按轴判定（TTFT/速度可独立缺样本）。
 
-
 ## v1.5.1 (2026-10-18)
 
 ### ✨ 新增
@@ -1943,7 +1945,6 @@ deepseek thinking 档位与一批上游缺陷。共 54 个提交（含移植溯�
 - **用量表 成本/Token 切换后显示错乱（用户反馈）**：根因在运行时 i18n（`src/i18n/runtime.js`）与 React 的冲突——观察器只监听 `childList`、看不见 React 原地改写的文本，且会把排序时被移动行的单元格文本重置回首次见到的"原文"（成本模式下的 `￥0.00`），造成 Token 模式下部分行显示金额、部分行显示 token 数的乱表。修复：观察器增加 `characterData` 监听 + 记录 `_i18nApplied`（上次写入值），发现文本被框架合法改写时采纳为新原文而非回退。附带修复：表头"Input Tokens"等被原地更新后漏翻译的问题。复现与修复均在 `next dev` + 真实浏览器验证。
 - **用量表排序语义**：值列（token/成本）排序此前作用于分组前的明细行，组顺序由"组内第一条明细"决定而非组合计值（51M input 的组会排在升序第一位）；现按分组 summary 排序（`UsageStats.js`）。成本模式的排序列字段从 `promptTokens`/`completionTokens` 修正为 `inputCost`/`outputCost`（`UsageTable.js`）。
 - **用量表表头字典补齐**：zh-CN 补 `Cached Cost`；zh-TW 补整个用量表组（Cached/Input Cost/Input Tokens/…/Usage by *，15 条）；APInex 提醒句与 `Invite code` 文案三语同步。
-
 
 ## v1.0.4 (2026-09-01)
 

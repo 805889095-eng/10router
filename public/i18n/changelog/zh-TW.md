@@ -128,6 +128,10 @@ MIT）。具體檔案清單見倉庫 `NOTICE`，不影響自用。
 - 媒體頁卡片拖曳不再意外换位；opencode 工作階段 ID 恢復確定性。
 - Antigravity 反代指紋升級到 2.29.0，對齊最新客戶端。
 
+- **Loomy 四個模型不再冒充能讀圖**：Loomy 的公開介面（Qwen 3.8 Flash、DeepSeek V4.1 Flash、DeepSeek V4.1 Flash 1017、GLM 5.3 Flash）此前被標成支援圖片，但它的 Bearer 通道實際只認文字——帶圖請求要麼直接報「請求有誤」，要麼返回 200 但模型只是把圖片編碼當文字讀、答非所問。官方網頁端的附件走的是另一套私有上傳介面，當前接入方式搆不到。現在這四款如實標為純文字：組合收到圖片時會自動讓給真正能讀圖的成員，純文字請求照常走 Loomy 不受影響。
+
+- **Responses 轉 Chat 的圖片 detail 歸一化（DuMate 400 修復）**：Codex 等 Responses 用戶端發圖片時會帶 `detail: "original"`——這是 Responses API 的合法值，但只收 auto/low/high 的 Chat 上游（如 DuMate）會直接 400，模型還沒跑就被拒。此前兩條 Responses→Chat 轉換路徑都把這個值原樣透傳。現在統一歸一化：auto/low/high 保留，缺失或非法值（含 original）一律落到 auto。任何包含 DuMate 成員的組合收到帶圖請求都不再因此報錯；Chat→Responses 方向不受影響。
+
 ## v1.9.7 (2026-11-10)
 
 ### 🔧 改進
@@ -452,7 +456,6 @@ MIT）。具體檔案清單見倉庫 `NOTICE`，不影響自用。
 ### 🎨 介面
 
 - 側邊欄字號恢復 14px，新增社群分區（飛書/Discord/Telegram/GitHub）；完整更新日誌改為彈窗內開啟（修飛牛殼打不開新分頁）；捐贈彈窗重做（愛發電 + 三張向量收款碼 + Star 按鈕）；頭部公告入口帶未讀紅點。
-
 
 ## v1.5.1 (2026-10-18)
 

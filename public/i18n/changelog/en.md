@@ -153,6 +153,10 @@ statically in CI. No config, connection, or data migration.
 - Dragging media-page cards no longer swaps their positions; OpenCode session ids are deterministic again.
 - Antigravity reverse-proxy fingerprint bumped to 2.29.0 to match the latest client.
 
+- **Loomy's four models no longer claim to read images**: the public Loomy endpoint (Qwen 3.8 Flash, DeepSeek V4.1 Flash, DeepSeek V4.1 Flash 1017, GLM 5.3 Flash) was marked vision-capable, but its Bearer channel is text-only in practice — image requests either fail with a 400 or return 200 with the model reading the raw image encoding as text and answering nonsense. The official web client's attachments ride a separate private upload API the current transport cannot reach. The four models are now honestly marked text-only: a combo handed an image routes it to a member that can actually read it, while text requests keep using Loomy unchanged.
+
+- **Image `detail` normalized on Responses → Chat (DuMate 400 fix)**: Responses clients like Codex send `detail: "original"` with images — legal on the Responses API, but Chat-only upstreams such as DuMate accept just auto/low/high and reject the request with a 400 before the model runs. Both Responses→Chat conversion paths used to pass the value through untouched. They now share one normalizer: auto/low/high are kept, and missing or unknown values (including original) fall back to auto. Combos containing a DuMate member no longer fail on image requests because of this; the Chat→Responses direction is unchanged.
+
 ## v1.9.7 (2026-11-10)
 
 ### 🔧 Improved
@@ -524,7 +528,6 @@ statically in CI. No config, connection, or data migration.
 ### 🎨 UI
 
 - Sidebar font restored to 14px with a new Community section (Feishu/Discord/Telegram/GitHub); the full changelog now opens inside the modal (fixes the fnOS shell being unable to open new tabs); the donate modal was rebuilt (AiFaDian + three vector QR codes + Star button); header announcements with an unread badge.
-
 
 ## v1.5.1 (2026-10-18)
 
