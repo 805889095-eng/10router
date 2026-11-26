@@ -5,6 +5,24 @@ import { Card, Toggle } from "@/shared/components";
 import { translate } from "@/i18n/runtime";
 import SecurityCard from "./SecurityCard";
 
+// 单行签到开关卡：本仓未移植上游那批 CheckinCard 重构，QuWork 的这一个入口
+// 需要自己有定义（上游把它抽成了共用组件）。
+function CheckinCard({ title, desc, checked, onToggle }) {
+  return (
+    <div
+      className={`flex items-start sm:items-center justify-between gap-4 rounded-xl border p-3 transition-colors ${
+        checked ? "border-primary/40 bg-primary/5" : "border-border/60 bg-bg-alt/50"
+      }`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm">{title}</p>
+        <p className="text-xs sm:text-sm text-text-muted leading-relaxed">{desc}</p>
+      </div>
+      <Toggle checked={checked} onChange={onToggle} />
+    </div>
+  );
+}
+
 // Beta toggles lifted out of Settings. They all act on provider *accounts*
 // rather than on request routing (credential transfer, daily check-in and
 // activity-credit probes), so they live on their own page instead of sharing

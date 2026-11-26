@@ -26,6 +26,7 @@ import {
 } from "@/lib/oauth/constants/oauth";
 import { buildClineHeaders } from "@/shared/utils/clineAuth";
 import { testQuworkConnection } from "./quworkConnection.js";
+import { ANTIGRAVITY_IDE_USER_AGENT } from "open-sse/providers/shared.js";
 import { buildAccountValidationMessage } from "open-sse/utils/error.js";
 
 // OAuth provider test endpoints
