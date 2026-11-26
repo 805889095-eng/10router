@@ -516,6 +516,22 @@ const PROVIDER_MODELS_CONFIG = {
       return { models: getStaticProviderModels("meoo"), warning };
     },
   },
+  // CrowLLM: the public /v1/models catalog carries 183 entries, but the gift
+  // balance only spends in the :free directory — paid models would be dead
+  // weight in the import surface. The parse filter keeps the catalog import
+  // and the stale sweep on the :free set only; ids pass through verbatim so
+  // they match the registry anchors.
+  crowllm: {
+    url: "https://crowllm.com/v1/models",
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    authHeader: "Authorization",
+    authPrefix: "Bearer ",
+    parseResponse: (data) => {
+      const rows = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+      return rows.filter((m) => String(m?.id || "").endsWith(":free"));
+    },
+  },
   // DeepAI Code: the desktop account API key is long-lived (issued once
   // at app sign-in, no refresh path); resolveDeepaiModels fetches the
   // live catalog whose rows carry their own specs. Live ids pass through

@@ -104,6 +104,9 @@ export const ALLOWLIST = {
   // CodeBuddy CN 客户端第五版目录带 auto 档（上游按 prompt 选真实模型），
   // 与 qoder 的 auto 同语义——静态能力行无法准确，按聚合档处理。
   "codebuddy-cn/auto": "aggregator",
+  // CrowLLM（one-hub 聚合站）:锚定的 :free 行无公开规格（厂商自己的 hy4-flash
+  // 在阿里/腾讯侧也无 models.dev 条目），与 capy/particle 同口径按「无公开规格」记账。
+  "crowllm/hy4-flash:free": "no public spec",
 
   // Inception Labs dLLM: models.dev 未收录（官方 docs 是唯一规格源）。
   // 注册表行已按 docs 写全（ctx/out/reasoning），地板判定来自其余默认字段。
