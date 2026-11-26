@@ -2,6 +2,28 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.1.5 (2026-11-26)
+
+Fixes one missed wire-up from v2.1.4: **the QuWork provider card had no way to open the
+phone + SMS sign-in dialog**. No migrations of config, connections or data.
+
+### Fixes
+
+- **QuWork could not open its SMS login dialog**: when QuWork was ported in v2.1.4, the dialog
+  component (phone number + SMS code with a slider captcha, or pasting an existing token) was
+  dropped into the repo but never referenced by the provider detail page — it did not even
+  define the state flag that opens it. Meanwhile the "Add connection" button goes through the
+  generic OAuth check, and QuWork declares itself an OAuth provider, so the button opened the
+  generic authorization popup, which could only fail. QuWork's button now opens its own dialog:
+  "verify and send code" → SMS code → receive token works end to end, and pasting an
+  `llm_token` still works too.
+- Also confirmed: the dialog refreshes the connection list after a successful add, so no manual
+  page reload is needed.
+
+### Upgrading
+
+- No database migration, no config change; install over the top. QuWork connections created on
+  v2.1.4 are unaffected.
 ## v2.1.4 (2026-11-26)
 
 Feature release: two new providers (CrowLLM and QuWork), CodeBuddy CN aligned to the

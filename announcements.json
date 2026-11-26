@@ -7,8 +7,14 @@
     "link": "可选，显示「了解更多」按钮",
     "note": "id 唯一且不变更（未读红点与已读标记依赖它）；本文件推送到 main 即生效，无需发版"
   },
-  "updatedAt": "2026-11-16T22:35:00+08:00",
+  "updatedAt": "2026-11-26",
   "items": [
+    {
+      "date": "2026-11-26",
+      "level": "fix",
+      "title": "v2.1.5：修复 QuWork 供应商卡片打不开「手机短信登入」弹窗",
+      "body": "v2.1.4 里 QuWork 的登录弹窗只被放进了仓库、详情页从未引用它，点「添加连接」会打开一个只会报错的通用授权窗。本版把它接上了：点按钮直接出现手机号 + 短信验证码（含滑块人机验证）与粘贴 llm_token 两种方式，添加成功后连接列表自动刷新。无数据库迁移，覆盖安装即可；v2.1.4 已配好的 QuWork 连接不受影响。"
+    },
     {
       "date": "2026-11-26",
       "level": "feature",
@@ -86,15 +92,6 @@
       "body": "流式结束前自动把思考提升为正文；组合模式判定零可用内容时自动顺延下一模型。Hermes Agent 等严格客户端受益。",
       "titleEn": "Fixed: reasoning-only responses no longer dropped",
       "bodyEn": "Thinking content is promoted to the reply body before the stream ends; combo mode advances to the next model on zero usable content. Strict clients like Hermes Agent benefit."
-    },
-    {
-      "id": "2026-11-03-privacy-redaction",
-      "date": "2026-11-03",
-      "level": "feature",
-      "title": "新功能：隐私脱敏——让上游看不到你的密钥",
-      "body": "连接详情里打开「隐私脱敏」，出站请求里的 API Key、私钥、JWT 会被替换成占位符，模型回显的内容自动还原成原文。默认关闭，只对你不信任的上游开启。",
-      "titleEn": "New: privacy redaction — keep your keys away from upstreams",
-      "bodyEn": "Turn on “Privacy redaction” in a connection and API keys, private keys and JWTs in the outbound request become placeholders; anything the model echoes back is restored before it reaches you. Off by default — enable it only for upstreams you do not trust."
     }
   ]
 }

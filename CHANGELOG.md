@@ -2,6 +2,28 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.1.5 (2026-11-26)
+
+修复版：v2.1.4 移植 QuWork 时漏了详情页接线，导致短信登录入口不存在。零迁移。
+
+### 修复：QuWork 详情页短信登录入口（`d9f6a6fd`）
+
+- 根因：`providers/[id]/page.js` 的「添加连接」按钮统一走 `triggerAddConnection`，函数首行
+  `if (isOAuth)` 就把 QuWork 截走了（registry 里 `quwork.authModes = ["oauth"]`），打开的是通用
+  PKCE 授权弹窗，对 QuWork 只会报错；而真正带手机号 + 短信 + 滑块验证的 `QuworkLoginModal`
+  在 v2.1.4 里**只被拷进仓库、从未被引用**，`showQuworkLoginModal` state 也没定义，
+  页面末尾自然没有它的挂载点。四样缺三样。
+- 修法：补 `import QuworkLoginModal`、补 `showQuworkLoginModal` state、页面末尾补条件挂载，
+  并把 `providerId === "quwork"` 分支插在 `if (isOAuth)` **之前**（与上游 `page.js:3096` 一致）。
+- `onAdded` 走本仓既有的 `refreshAfterConnectionChange`，与其它弹窗一致。
+- 验证：`eslint --config eslint.gate.config.mjs src/` exit 0（CI 同款 no-undef 门禁）；
+  `@babel/parser` JSX 解析通过；全量 38 失败 = `known-fails` 基线 38，无新增。
+
+### 已知限制
+
+- 本机内存不足以跑 `next build`，UI 渲染只能在 CI 产物或真机上确认；本地仅验证了语法、
+  门禁与回归基线。
+
 ## v2.1.4 (2026-11-26)
 
 功能版：新增 CrowLLM 与 QuWork 两个供应商、CodeBuddy CN 对齐客户端第五版清单、Loomy
