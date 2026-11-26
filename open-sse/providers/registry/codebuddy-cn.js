@@ -1,3 +1,5 @@
+import { CODEBUDDY_USER_AGENT, codebuddyIdentityHeaders } from "../../shared/codebuddyIdentity.js";
+
 export default {
   id: "codebuddy-cn",
   // Short model prefix (cbcn/glm-5.2). "cbcn" = CodeBuddy CN; reserve "cbai"
@@ -37,22 +39,10 @@ export default {
       // translator/concerns/toolCall.js and issue #27.
       sanitizeToolSchema: true,
     },
-    headers: {
-      // 2026-11-25 对齐官方 CLI 2.186.0（npm @tencent-ai/codebuddy-code 2.186.0
-      // 解包）：UA 模板未变——buildUserAgent 仍是 `${platform}/${platformVersion}`
-      // + `${productName}/${productVersion}`，platform=CLI、productName=CodeBuddy、
-      // 版本全部回退到包版本 2.186.0；X-IDE/X-Client/X-Product-Version 三头
-      // 继续发且默认值仍回退链 ideVersion→platformVersion→包版本。纯版本平移。
-      "User-Agent": "CLI/2.186.0 CodeBuddy/2.186.0",
-      "X-Product": "SaaS",
-      "X-IDE-Type": "CLI",
-      "X-IDE-Name": "CLI",
-      "X-IDE-Version": "2.186.0",
-      "X-Client-Version": "2.186.0",
-      "X-Product-Version": "2.186.0",
-      "x-requested-with": "XMLHttpRequest",
-      "x-codebuddy-request": "1",
-    },
+    // Identity headers: single source in open-sse/shared/codebuddyIdentity.js, so a
+    // CLI release is one edit instead of six. See that file for what is (and is not)
+    // duplicated from the shipped bundle, and why `x-codebuddy-request` stays absent.
+    headers: codebuddyIdentityHeaders(),
     auth: {
       combined: true,
       header: "Authorization",
