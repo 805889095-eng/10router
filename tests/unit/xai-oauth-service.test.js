@@ -1,6 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("xai/oauth service", () => {
+  // proxyFetch.js patches globalThis.fetch at module load and pins the
+  // pre-patch original in a module-level const, so a stub installed by the
+  // first test would be captured (and then ignored) by whichever test happens
+  // to trigger that import. Load the graph once here, before any test runs,
+  // so the patched fetch is in place and every test's stubGlobal takes effect.
+  beforeAll(async () => {
+    await import("../../src/lib/oauth/providers.js");
+  }, 60000);
+
   beforeEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
@@ -64,13 +73,17 @@ describe("xai/oauth service", () => {
   });
 
   it("generates dashboard auth data with CLIProxyAPI PKCE size and discovered endpoints", async () => {
-    fetch.mockResolvedValueOnce({
+    // proxyFetch patches globalThis.fetch at import time and captures the
+    // original in a module-level const, so the mock has to be in place before
+    // the module graph loads (same reason as the exchange case below).
+    const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         authorization_endpoint: "https://auth.x.ai/oauth2/authorize-from-discovery",
         token_endpoint: "https://auth.x.ai/oauth2/token-from-discovery",
       }),
     });
+    vi.stubGlobal("fetch", fetchMock);
 
     const { generateAuthData } = await import("../../src/lib/oauth/providers.js");
     const data = await generateAuthData("xai", "http://127.0.0.1:56121/callback");
@@ -85,7 +98,10 @@ describe("xai/oauth service", () => {
   });
 
   it("exchanges dashboard codes against the discovered xAI token endpoint", async () => {
-    const fetchMock = fetch;
+    // The mock must be installed BEFORE the module graph loads: proxyFetch.js
+    // captures `const originalFetch = globalThis.fetch` at import time and
+    // patches globalThis.fetch, so a later stub would never be consulted.
+    const fetchMock = vi.fn();
     fetchMock
       .mockResolvedValueOnce({
         ok: true,
@@ -102,6 +118,7 @@ describe("xai/oauth service", () => {
           expires_in: 3600,
         }),
       });
+    vi.stubGlobal("fetch", fetchMock);
 
     const { exchangeTokens } = await import("../../src/lib/oauth/providers.js");
     const tokens = await exchangeTokens(

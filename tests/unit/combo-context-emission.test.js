@@ -49,7 +49,7 @@ describe("buildModelsList — combo context reaches the agent", () => {
     mocks.getCombos.mockResolvedValue([
       {
         name: "kimi-preview",
-        models: ["codebuddy-cn/kimi-k2.8-preview", "codebuddy-cn/kimi-k2.6"],
+        models: ["codebuddy-cn/kimi-k2.8-preview", "codebuddy-cn/kimi-k3"],
       },
     ]);
 
