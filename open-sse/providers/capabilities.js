@@ -170,6 +170,11 @@ export const MODEL_CAPABILITIES = {
   // 改它们会波及别人，因此只加精确行。来源都是第一方 models.dev 条目；与转售商冲突时
   // 取第一方。
   "glm-5.3":        { reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 131072 }, // zai + zhipuai 一致；thinking 不可关闭
+  // GLM-5.4（2026-11-23 发布，models.dev zai/zhipuai-coding-plan 两条一致）：多模态旗舰
+  // text+image+video+pdf、1M/131072、reasoning effort low/high/max。CodeBuddy CN 2026-11-25
+  // 第五版清单与 QwenWork CN live 目录同日上架，id 与第一方同名——与 glm-5.3 同理由写
+  // canonical。不写会落 `*glm-5*` 兜底：200K 窗口、vision:false，图片被剥。
+  "glm-5.4":        { vision: true, videoInput: true, pdf: true, reasoning: true, thinkingFormat: "zai", contextWindow: 1000000, maxOutput: 131072 },
   "glm-5.2":        { reasoning: true, thinkingFormat: "zai", contextWindow: 1000000, maxOutput: 131072 }, // zhipuai：窗口 1M
   "glm-5.1":        { reasoning: true, thinkingFormat: "zai", contextWindow: 200000, maxOutput: 131072 }, // zhipuai：窗口与兜底同值，只有输出上限要改
   "glm-5":          { reasoning: true, thinkingFormat: "zai", contextWindow: 204800, maxOutput: 131072 }, // zai + zhipuai（models.dev 已标 deprecated）
@@ -696,6 +701,11 @@ export const PROVIDER_CAPABILITIES = {
     // x 变体同基础版形态；32000 是暂取（同 hy3「输出上限暂取同档」的既有做法）——
     // CN 网关的 product-config 需要鉴权取不到，等它回来再校准。
     "glm-5.3-flashx":     { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 32000 },
+    // GLM-5.4（客户端 2026-11-25 第五版清单新上，0.69x）：CN 网关 product-config 尚未
+    // 取到，形态按 canonical glm-5.4 行（1M/131072、全模态）压到 openai 思考形状
+    // （transport 已写死 openai，provider 行优先）；maxOutput 先按 glm-5.3 的 48000
+    // 夹，宁小勿大（真夹子），待 product-config 校准。
+    "glm-5.4":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 48000 },
     "kimi-k3":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 32000 },
     // DeepSeek-V4-Pro：纯文本（模型卡 text→text；models.dev 124 条命中一致报
     // attach:false，火山方舟第一方 deepseek-v4-pro-ga-260813 亦然）。1M 输入 /
