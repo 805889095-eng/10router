@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getProviderIconSrc, markProviderIconMissing } from "@/shared/utils/providerIcon";
+import QuworkLoginModal from "../components/QuworkLoginModal";
 import { Card, Button, Badge, Input, Modal, CardSkeleton, OAuthModal, KiroOAuthWrapper, CursorAuthModal, ZedAuthModal, XiaomiMimoAuthModal, DeepaiAuthModal, IFlowCookieModal, GitLabAuthModal, Toggle, Select, EditConnectionModal, NoAuthProxyCard, ConfirmModal, InviteCodeChip, Tooltip } from "@/shared/components";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, getProviderAlias, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, AI_PROVIDERS } from "@/shared/constants/providers";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
@@ -89,6 +90,7 @@ export default function ProviderDetailPage() {
   const [showDumateQrModal, setShowDumateQrModal] = useState(false);
   const [dumateQrConnectionId, setDumateQrConnectionId] = useState(null);
   const [showLingxiCaptureModal, setShowLingxiCaptureModal] = useState(false);
+  const [showQuworkLoginModal, setShowQuworkLoginModal] = useState(false);
   const [lingxiCaptureConnectionId, setLingxiCaptureConnectionId] = useState(null);
   const [showAddApiKeyModal, setShowAddApiKeyModal] = useState(false);
   const [addConnectionError, setAddConnectionError] = useState("");
@@ -193,6 +195,14 @@ export default function ProviderDetailPage() {
   };
 
   const triggerAddConnection = () => {
+    // QuWork: phone + SMS (slider captcha popup) or pasted tokens — no
+    // browser-OAuth URL, so the generic PKCE modal would only show an error.
+    // Must be checked BEFORE the isOAuth branch: its authModes is ["oauth"],
+    // so without this line the card's only button opens the wrong modal.
+    if (providerId === "quwork") {
+      setShowQuworkLoginModal(true);
+      return;
+    }
     if (isOAuth) {
       triggerOAuthConnection();
       return;
@@ -2892,6 +2902,13 @@ export default function ProviderDetailPage() {
           reactive={autoPing.connections[scheduleConnection.id] === true}
           schedule={autoPing.schedules?.[scheduleConnection.id] || null}
           onSave={(result) => handleSaveAutoPing(scheduleConnection.id, result)}
+        />
+      )}
+      {providerId === "quwork" && showQuworkLoginModal && (
+        <QuworkLoginModal
+          isOpen
+          onClose={() => setShowQuworkLoginModal(false)}
+          onAdded={refreshAfterConnectionChange}
         />
       )}
     </div>
