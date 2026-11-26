@@ -198,6 +198,19 @@ export async function PATCH(request) {
       }
     }
 
+    // QuWork daily reward auto-claim (status-gated, never blind-claims).
+    if (Object.prototype.hasOwnProperty.call(body, "quworkCheckin")) {
+      if (settings.quworkCheckin === true) {
+        import("@/sse/services/quworkCheckin.js")
+          .then(({ startQuworkCheckin }) => startQuworkCheckin())
+          .catch((error) => console.warn("[QuworkCheckin] start failed:", error.message));
+      } else {
+        import("@/sse/services/quworkCheckin.js")
+          .then(({ stopQuworkCheckin }) => stopQuworkCheckin())
+          .catch((error) => console.warn("[QuworkCheckin] stop failed:", error.message));
+      }
+    }
+
     // Daily-grant midnight reset (每日赠送积分优先 policy). Keyed off the
     // providerStrategies patch: any change that leaves at least one provider
     // with dailyGrantFirst=true starts the scheduler, none stops it. An

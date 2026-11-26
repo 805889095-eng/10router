@@ -174,6 +174,14 @@ async function runHeavyStartup() {
       .catch((e) => console.log("[TraeCheckin] scheduler start failed:", e.message));
   }
 
+  // QuWork daily reward auto-claim (status-gated). Account-token renewal is the
+  // generic background OAuth refresh (REFRESH_HANDLERS.quwork), not this.
+  if (settings.quworkCheckin === true) {
+    import("@/sse/services/quworkCheckin.js")
+      .then(({ startQuworkCheckin }) => startQuworkCheckin())
+      .catch((e) => console.log("[QuworkCheckin] scheduler start failed:", e.message));
+  }
+
   // Daily-grant midnight reset (每日赠送积分优先 policy, 2026-11-12): reopens
   // connections auto-disabled by the drain guard in auth.js once their daily
   // grant refreshes. The scheduler self-gates per tick on providerStrategies
