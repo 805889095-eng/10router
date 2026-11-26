@@ -174,8 +174,13 @@ export function sortVisibleConnections(
   };
 
   return [...connections].sort((a, b) => {
-    const expiryDiff = getEarliestResetTime(a) - getEarliestResetTime(b);
-    if (expiryDiff !== 0) return expiryDiff;
+    // Compare the VALUES, not the difference: both sides Infinity makes
+    // `a - b` NaN, a NaN comparator result is treated as "equal" and the
+    // provider/name tiebreak below never fires — the no-date cards then kept
+    // the default order and the hourglass looked like it did nothing.
+    const aTime = getEarliestResetTime(a);
+    const bTime = getEarliestResetTime(b);
+    if (aTime !== bTime) return aTime - bTime;
     return (
       (a.provider || "").localeCompare(b.provider || "") ||
       (getConnectionLabel(a) || "").localeCompare(getConnectionLabel(b) || "")

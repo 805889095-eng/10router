@@ -700,6 +700,12 @@ export const PROVIDER_CAPABILITIES = {
     // their thinking is switchable; the hy* models are forced always-on.
     "hy3":                { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 192000, maxOutput: 64000 },
     "hy4-preview":        { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
+    // Hy4 正式版（客户端 2026-11-05 新上，红色 new 标签）：1M 窗口，输出上限暂取
+    // Hy 同档 64000（CN 网关 product-config 需鉴权取不到，回来后校准）。
+    "hy4":                { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
+    // Hy4 flash（客户端 2026-11-16 正式发布，日常主力档）：卡片 960K 上下文，
+    // 与 hy4 的 1M 不同窗。Hy 同族思考强制常开。
+    "hy4-flash":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 960000, maxOutput: 64000 },
     // Space-Bunny（官方应用 2026-10-02 上架）：原生多模态输入 → vision:true；
     // 思考"极致"档与 Hy 系同族（强制常开，canDisable:false 待服务端
     // product-config 回来后校准）；1M 输入，输出上限暂取 Hy 同档 64000。

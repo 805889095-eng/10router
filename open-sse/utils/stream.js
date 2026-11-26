@@ -136,6 +136,22 @@ export function createSSEStream(options = {}) {
     }
   };
 
+  // Is this still-untranslated chunk the upstream's terminal frame?
+  //
+  // The translate lane sees the PROVIDER dialect, so there is no single
+  // `finish_reason` to test. Each family announces completion differently:
+  //   - OpenAI / Responses-ish: choices[0].finish_reason
+  //   - Claude: message_delta carrying stop_reason (message_stop has no delta)
+  //   - Gemini / Antigravity: candidates[0].finishReason
+  // Ollama keeps its terminal in `done`, which the [DONE] branch handles.
+  const isUpstreamTerminalChunk = (chunk, upstreamFormat) => {
+    if (!chunk || chunk.error) return false;
+    if (Array.isArray(chunk.choices) && chunk.choices[0]?.finish_reason) return true;
+    if (upstreamFormat === FORMATS.CLAUDE && chunk.type === "message_delta" && chunk.delta?.stop_reason) return true;
+    if (Array.isArray(chunk.candidates) && chunk.candidates[0]?.finishReason) return true;
+    return false;
+  };
+
   // Issue #96: 兜底防御 —— 如果整个流结束时，accumulatedContent 依然为空，
   // 且没有任何工具调用（!hasToolCallsSeen），但是产生了非空的推理内容（accumulatedThinking）：
   // 这属于上游推理中断/未输出正文（Reasoning-only response）。

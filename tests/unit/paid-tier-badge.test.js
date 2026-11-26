@@ -73,18 +73,22 @@ describe("subPriority registry flag", () => {
   const intlById = Object.fromEntries(intl.models.map((m) => [m.id, m]));
 
   it("marks exactly the rows the credit page tags 订阅优先", () => {
-    // Step-5-Preview (CN, 0.43x) and Kimi-K2.8-Preview (0.77x on BOTH lines —
-    // one credit system, and the tag was visible on the CN page too). Both are
-    // preview models queued ahead for subscribers — a scheduling property that
-    // says nothing about price or about whether your account can call them.
-    expect(cnById["step-5-preview"].subPriority).toBe(true);
+    // 2026-11-25 CN 客户端第五版：订阅优先标签扩到 GLM-5.3 / 5.3-Flash / Kimi-K3.1-Pro
+    // 与 K2.8-Preview；Step-5-Preview 自第三版起不再带标。GLM-5.4 与 5.3 同价但
+    // **不带**标签（卡面只有倍率），不得外溢。
+    expect(cnById["glm-5.3"].subPriority).toBe(true);
+    expect(cnById["glm-5.3-flash"].subPriority).toBe(true);
+    expect(cnById["kimi-k3.1-pro"].subPriority).toBe(true);
     expect(cnById["kimi-k2.8-preview"].subPriority).toBe(true);
     expect(intlById["kimi-k2.8-preview"].subPriority).toBe(true);
+    expect(cnById["glm-5.4"].subPriority).toBeUndefined();
     const tagged = [...cn.models, ...intl.models].filter((m) => m.subPriority);
     expect(tagged.map((m) => `${m.id}`).sort()).toEqual([
+      "glm-5.3",
+      "glm-5.3-flash",
       "kimi-k2.8-preview",
       "kimi-k2.8-preview",
-      "step-5-preview",
+      "kimi-k3.1-pro",
     ]);
   });
 
@@ -97,17 +101,15 @@ describe("subPriority registry flag", () => {
   });
 
   it("keeps the two flags independent on the same row", () => {
-    // Step-5-Preview is 订阅优先 but NOT behind a paid lock on the page, so it
-    // must not acquire paidTier by association. The two badges answer different
-    // questions: "is it gated?" vs "is it queued ahead?".
-    expect(cnById["step-5-preview"].paidTier).toBeUndefined();
-    expect(cnById["step-5-preview"].subPriority).toBe(true);
+    // GLM-5.3 是订阅优先但不在付费锁后面 —— 两个徽章回答不同的问题：
+    // "是否限档位？" vs "是否排队优先？"。（Step-5-Preview 自第三版起已无订阅优先标签。）
+    expect(cnById["glm-5.3"].paidTier).toBeUndefined();
+    expect(cnById["glm-5.3"].subPriority).toBe(true);
   });
 
   it("records Step-5-Preview's published rate and 1M context", () => {
-    // 0.43x off the 2026-10-09 credit page; the context picker offers
-    // 300/600/1M and the row resolves to the 1M ceiling.
-    expect(cnById["step-5-preview"]).toMatchObject({ rateMultiplier: 0.43 });
+    // 客户端第四/五版 0.33x（旧积分页是 0.43x）；上下文档 300/600/1M，行解析到 1M 上限。
+    expect(cnById["step-5-preview"]).toMatchObject({ rateMultiplier: 0.33 });
     expect(getCapabilitiesForModel("codebuddy-cn", "step-5-preview").contextWindow).toBe(1000000);
   });
 });

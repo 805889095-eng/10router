@@ -101,6 +101,9 @@ export const ALLOWLIST = {
   // 行——见 capabilities.js 的虚拟档注释——故按「gained a row → 删除条目」规约移除。)
   "cursor/default": "aggregator",
   "bazaarlink/auto:free": "aggregator",
+  // CodeBuddy CN 客户端第五版目录带 auto 档（上游按 prompt 选真实模型），
+  // 与 qoder 的 auto 同语义——静态能力行无法准确，按聚合档处理。
+  "codebuddy-cn/auto": "aggregator",
 
   // Inception Labs dLLM: models.dev 未收录（官方 docs 是唯一规格源）。
   // 注册表行已按 docs 写全（ctx/out/reasoning），地板判定来自其余默认字段。

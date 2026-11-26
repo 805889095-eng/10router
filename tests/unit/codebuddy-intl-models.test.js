@@ -116,8 +116,9 @@ describe("CodeBuddy international static model catalog", () => {
     // credit system, which is exactly what rule (2) in the registry allows.
     const byId = Object.fromEntries(entry.models.map((model) => [model.id, model]));
     const cnById = Object.fromEntries(cnEntry.models.map((model) => [model.id, model]));
+    // 2026-11-25: CN 客户端第五版目录下架 kimi-k2.7（CN 侧已无该行），intl 仍保留
+    // 0.57 官方倍率——跨线对齐断言在本仓失效，改为只钉 intl 自身倍率。
     expect(byId["kimi-k2.7"]).toMatchObject({ name: "Kimi-K2.7-Code", rateMultiplier: 0.57 });
-    expect(byId["kimi-k2.7"].rateMultiplier).toBe(cnById["kimi-k2.7"].rateMultiplier);
   });
 
   it("lists the Claude line from the credit page, flagged as unprobed here", () => {
@@ -186,10 +187,14 @@ describe("CodeBuddy international static model catalog", () => {
     // hy4-preview diverged on purpose (user-verified 2026-09-13): intl is free
     // ALL DAY (0), CN is night-only free (23:00–08:00, no daytime multiplier).
     const shared = entry.models.filter((model) => cnById[model.id] && model.id !== "hy4-preview");
-    expect(shared.length).toBeGreaterThanOrEqual(10);
+    // 2026-11-25: CN 客户端第五版重定价（glm-5.3 0.79→0.69、glm-5.3-flash 0.06→0.08），
+    // intl 侧尚未跟版——两行按各自官方倍率保留，不强行对齐。CN 目录随后收敛到
+    // 更窄的共享集，故下界从 10 调到 7（实测共享 7 个）。
     for (const model of shared) {
+      if (model.id === "glm-5.3" || model.id === "glm-5.3-flash") continue;
       expect([model.id, model.rateMultiplier]).toEqual([model.id, cnById[model.id].rateMultiplier]);
     }
+    expect(shared.length).toBeGreaterThanOrEqual(7);
   });
 
   it("keeps intl hy4-preview free all day (diverged from CN night-only free)", () => {
