@@ -678,16 +678,11 @@ export const PROVIDER_CAPABILITIES = {
   // below; it is NOT the inverse of onlyReasoning.
   "codebuddy-cn": {
     "glm-5.2":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 48000 },
-    "glm-5.1":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
     // maxOutput 64000 per both the plugin-baked fallback and the live server
     // table (the old 38000 had no source and truncated output).
-    "glm-5v-turbo":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 64000 },
-    "minimax-m3":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 512000, maxOutput: 128000 },
-    "kimi-k2.7":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
     // K2.8 预览版：models.dev 尚无条目，形态暂取 k2.7 同档（256000/32000 同 hy3、
     // glm-5.3-flashx 的既有做法），等 CN 网关 product-config 的 maxOutputTokens 回来校准。
     "kimi-k2.8-preview":  { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
-    "kimi-k2.6":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
     // Per-model values mirror the server's product-config payload (fetched
     // from copilot.tencent.com; the `models[]` entries carry
     // maxInputTokens/maxOutputTokens/supportsImages). contextWindow =
@@ -698,8 +693,6 @@ export const PROVIDER_CAPABILITIES = {
     // on by default"; canDisableThinking means "it CAN be turned off". glm-5.3
     // and glm-5.3-flash are onlyReasoning:true BUT canDisableThinking:true, so
     // their thinking is switchable; the hy* models are forced always-on.
-    "hy3":                { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 192000, maxOutput: 64000 },
-    "hy4-preview":        { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
     // Hy4 正式版（客户端 2026-11-05 新上，红色 new 标签）：1M 窗口，输出上限暂取
     // Hy 同档 64000（CN 网关 product-config 需鉴权取不到，回来后校准）。
     "hy4":                { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
@@ -714,7 +707,6 @@ export const PROVIDER_CAPABILITIES = {
     "glm-5.3-flash":      { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 32000 },
     // x 变体同基础版形态；32000 是暂取（同 hy3「输出上限暂取同档」的既有做法）——
     // CN 网关的 product-config 需要鉴权取不到，等它回来再校准。
-    "glm-5.3-flashx":     { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 32000 },
     // GLM-5.4（客户端 2026-11-25 第五版清单新上，0.69x）：CN 网关 product-config 尚未
     // 取到，形态按 canonical glm-5.4 行（1M/131072、全模态）压到 openai 思考形状
     // （transport 已写死 openai，provider 行优先）；maxOutput 先按 glm-5.3 的 48000
