@@ -2,6 +2,64 @@
 
 這裡展示面向用戶的關鍵更新；完整開發明細見 [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md)。
 
+## v2.1.4 (2026-11-26)
+
+功能版：新增 CrowLLM 與 QuWork 兩個供應商、CodeBuddy CN 對齊用戶端第五版清單、
+Loomy 目錄對齊，外加一批把內容靜默吃掉的上游正確性修復。設定、連線、資料零遷移。
+
+### 新增供應商
+
+- **CrowLLM**（crowllm.com，`crowllm/` 前綴）：one-hub 系聚合站，OpenAI 相容閘道，
+  API Key 直填。免費檔走 `:free` 零倍率模型。**實測更正**：上游條目依定價頁錨定的
+  `qwen4-max:free` / `grok-4.7:free` 在真實 `/v1/models`（171 個、30 個 `:free`）裡
+  已不存在，本版按實測改錨 `glm-5.3-flash:free` / `deepseek-v4-flash-0731:free` /
+  `minimax-m3.1-flash:free` / `hy4-flash:free` / `step-5-preview:free` /
+  `gemma-4-31b-it:free`，其餘靠動態目錄跟隨。歸入免費額度組。
+- **QuWork**（quwork.cn，`quwork/` 前綴）：OpenAI 相容推理閘道，手機號簡訊登入
+  （阿里雲滑塊驗證 → 收碼）或貼上 `llm_token`（+ 可選帳號 token）。帶積分配額卡
+  （餘額 + 永久/限時/訂閱明細 + 到期提醒）、每日簽到（連線卡手動領，或實驗功能頁
+  自動領，先查狀態絕不盲領）、微信綁定、邀請碼/兌換碼啟用。帳號 token 約 2 小時
+  自動續期，`llm_token` 不輪換。⚠️ 閘道前置阿里雲 WAF，**非中國大陸 IP 直接 405**，
+  海外伺服器需給該連線配國內代理或在設定裡配出站代理。順帶修了打包後
+  `undici` 未被追蹤導致連線級代理靜默回落直連的問題。
+
+### 模型目錄
+
+- **CodeBuddy CN** 對齊用戶端 2026-11-25 第五版清單：新增 **GLM-5.4**（0.69x，卡面無徽章，
+  不帶「訂閱優先」）；訂閱優先標籤按第五版重新落到 GLM-5.3 / 5.3-Flash / Kimi-K3.1-Pro /
+  K2.8-Preview；Step-5-Preview 自第三版起不再帶該標籤（0.33x）。
+- **zcode-free** free 線新增 GLM-5.4。
+- **Loomy** 對齊 live 目錄（6 個 session 探測一致）：新增 `deepseek-v4-flash-1017`
+  （用戶端「DeepSeek V4.1 Flash 1017」，×2.0，1M/384K，實測 text+image）；
+  spark-x2.6 限時免費結束，恢復正式價 ×2.5；下架 `deepseek-v4-flash-0731` 與 `mimo-v2.5`。
+- **能力表**：補 canonical `glm-5.4`（zai 第一方 text+image+video+pdf、1M/131072）與
+  codebuddy-cn 的 GLM-5.4 覆蓋行，否則新模型會落到 `*glm-5*` 兜底——200K 視窗 +
+  `vision:false`，圖片被靜默剝掉。同時補齊 codebuddy-cn 的 `hy4` / `hy4-flash` 行。
+
+### 正確性修復
+
+- **Loomy 四個模型不再冒充能讀圖**：公開連線（Qwen 3.8 Flash、DeepSeek V4.1 Flash、
+  DeepSeek V4 Flash 1017、GLM 5.3 Flash）此前宣告 `vision:true`，實際是純文字通道，
+  導致圖片繞過剝離直接打到上游後被吞。現如實宣告 `vision:false`，請求裡的圖片區塊
+  會被正常剝掉而不是靜默失敗。
+- **Responses → Chat 歸一化 `image_url.detail`**：Codex 等 Responses 用戶端帶 `detail`
+  欄位發圖時，轉換成 Chat 格式後上游（DuMate 等）回 400。現統一歸一到合法取值。
+- **額度卡「最早到期 / 重置」三面口徑統一**：頭部倒數、卡間排序（沙漏鈕）、服務端
+  `earliestPackageExpiry` 此前各算各的，出現「卡上寫 17d、排序按 5d」。現統一到一份
+  時鐘語意（`open-sse/utils/quotaTiming.js` + `src/shared/utils/quotaRows.js`），並修掉
+  「兩側都是 Infinity 時相減得 NaN、並列永不沉底、沙漏鈕點了沒反應」。新增持久欄
+  `displayPackageExpiry` / `displayPackageName`，路由行為不變。
+- **上游終態追蹤**：完成回呼不再把「純 EOF / 合成結束 / 解析失敗」當成功；區分真完成
+  與截斷，供按任務結算的供應商使用。
+
+### 其他
+
+- 修 `codex-registry-model-routing` 用例用 cwd 相對路徑解析原始碼、從倉庫根跑必紅的問題
+  （改用 `import.meta.url`）。
+
+**你需要做什麼**：什麼都不用。設定、連線、歷史資料零遷移。已建的 Loomy / CodeBuddy
+連線無需重新登入，選擇「重新整理模型清單」即可拉到新目錄。
+
 ## v2.1.3 (2026-11-20)
 
 這一版修了上游五個「內容會憑空消失」的 bug，另外給 Google 頻道加了熔斷。升級不必做任何事。

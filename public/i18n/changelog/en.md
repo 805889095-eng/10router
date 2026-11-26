@@ -2,6 +2,77 @@
 
 User-facing highlights per release. See [CHANGELOG.md](https://github.com/805889095-eng/10router/blob/main/CHANGELOG.md) for the full developer log.
 
+## v2.1.4 (2026-11-26)
+
+Feature release: two new providers (CrowLLM and QuWork), CodeBuddy CN aligned to the
+client's fifth catalog edition, Loomy catalog sync, plus a batch of upstream correctness
+fixes that were silently eating content. Nothing to do on upgrade.
+
+### New providers
+
+- **CrowLLM** (`crowllm.com`, prefix `crowllm/`): one-hub-family aggregator, OpenAI-compatible
+  gateway, paste an API key. The free tier rides `:free` zero-multiplier models. **Measured
+  correction**: the upstream entry anchored `qwen4-max:free` and `grok-4.7:free` off the
+  pricing page, but neither exists in the real `/v1/models` (171 models, 30 of them `:free`);
+  this release anchors `glm-5.3-flash:free`, `deepseek-v4-flash-0731:free`,
+  `minimax-m3.1-flash:free`, `hy4-flash:free`, `step-5-preview:free` and `gemma-4-31b-it:free`
+  instead, with the rest following the live catalog. Filed under the free-tier group.
+- **QuWork** (`quwork.cn`, prefix `quwork/`): OpenAI-compatible inference gateway. Sign in with
+  a phone number (Alibaba slider captcha, then SMS code) or paste `llm_token` (+ optional
+  account token). Comes with a credit card (balance + permanent/limited/subscription detail +
+  expiry warnings), a daily reward claim (manual on the connection card, or automatic on the
+  experimental page — always checks status first, never blind-claims), WeChat binding, and
+  invite/redeem-code activation. The account token auto-renews about every 2 hours; `llm_token`
+  never rotates. ⚠️ The gateway sits behind an Alibaba WAF that **returns 405 to any
+  non-mainland-China IP** — on an overseas server, give that connection a mainland proxy pool
+  or set the outbound proxy in Settings. This release also fixes connection-level proxies
+  silently falling back to a direct connection after packaging because `undici` was not traced.
+
+### Model catalog
+
+- **CodeBuddy CN** aligned to the client's 2026-11-25 fifth edition: adds **GLM-5.4** (0.69x, no
+  badge on the card, no subscriber priority); the subscriber-priority tag moves to GLM-5.3 /
+  5.3-Flash / Kimi-K3.1-Pro / K2.8-Preview per that edition; Step-5-Preview dropped the tag
+  back in the third edition (0.33x).
+- **zcode-free** free line gains GLM-5.4.
+- **Loomy** synced to the live catalog (six sessions probed, all identical): adds
+  `deepseek-v4-flash-1017` (client label "DeepSeek V4.1 Flash 1017", ×2.0, 1M/384K, measured
+  text+image); spark-x2.6's promo pricing ended, back to the regular ×2.5; `deepseek-v4-flash-0731`
+  and `mimo-v2.5` removed.
+- **Capabilities**: added a canonical `glm-5.4` row (zai first-party, text+image+video+pdf,
+  1M/131072) and the CodeBuddy CN override row. Without them a new model falls through to the
+  `*glm-5*` wildcard — 200K window and `vision:false`, so images get stripped silently. Also
+  filled in the CodeBuddy CN `hy4` / `hy4-flash` rows.
+
+### Correctness fixes
+
+- **Four Loomy models no longer claim to read images**: the public connection (Qwen 3.8 Flash,
+  DeepSeek V4.1 Flash, DeepSeek V4 Flash 1017, GLM 5.3 Flash) declared `vision:true` while the
+  channel is text-only, so images skipped the stripping step, hit the upstream and were
+  swallowed. They now declare `vision:false` honestly and images are dropped up front.
+- **`image_url.detail` normalized on Responses → Chat**: Responses clients such as Codex send a
+  `detail` field that upstreams like DuMate rejected with a 400 after conversion. Now normalized
+  to a legal value.
+- **Quota card's "earliest expiry / reset" unified across three surfaces**: the header countdown,
+  the card sort (hourglass button) and the server's `earliestPackageExpiry` each computed it
+  their own way — a card could read "17d left" while sorting at "5d". All three now share one
+  clock semantic (`open-sse/utils/quotaTiming.js` + `src/shared/utils/quotaRows.js`), and
+  "both sides Infinity subtract to NaN, ties never sink, the hourglass looks dead" is fixed.
+  Adds persisted columns `displayPackageExpiry` / `displayPackageName`; routing behaviour is
+  unchanged.
+- **Upstream terminal-state tracking**: the completion callback no longer treats plain EOF,
+  synthesized ends or parse failures as success — real completion is now distinguished from
+  truncation for providers that settle tasks per turn.
+
+### Misc
+
+- Fixed `codex-registry-model-routing` resolving its source file against the cwd, which failed
+  whenever vitest ran from the repository root (now uses `import.meta.url`).
+
+**What you need to do:** nothing. Configuration, connections and history migrate themselves.
+Existing Loomy / CodeBuddy connections need no re-login — hit "refresh model list" to pull the
+new catalog.
+
 ## v2.1.3 (2026-11-20)
 
 Five upstream correctness fixes plus a circuit breaker for Google channels. Nothing to do on

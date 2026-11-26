@@ -2,7 +2,107 @@
 
 > 面向用户的精简更新见 [`public/i18n/changelog/`](https://github.com/805889095-eng/10router/tree/main/public/i18n/changelog)（`en.md` / `zh-CN.md` / `zh-TW.md`，仪表盘「Change Log」按界面语言加载对应文件）。本文件为完整开发日志，按版本从上往下排列。
 
+## v2.1.4 (2026-11-26)
+
+功能版：新增 CrowLLM 与 QuWork 两个供应商、CodeBuddy CN 对齐客户端第五版清单、Loomy
+目录对齐，外加一批把内容静默吃掉的上游正确性修复。配置、连接、数据零迁移。
+
+### 新增供应商
+
+- **CrowLLM**（crowllm.com，`crowllm/` 前缀，`c1c73c45` + 本版实测修正）：one-hub 系聚合站，
+  OpenAI 兼容网关（`https://crowllm.com/v1/*`），Bearer apiKey，`:free` 后缀即零倍率免费模型。
+  `passthroughModels` 透传动态目录，`category: freeTier`（免费额度组）。**实测更正**：上游条目
+  按 `/api/pricing` 锚定的 `qwen4-max:free` / `grok-4.7:free` 在真实 `/v1/models`
+  （2026-11-26 测：171 个模型、30 个 `:free`，全目录无这两个 id，grok 只到 `grok-4.7` 无
+  `:free` 版）里已不存在 → 改锚实测存在的六个：`glm-5.3-flash:free` /
+  `deepseek-v4-flash-0731:free` / `minimax-m3.1-flash:free` / `hy4-flash:free` /
+  `step-5-preview:free` / `gemma-4-31b-it:free`。`PROVIDER_MODELS_CONFIG` 用 `parseResponse`
+  只保留 `:free`（否则 141 个付费行灌进导入面）；`audit-capabilities` allowlist 补
+  `crowllm/hy4-flash:free`（无公开规格，同 capy/particle 口径）。基线：alias 295→296 tokens、
+  providers 123→124。
+- **QuWork**（quwork.cn，`quwork/` 前缀，上游 `9c8d92d2` / #167，PR by Duseus）：OpenAI 兼容
+  推理网关 `llm.quwork.cn/v1` + 账号网关 `llm.rrzu.com`。登录：手机号短信直登（阿里云验证码
+  2.0 滑块 SDK 本地托管 `public/quwork/`，验证页 postMessage 回传 token）或粘贴 `llm_token`
+  （必填，经 `GET /v1/models` 校验不耗积分）+ 账号 access token（选填）。积分配额卡
+  （`points_entitlement` → 储值汇总行 + 永久/限时/订阅 detailOnly + 到期 expiringBatch +
+  今日已签到徽章）；每日签到先查 `daily-reward/status`、`can_claim` 才 claim，连接卡手动 +
+  实验页自动（`quworkCheckin` 默认关）；微信绑定（扫码链接回调页粘贴回）；邀请码/兑换码
+  `POST /api/user/activate`。账号 token ~2h 经 `refreshUrl` 续期（失败返 null 不标记死），
+  `llm_token` 不轮换。**网关前置阿里云 WAF：非中国大陆 IP 直接 405**，不内置代理，全走
+  连接级代理或全局出站代理。附 `undici` 打包修复（`proxyFetch` 的动态 `import("undici")`
+  不被 standalone 追踪，打包后连接级代理静默回落直连 → `ensureModuleInBundle("undici")`
+  + `cli/package.json` 声明依赖）。
+
+### 模型目录
+
+- **CodeBuddy CN** 对齐客户端 2026-11-25 第五版清单（`941f2208`）：新增 **GLM-5.4**
+  （0.69x、**无徽章**、不带「订阅优先」）；订阅优先标签按第五版落在 GLM-5.3 / 5.3-Flash /
+  Kimi-K3.1-Pro / K2.8-Preview；Step-5-Preview 自第三版起不再带该标签（0.33x）；新增 `auto`
+  聚合档（allowlist 记为 aggregator）。测试清单同步改写 `paid-tier-badge` 与
+  `codebuddy-intl-models`（CN 第五版重定价后跨线倍率不再强行对齐，kimi-k2.7 已从 CN 目录下架）。
+- **zcode-free** free 线新增 GLM-5.4（`1d12d6fc`）。
+- **Loomy** 对齐 live 目录（`465a897f`，6 个 NAS session 打 `/models` 全一致）：新增
+  `deepseek-v4-flash-1017`（×2.0，1M/384K，vision，按 V4.1-Flash 同剖面显式声明——裸落
+  `*deepseek-v4*` 通配会被剥 vision）；spark-x2.6 限时免费结束（×0.0 → ×2.5，摘 promoFreeNote）；
+  下架 `deepseek-v4-flash-0731`（live 目录彻底消失）与 `mimo-v2.5`（×3.3）。live 另有 3 款
+  画图模型与 auto 档，本 provider 只做 chat（`serviceKinds: ["llm"]`）不收录。
+- **能力表**（`c3371de3` 补漏）：补 canonical `glm-5.4`（models.dev zai/zhipuai-coding-plan
+  一致：text+image+video+pdf、1M/131072、zai thinking 不可关）与 codebuddy-cn 的 glm-5.4
+  覆盖行（openai 形状，maxOutput 保守 48000）。**不写会落 `*glm-5*` 兜底：200K 窗口 +
+  vision:false，图片被剥。** 同时补 codebuddy-cn 的 `hy4`（1M/64000）与 `hy4-flash`
+  （960K/64000）行，消除 capability-floor 红灯。
+
+### 正确性修复
+
+- **Loomy 四模型 vision 改 false**（`dec7bf4b` / #179，文本通道如实声明）：公开连接
+  （Qwen 3.8 Flash、DeepSeek V4.1 Flash、DeepSeek V4 Flash 1017、GLM 5.3 Flash）此前声明
+  `vision:true`，实际纯文本，图片绕过了 modality 剥离直接打到上游后被吞。现 `vision:false`。
+- **Responses → Chat 归一化 `image_url.detail`**（`c862e514` / #178，修 DuMate 400）：新增
+  `open-sse/translator/concerns/imageDetail.js`，responsesApi / openai-responses 请求转换与
+  schema defaults 统一把 `detail` 归一到合法枚举。
+- **额度卡「最早到期/重置」三面口径统一 + 健壮化**（`fb1b8d83` / `3d1f66eb`）：头部
+  `QuotaPackBar.soonestLive` 会剔除耗尽行、却要拿时钟；卡间排序 `getEarliestResetTime` 取
+  quotas 全部 `resetAt` 最小值（含 5d 回血窗）；服务端 `extractEarliestPackageExpiry` 是第三套
+  且**刻意**剔除耗尽 giftPack（路由契约，`earliest-expiry-first.test.js:90` 钉过，保留）。落地
+  两层：新 `open-sse/utils/quotaTiming.js` 只管时钟/数值语义（`quotaCountdownFromRaw` 处理
+  串/Date/9999 哨兵/过去时间、`quotaDeadlineTime`、`hasLiveRemaining`、`refillsWhenDrained`、
+  `drivesEarliestExpiry`、`earliestExpiryBucket`），`src/shared/utils/quotaRows.js` 只加具名
+  判定与 `earliestQuotaCountdown()` / `connectionCountdown()`。四个消费面（卡头、排序器、
+  `/api/providers/client?sort=expiring`、`expiryExtractor`）各自调它。新增第四件
+  `extractDisplayPackageExpiry()` → 持久列 `displayPackageExpiry` / `displayPackageName`
+  （relay 仍读 `earliestPackageExpiry`，路由行为零变化；UI 一律读展示列、回落路由列）。
+  **本版另修**：排序比较器原先 `a - b`，两侧都是 Infinity 得 NaN 被当相等 → 并列永不沉底、
+  沙漏钮「点了没反应」；改为先判值再相减（`2eff94c4`）。
+- **上游终态追踪**（`267d952d` / #159）：stream 层新增 `upstreamTerminalSeen` /
+  `upstreamTurnComplete` / 截断 / 解析失败 / 隐私占位还原丢失标记；`onCompletedResponse` 只在
+  拿到 provider-authored 终态（真实 `finish_reason` / `[DONE]` / `completed` 状态）且流干净
+  收尾时触发。新增 `open-sse/utils/completedChatTurn.js` 纯函数。**本版补齐**：
+  `isUpstreamTerminalChunk` 定义块在冲突时漏取，补回（否则 translate lane 直接
+  `ReferenceError`）。
+
+### 其他
+
+- `open-sse/config/providerCategories.js` 补齐（`auth.js` 早已 import，本仓此前缺失，补回后
+  `codebuddy-channel-block` 等 4 个用例转绿）（`2eff94c4`）。
+- `tests/unit/codex-registry-model-routing.test.js` 改用 `import.meta.url` 解析源码路径
+  （原先 `path.resolve("../open-sse/...")` 在仓库根跑 vitest 会解析到 workspace 同级目录，
+  整文件 23 个用例变 suite-level failure）（`0abebc59`）。
+- codebuddy-cn 恢复 identity 单点真源 `codebuddyIdentityHeaders()`：`941f2208` 冲突整文件取
+  theirs 时把硬编码 9 头搬了进来，其中 `x-codebuddy-request` 违反本仓纪律（只在本地 daemon
+  路径发，聊天路径多发即为新指纹）（`1ecf9565`）。
+
+### 验证
+
+- 基线三连全绿：`verify-alias`（296 tokens）、`verify-oauth-urls`、
+  `verify-providers`（124 providers）byte-for-byte equal；`audit-capabilities --check`
+  9 条 dead row = 基线原值，未新增。
+- 全量回归：与 v2.1.3 worktree 实测基线（36 失败用例）逐条比对，**新增 0 / 消失 0**。
+- 语法解析 1137 个文件 0 错误；registry 自检 168 条目、重复 id 0、别名冲突 0。
+- 真机：CrowLLM `/v1/models` 直连超时、走代理 HTTP 200（171 模型 / 30 `:free`）；
+  QuWork `GET /v1/models` 假 token 回 401 `Invalid token (request id…)` = 端点正确。
+
 ## v2.1.3 (2026-11-20)
+
 
 修复版：五个上游正确性修复移植 + Google 伪 429 的渠道级熔断。配置、连接、数据零迁移。
 

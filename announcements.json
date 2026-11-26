@@ -10,6 +10,12 @@
   "updatedAt": "2026-11-16T22:35:00+08:00",
   "items": [
     {
+      "date": "2026-11-26",
+      "level": "feature",
+      "title": "v2.1.4：新增 CrowLLM / QuWork 两个供应商，CodeBuddy GLM-5.4 上架",
+      "body": "CrowLLM：one-hub 聚合站，贴 API Key 即用，30 个 :free 免费模型（GLM 5.3 Flash、DeepSeek V4 Flash 0731、MiniMax M3.1 Flash 等）。QuWork：手机号短信登录或粘 llm_token，带积分配额卡、每日签到、微信绑定与邀请码激活——注意它拒绝非中国大陆 IP（HTTP 405），海外服务器需给该连接配国内代理。模型目录：CodeBuddy CN 新增 GLM-5.4（0.69x），Loomy 新增 DeepSeek V4.1 Flash 1017、下架 V4 Flash 0731 与 MiMo V2.5。修复：额度卡「最早到期」三面口径统一、Loomy 四个模型不再冒充能读图、Codex 发图 400。配置零迁移。"
+    },
+    {
       "id": "2026-11-16-211-webcookie-cards",
       "level": "info",
       "date": "2026-11-16",
@@ -89,15 +95,6 @@
       "body": "连接详情里打开「隐私脱敏」，出站请求里的 API Key、私钥、JWT 会被替换成占位符，模型回显的内容自动还原成原文。默认关闭，只对你不信任的上游开启。",
       "titleEn": "New: privacy redaction — keep your keys away from upstreams",
       "bodyEn": "Turn on “Privacy redaction” in a connection and API keys, private keys and JWTs in the outbound request become placeholders; anything the model echoes back is restored before it reaches you. Off by default — enable it only for upstreams you do not trust."
-    },
-    {
-      "id": "2026-11-03-loomy-free-pool",
-      "date": "2026-11-03",
-      "level": "promo",
-      "title": "讯飞 Loomy 免费池：8 个免费模型 + 手机验证码直登",
-      "body": "内置 Spark X2.6、Qwen 3.8、DeepSeek V4.1、MiniMax M3、Kimi K2.6、GLM 5.3 Flash 等 8 个模型。供应商页点「验证码登录」，输手机号收码即可，无需安装客户端，会话 14 天有效。",
-      "titleEn": "iFlytek Loomy free pool: 8 free models + phone-code sign-in",
-      "bodyEn": "Eight models built in — Spark X2.6, Qwen 3.8, DeepSeek V4.1, MiniMax M3, Kimi K2.6, GLM 5.3 Flash and more. On the provider page press “SMS Login”, enter your phone number, done — no client install needed, session lasts about 14 days."
     }
   ]
 }
